@@ -11,6 +11,42 @@ function aspectFromContentType(contentType: StudioState["contentType"]) {
   return contentType === "reels" ? ("9:16" as const) : ("1:1" as const);
 }
 
+function sanitizePromptText(raw: string): string {
+  let s = (raw ?? "").trim();
+  if (!s) return s;
+
+  // Частая форма от модели: {"prompt":"..."} или { prompt: "..." }
+  const jsonLike = s.match(/^\{\s*"?prompt"?\s*:\s*([\s\S]*?)\s*\}$/i);
+  if (jsonLike?.[1]) {
+    s = jsonLike[1].trim();
+  }
+
+  // Удаляем markdown fenced blocks
+  const fenced = s.match(/```(?:[\w-]*)?\s*\n([\s\S]*?)```/);
+  if (fenced?.[1]) {
+    s = fenced[1].trim();
+  }
+
+  // Если осталась метка prompt:
+  s = s.replace(/^\s*(prompt|промпт)\s*[:\-]\s*/i, "");
+
+  // Снимаем внешние кавычки/апострофы/бэктики
+  s = s.replace(/^[`"'«»\s]+|[`"'«»\s]+$/g, "");
+
+  // Нормализуем экранированные переводы строк от JSON
+  s = s.replace(/\\n/g, "\n").replace(/\\"/g, "\"");
+
+  // Если модель отдала мини-объект/массив в одной строке, пытаемся достать самое длинное значение в кавычках.
+  if ((s.startsWith("{") && s.endsWith("}")) || (s.startsWith("[") && s.endsWith("]"))) {
+    const quoted = [...s.matchAll(/"([^"]{12,})"/g)].map((m) => m[1]!.trim());
+    if (quoted.length > 0) {
+      s = quoted.sort((a, b) => b.length - a.length)[0]!;
+    }
+  }
+
+  return s.trim();
+}
+
 export function buildSelectorsPayload(
   state: StudioState
 ): Pick<
@@ -68,7 +104,12 @@ export function mergeStatePatch(state: StudioState, patch: StatePatch | undefine
   if (patch.selectedAngleId !== undefined) out.selectedAngleId = patch.selectedAngleId;
   if (patch.slides !== undefined) out.slides = patch.slides;
   if (patch.approved !== undefined) out.approved = patch.approved;
-  if (patch.prompts !== undefined) out.prompts = patch.prompts;
+  if (patch.prompts !== undefined) {
+    out.prompts = patch.prompts.map((p) => ({
+      slideId: p.slideId,
+      prompt: sanitizePromptText(p.prompt)
+    }));
+  }
   if (patch.caption !== undefined) out.caption = patch.caption;
   if (patch.music !== undefined) out.music = patch.music;
   return out;
