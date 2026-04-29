@@ -12,7 +12,7 @@ export function AppShell() {
           min-w-0 + minmax: иначе длинный контент в центре раздувает грид, overflow-hidden срезает боковые колонки.
           overflow-x-auto: на узком окне можно прокрутить к боковым панелям.
         */}
-        <div className="grid h-full min-h-0 w-full min-w-0 flex-1 grid-cols-[minmax(240px,360px)_minmax(300px,1fr)_minmax(240px,420px)] gap-0 overflow-x-auto overflow-y-hidden rounded-2xl">
+        <div className="grid h-full min-h-0 w-full min-w-[1180px] flex-1 grid-cols-[360px_minmax(0,1fr)_420px] gap-0 overflow-x-auto overflow-y-hidden rounded-2xl">
           <aside className="min-h-0 min-w-0 border-r border-border bg-panel p-4">
             <PanelErrorBoundary label="Control Panel">
               <ControlPanel />

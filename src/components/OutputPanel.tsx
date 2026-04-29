@@ -85,7 +85,8 @@ export function OutputPanel() {
       : state.prompts.some((p) => p.prompt.trim());
 
   return (
-    <div className="flex h-full min-h-0 min-w-0 flex-col gap-4 overflow-x-hidden overflow-y-auto">
+    <div className="flex h-full min-h-0 min-w-0 flex-col">
+      <div className="min-h-0 flex-1 space-y-4 overflow-x-hidden overflow-y-auto pr-0.5">
       <div>
         <div className="text-sm font-medium text-muted">Вывод</div>
         <div className="text-xl font-semibold tracking-tight">Ассеты</div>
@@ -161,13 +162,19 @@ export function OutputPanel() {
 
       <div className="min-h-0 min-w-0 space-y-3">
         <div className="text-xs font-medium text-muted">Изображения</div>
-        {state.images.length === 0 ? (
-          <div className="rounded-xl border border-dashed border-border bg-black/10 p-4 text-center text-xs text-muted">
-            После промптов нажми «Generate images». Перегенерация — у каждого кадра.
-          </div>
-        ) : (
-          state.images.map((img, idx) => <ImageSlideCard key={img.id} index={idx} image={img} />)
-        )}
+        <div className="max-h-[min(52vh,560px)] overflow-y-auto pr-1">
+          {state.images.length === 0 ? (
+            <div className="rounded-xl border border-dashed border-border bg-black/10 p-4 text-center text-xs text-muted">
+              После промптов нажми «Generate images». Перегенерация — у каждого кадра.
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {state.images.map((img, idx) => (
+                <ImageSlideCard key={img.id} index={idx} image={img} />
+              ))}
+            </div>
+          )}
+        </div>
       </div>
 
       <div className="rounded-xl border border-border bg-black/20 p-3">
@@ -245,15 +252,18 @@ export function OutputPanel() {
           </div>
         </div>
       </div>
+      </div>
 
-      <button
-        type="button"
-        onClick={() => void onDownload()}
-        disabled={!!busy || !hasSomethingToExport}
-        className="rounded-xl border border-accent/30 bg-accent/10 px-3 py-2 text-sm text-text hover:bg-accent/15 disabled:opacity-50"
-      >
-        {busy === "zip" ? "Архив…" : "Download ZIP"}
-      </button>
+      <div className="shrink-0 border-t border-border bg-panel pt-3">
+        <button
+          type="button"
+          onClick={() => void onDownload()}
+          disabled={!!busy || !hasSomethingToExport}
+          className="w-full rounded-xl border border-accent/30 bg-accent/10 px-3 py-2 text-sm text-text hover:bg-accent/15 disabled:opacity-50"
+        >
+          {busy === "zip" ? "Архив…" : "Download ZIP"}
+        </button>
+      </div>
     </div>
   );
 }
