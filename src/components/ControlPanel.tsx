@@ -7,10 +7,35 @@ import type { ProjectId, StudioState } from "@/lib/state";
 const projectOptions: { id: ProjectId; label: string }[] = [
   { id: "poslenego", label: "После него" },
   { id: "zobnin", label: "Zobnin AI" },
+  { id: "olgatrip", label: "OlgaTrip" },
   { id: "custom", label: "Custom" }
 ];
 
 const emptyMusic = () => ({ queries: [] as string[], recommendations: [] as string[], avoid: [] as string[] });
+
+/** Селекторы по умолчанию при смене проекта (не трогаем zobnin/custom без нужды). */
+function defaultsForProject(project: ProjectId): Partial<StudioState> {
+  if (project === "olgatrip") {
+    return {
+      mood: "soft",
+      visualStyle: "lightMinimal",
+      outputMode: "both",
+      ctaMode: "direct",
+      website: "olgatrip.com",
+      triggerWord: "море",
+      customCta: ""
+    };
+  }
+  if (project === "poslenego") {
+    return {
+      ctaMode: "website",
+      website: "poslenego.com",
+      triggerWord: "",
+      customCta: ""
+    };
+  }
+  return {};
+}
 
 export function ControlPanel() {
   const { state, dispatch } = useStudio();
@@ -53,7 +78,8 @@ export function ControlPanel() {
         prompts: [],
         images: [],
         caption: "",
-        music: emptyMusic()
+        music: emptyMusic(),
+        ...defaultsForProject(nextProject)
       }
     });
   }

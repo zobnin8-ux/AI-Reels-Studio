@@ -1,4 +1,4 @@
-export type ProjectId = "poslenego" | "zobnin" | "custom";
+export type ProjectId = "poslenego" | "zobnin" | "olgatrip" | "custom";
 
 export type ContentType = "reels" | "post";
 

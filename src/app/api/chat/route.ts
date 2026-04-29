@@ -4,7 +4,7 @@ import { buildDialogueSystemPrompt } from "@/lib/dialogue-context";
 import { chatApiResponseSchema } from "@/lib/chat-response";
 
 const selectorsSchema = z.object({
-  project: z.enum(["poslenego", "zobnin", "custom"]),
+  project: z.enum(["poslenego", "zobnin", "olgatrip", "custom"]),
   customSystemPrompt: z.string(),
   contentType: z.enum(["reels", "post"]),
   slideCount: z.union([z.literal(5), z.literal(7), z.literal(9), z.literal(10), z.literal(12)]),

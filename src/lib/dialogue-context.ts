@@ -30,13 +30,28 @@ export type SelectorSnapshotForApi = Pick<
 
 function selectorsBlock(sel: SelectorSnapshotForApi) {
   const aspect = sel.contentType === "reels" ? "9:16" : "1:1";
-  return `CONTENT FORMAT: ${sel.contentType} (${aspect})
+  const customExtra =
+    sel.project === "custom"
+      ? `\nCUSTOM SYSTEM (project Custom): ${sel.customSystemPrompt.slice(0, 500)}${sel.customSystemPrompt.length > 500 ? "…" : ""}`
+      : "";
+  return `PROJECT: ${sel.project}
+CONTENT FORMAT: ${sel.contentType} (${aspect})
 SLIDE COUNT TARGET: ${sel.slideCount}
 MOOD/TONE: ${sel.mood}
 VISUAL STYLE: ${sel.visualStyle}
 OUTPUT MODE (text on images vs separate): ${sel.outputMode}
-CTA MODE & RULES: ${getCtaHint(sel)}
-CUSTOM SYSTEM (project Custom only): ${sel.customSystemPrompt.slice(0, 500)}${sel.customSystemPrompt.length > 500 ? "…" : ""}`;
+CTA MODE & RULES: ${getCtaHint(sel)}${customExtra}`;
+}
+
+function olgatripRules(project: SelectorSnapshotForApi["project"]) {
+  if (project !== "olgatrip") return "";
+  return `
+OLGATRIP / CASHMERE COAST (always respect with this project):
+- Scenario beats for Reels: align slide flow with 0–3s hook → 3–10 visual → 10–25 micro-story → 25–35 soft close (total ~20–35s); slide titles may note seconds.
+- Full-package answers in "reply": use sections IDEA → HOOK → SCRIPT (with second ranges) → VISUAL PROMPTS (English only) → CAPTION → MUSIC MOOD.
+- statePatch.prompts: English prompts; visual tone = beige/cashmere/sand, golden hour, muted palette; no selfie / no direct eye contact / no neon or gimmick effects — unless user overrides selectors.
+- Copy quality: if it sounds like generic travel or hard sell, rewrite; use concrete moments, not adjectives from the forbidden list in the profile.
+`;
 }
 
 /** Full system prompt: profile + selectors + JSON contract + session snapshot (re-sent every request). */
@@ -66,6 +81,7 @@ export function buildDialogueSystemPrompt(
 ---
 SESSION CONTEXT SELECTORS (must respect on every answer):
 ${selectorsBlock(selectors)}
+${olgatripRules(selectors.project)}
 
 ---
 CURRENT SESSION STATE (authoritative; update via statePatch only when user intent requires it):
