@@ -20,7 +20,9 @@ async function generateWithOpenAI(prompt: string, aspect: "9:16" | "1:1") {
   if (!apiKey) throw new Error("Missing OPENAI_API_KEY");
 
   const model = process.env.OPENAI_IMAGE_MODEL || "gpt-image-1";
-  const size = aspect === "9:16" ? "1024x1792" : "1024x1024";
+  // OpenAI image API currently supports: 1024x1024, 1024x1536, 1536x1024, auto.
+  // For vertical Reels we use the closest portrait preset.
+  const size = aspect === "9:16" ? "1024x1536" : "1024x1024";
 
   const res = await fetch("https://api.openai.com/v1/images/generations", {
     method: "POST",

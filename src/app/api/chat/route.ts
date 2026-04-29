@@ -185,8 +185,17 @@ export async function POST(request: Request) {
         ? await callOpenAIChat(system, body.messages)
         : await callAnthropicChat(system, body.messages);
 
-    const out = parseChatResponse(raw);
-    return NextResponse.json(out);
+    try {
+      const out = parseChatResponse(raw);
+      return NextResponse.json(out);
+    } catch {
+      // Fallback: если модель нарушила JSON-контракт, не роняем диалог.
+      // Возвращаем текст как reply без statePatch.
+      return NextResponse.json({
+        reply: raw.trim() || "Не удалось распарсить ответ модели. Повтори запрос чуть иначе.",
+        statePatch: {}
+      });
+    }
   } catch (e: unknown) {
     const msg = e instanceof Error ? e.message : "Chat error";
     return jsonError(msg, 500);
