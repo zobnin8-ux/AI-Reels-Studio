@@ -119,7 +119,8 @@ async function callAnthropicChat(
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) throw new Error("Missing ANTHROPIC_API_KEY");
 
-  const model = process.env.ANTHROPIC_MODEL || "claude-3-7-sonnet-latest";
+  // См. актуальные ID: https://docs.anthropic.com/en/docs/about-claude/models/all-models
+  const model = process.env.ANTHROPIC_MODEL || "claude-sonnet-4-6";
   const anthropicMessages = msgs.map((m) => ({
     role: m.role,
     content: m.content

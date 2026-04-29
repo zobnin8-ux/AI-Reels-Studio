@@ -2,8 +2,9 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useStudio } from "@/lib/studio-store";
-import { mergeStatePatch, sendDialogueTurn } from "@/lib/actions";
-import type { ChatMessage } from "@/lib/state";
+import { generateImagesFromState, mergeStatePatch, sendDialogueTurn } from "@/lib/actions";
+import { canRunImageGeneration, userWantsImageGeneration } from "@/lib/auto-image-intent";
+import type { ChatMessage, StudioState } from "@/lib/state";
 
 function uid(p: string) {
   return `${p}_${Math.random().toString(16).slice(2)}`;
@@ -57,14 +58,35 @@ export function DialoguePanel() {
       const assistantMsg: ChatMessage = { id: uid("a"), role: "assistant", content: reply };
       const patch = mergeStatePatch(state, statePatch);
 
+      const merged: StudioState = {
+        ...state,
+        ...patch,
+        messages: [...state.messages, userMsg, assistantMsg]
+      };
+
       dispatch({
         type: "set",
         patch: {
-          messages: [...state.messages, userMsg, assistantMsg],
+          messages: merged.messages,
           ...patch
         }
       });
       setInput("");
+
+      if (userWantsImageGeneration(text) && canRunImageGeneration(merged)) {
+        try {
+          const images = await generateImagesFromState(merged);
+          dispatch({ type: "set", patch: { images } });
+        } catch (imgErr: unknown) {
+          const m = imgErr instanceof Error ? imgErr.message : "Image gen error";
+          const errMsg: ChatMessage = {
+            id: uid("a"),
+            role: "assistant",
+            content: `Не удалось сгенерировать кадры: ${m}`
+          };
+          dispatch({ type: "set", patch: { messages: [...merged.messages, errMsg] } });
+        }
+      }
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : "Ошибка сети";
       const assistantMsg: ChatMessage = {
@@ -135,7 +157,7 @@ export function DialoguePanel() {
                 <div className="mb-1 text-[10px] font-medium uppercase tracking-wide text-muted">
                   {m.role === "user" ? "Вы" : "Ассистент"}
                 </div>
-                <div className="whitespace-pre-wrap">{m.content}</div>
+                <div className="max-w-full min-w-0 break-words whitespace-pre-wrap">{m.content}</div>
               </div>
             ))}
             <div ref={endRef} />

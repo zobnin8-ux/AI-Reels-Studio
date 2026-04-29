@@ -98,6 +98,7 @@ RULES:
 - When user asks for per-slide image prompts: fill "prompts" aligned with current slides (slideId must match slide id).
 - Caption / music: fill statePatch when user asks; caption must not blindly repeat slide body text.
 - If nothing structural changes, omit statePatch or use {}.
+- When the user asks for image prompts for any slide, you MUST also put the full "prompts" array in statePatch (one entry per slide, slideId must match), not only text in "reply" — the right panel reads state, not the chat text.
 
 `;
 
