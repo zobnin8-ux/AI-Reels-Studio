@@ -15,11 +15,12 @@ function sanitizePromptText(raw: string): string {
   let s = (raw ?? "").trim();
   if (!s) return s;
 
-  // Частая форма от модели: {"prompt":"..."} или { prompt: "..." }
+  // Частая форма от модели: {"prompt":"..."} или вложенный JSON с полем prompt.
+  const inlinePrompt = s.match(/"prompt"\s*:\s*"([\s\S]*?)"/i) ?? s.match(/prompt\s*:\s*([\s\S]*)$/i);
+  if (inlinePrompt?.[1]) s = inlinePrompt[1].trim();
+
   const jsonLike = s.match(/^\{\s*"?prompt"?\s*:\s*([\s\S]*?)\s*\}$/i);
-  if (jsonLike?.[1]) {
-    s = jsonLike[1].trim();
-  }
+  if (jsonLike?.[1]) s = jsonLike[1].trim();
 
   // Удаляем markdown fenced blocks
   const fenced = s.match(/```(?:[\w-]*)?\s*\n([\s\S]*?)```/);
@@ -29,12 +30,14 @@ function sanitizePromptText(raw: string): string {
 
   // Если осталась метка prompt:
   s = s.replace(/^\s*(prompt|промпт)\s*[:\-]\s*/i, "");
+  s = s.replace(/^\s*[{[]\s*|[\]}]\s*$/g, "");
 
   // Снимаем внешние кавычки/апострофы/бэктики
   s = s.replace(/^[`"'«»\s]+|[`"'«»\s]+$/g, "");
 
   // Нормализуем экранированные переводы строк от JSON
   s = s.replace(/\\n/g, "\n").replace(/\\"/g, "\"");
+  s = s.replace(/\s*[,;]\s*$/g, "");
 
   // Если модель отдала мини-объект/массив в одной строке, пытаемся достать самое длинное значение в кавычках.
   if ((s.startsWith("{") && s.endsWith("}")) || (s.startsWith("[") && s.endsWith("]"))) {
@@ -43,6 +46,10 @@ function sanitizePromptText(raw: string): string {
       s = quoted.sort((a, b) => b.length - a.length)[0]!;
     }
   }
+
+  // Удаляем служебные префиксы вида "1) { ... }"
+  s = s.replace(/^\s*\d+[.)]\s*/, "");
+  s = s.replace(/^\s*[-*]\s*/, "");
 
   return s.trim();
 }

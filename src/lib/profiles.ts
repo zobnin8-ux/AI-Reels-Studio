@@ -8,7 +8,9 @@ export type ProjectProfile = {
 
 function ctaText(state: Pick<StudioState, "ctaMode" | "website" | "triggerWord" | "customCta">) {
   const mode: CtaMode = state.ctaMode;
-  if (mode === "none") return "No CTA in copy unless user overrides.";
+  if (mode === "none") {
+    return "CTA mode NONE: absolutely no CTA in scenario/caption (no website, no trigger, no service offer) unless user explicitly asks to add CTA in this turn.";
+  }
   if (mode === "website") return `Website CTA: ${state.website || "beznego.com / poslenego.com"}.`;
   if (mode === "direct") return `Direct trigger word: «${state.triggerWord || "…"}».`;
   return `Custom CTA: «${state.customCta || "…"}».`;
