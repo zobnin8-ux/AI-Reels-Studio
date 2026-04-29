@@ -99,6 +99,7 @@ RULES:
 - Caption / music: fill statePatch when user asks; caption must not blindly repeat slide body text.
 - If nothing structural changes, omit statePatch or use {}.
 - When the user asks for image prompts for any slide, you MUST also put the full "prompts" array in statePatch (one entry per slide, slideId must match), not only text in "reply" — the right panel reads state, not the chat text.
+- When the user asks to improve/refine/rewrite a slide image prompt ("улучши промпт", "перепиши промпт для кадра N"), you MUST update statePatch.prompts for that slideId with the new prompt text.
 
 `;
 

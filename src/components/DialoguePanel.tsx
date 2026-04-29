@@ -6,32 +6,15 @@ import { generateImagesFromState, mergeStatePatch, sendDialogueTurn } from "@/li
 import { canRunImageGeneration, userWantsImageGeneration } from "@/lib/auto-image-intent";
 import type { ChatMessage, StudioState } from "@/lib/state";
 import { mergePromptForSlide } from "@/lib/prompt-sync";
+import {
+  extractSlideIndexFromAssistantReply,
+  extractSlideIndexFromUserMessage,
+  normalizeImagePromptFromReply,
+  userWantsPromptImprovement
+} from "@/lib/prompt-reply-sync";
 
 function uid(p: string) {
   return `${p}_${Math.random().toString(16).slice(2)}`;
-}
-
-function extractRequestedSlideIndex(text: string): number | null {
-  const m = text.match(/(?:слайд|slide|кадр|frame)\s*#?\s*(\d{1,2})/i);
-  if (m) {
-    const idx = Number(m[1]);
-    return Number.isFinite(idx) && idx > 0 ? idx : null;
-  }
-  if (/\bперв(ый|ому|ого)?\b/i.test(text)) return 1;
-  if (/\bвтор(ой|ому|ого)?\b/i.test(text)) return 2;
-  if (/\bтрет(ий|ьему|ьего)?\b/i.test(text)) return 3;
-  if (/\bчетверт(ый|ому|ого)?\b/i.test(text)) return 4;
-  if (/\bпят(ый|ому|ого)?\b/i.test(text)) return 5;
-  return null;
-}
-
-function normalizePromptFromReply(reply: string): string {
-  const code = reply.match(/```[\s\S]*?\n([\s\S]*?)```/);
-  const raw = (code?.[1] ?? reply).trim();
-  return raw
-    .replace(/^["'`\s]+|["'`\s]+$/g, "")
-    .replace(/^\s*(промпт|prompt)\s*[:\-]\s*/i, "")
-    .trim();
 }
 
 const SHORTCUTS: { label: string; message: string }[] = [
@@ -88,14 +71,20 @@ export function DialoguePanel() {
       const assistantMsg: ChatMessage = { id: uid("a"), role: "assistant", content: reply };
       const patch = mergeStatePatch(state, statePatch);
 
-      // Если модель вернула промпт только текстом в reply (без statePatch.prompts),
-      // а пользователь просил промпт для конкретного слайда — синхронизируем его в правую панель.
-      if (!patch.prompts) {
-        const requested = extractRequestedSlideIndex(text);
-        if (requested && state.slides.length >= requested) {
-          const targetSlideId = state.slides[requested - 1]?.id;
-          const promptCandidate = normalizePromptFromReply(reply);
-          if (targetSlideId && promptCandidate.length > 20) {
+      // Если модель не положила промпт в statePatch — пробуем вытащить из reply:
+      // явный номер слайда в сообщении, режим «улучши промпт», номер кадра из текста ответа.
+      if (!patch.prompts && state.slides.length > 0) {
+        let slideIdx = extractSlideIndexFromUserMessage(text, state.slides.length);
+        if (!slideIdx && userWantsPromptImprovement(text)) {
+          slideIdx = extractSlideIndexFromAssistantReply(reply);
+        }
+        if (!slideIdx && userWantsPromptImprovement(text) && state.slides.length === 1) {
+          slideIdx = 1;
+        }
+        if (slideIdx && slideIdx >= 1 && slideIdx <= state.slides.length) {
+          const targetSlideId = state.slides[slideIdx - 1]!.id;
+          const promptCandidate = normalizeImagePromptFromReply(reply);
+          if (targetSlideId && promptCandidate.length >= 15) {
             patch.prompts = mergePromptForSlide(state, targetSlideId, promptCandidate);
           }
         }
