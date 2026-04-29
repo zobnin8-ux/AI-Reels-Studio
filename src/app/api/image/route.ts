@@ -19,10 +19,27 @@ async function generateWithOpenAI(prompt: string, aspect: "9:16" | "1:1") {
   const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) throw new Error("Missing OPENAI_API_KEY");
 
-  const model = process.env.OPENAI_IMAGE_MODEL || "gpt-image-1";
+  // По умолчанию gpt-image-2 — лучше следование промпту и текст на изображении (в т.ч. кириллица),
+  // чем gpt-image-1. Fallback: OPENAI_IMAGE_MODEL=gpt-image-1 | dall-e-3 | ...
+  const model = process.env.OPENAI_IMAGE_MODEL || "gpt-image-2";
   // OpenAI image API currently supports: 1024x1024, 1024x1536, 1536x1024, auto.
   // For vertical Reels we use the closest portrait preset.
   const size = aspect === "9:16" ? "1024x1536" : "1024x1024";
+
+  const isGptImageFamily = /^gpt-image/i.test(model);
+  const qualityRaw = (process.env.OPENAI_IMAGE_QUALITY ?? "high").trim().toLowerCase();
+  const skipQuality = qualityRaw === "" || qualityRaw === "skip" || qualityRaw === "off";
+  const quality =
+    qualityRaw === "low" || qualityRaw === "medium" || qualityRaw === "high" ? qualityRaw : "high";
+
+  const body: Record<string, unknown> = {
+    model,
+    prompt,
+    size
+  };
+  if (isGptImageFamily && !skipQuality) {
+    body.quality = quality;
+  }
 
   const res = await fetch("https://api.openai.com/v1/images/generations", {
     method: "POST",
@@ -30,11 +47,7 @@ async function generateWithOpenAI(prompt: string, aspect: "9:16" | "1:1") {
       authorization: `Bearer ${apiKey}`,
       "content-type": "application/json"
     },
-    body: JSON.stringify({
-      model,
-      prompt,
-      size
-    })
+    body: JSON.stringify(body)
   });
 
   if (!res.ok) {

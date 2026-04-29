@@ -36,9 +36,12 @@ ANTHROPIC_API_KEY=...
 
 Optional:
 
-- `OPENAI_CHAT_MODEL` — default `gpt-4o-mini`
-- `OPENAI_IMAGE_MODEL` — default `gpt-image-1`
+- `OPENAI_CHAT_MODEL` — default `gpt-4o-mini`. Для стабильнее русского сценария/промптов часто лучше `gpt-4o` или `gpt-4.1`.
+- `OPENAI_IMAGE_MODEL` — default **`gpt-image-2`** (лучше текст на картинке и следование промпту). Если аккаунт/API ещё без этой модели — поставьте `gpt-image-1` или `dall-e-3`.
+- `OPENAI_IMAGE_QUALITY` — для семейства `gpt-image-*`: `low` | `medium` | **`high`** (по умолчанию `high`). Если API вернёт ошибку по параметру `quality`, задайте `skip` — запрос уйдёт без `quality`.
 - `ANTHROPIC_MODEL` — default per SDK
+
+**Кириллица на слайдах:** у всех генераторов изображений слабое место — буквы в кадре. Мы усиливаем промпт для русского текста и перешли на более новую модель изображений по умолчанию. Если буквы всё равно «плывут», попробуйте короче фразы на кадр или режим «текст отдельно от картинки», а финальный текст набрать в монтаже.
 
 Uncomment and set variables in `.env.local`; lines starting with `#` are ignored.
 

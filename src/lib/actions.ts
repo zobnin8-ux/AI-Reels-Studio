@@ -11,6 +11,11 @@ function aspectFromContentType(contentType: StudioState["contentType"]) {
   return contentType === "reels" ? ("9:16" as const) : ("1:1" as const);
 }
 
+/** Есть ли кириллица — усиливаем инструкции для текста на изображении. */
+function textHasCyrillic(s: string) {
+  return /[\u0400-\u04FF]/.test(s);
+}
+
 function typographyForStyle(style: StudioState["visualStyle"]) {
   switch (style) {
     case "tech":
@@ -41,9 +46,18 @@ function enrichPromptForGeneration(state: StudioState, slideText: string, basePr
       .filter(Boolean)
       .slice(0, 6)
       .join(" / ");
+    const cyrillic = textHasCyrillic(onImage) || textHasCyrillic(cleaned);
     lines.push("On-image text required. Make the text fully readable, not warped, not tiny.");
     lines.push(typographyForStyle(state.visualStyle));
     lines.push(`On-image text (exact): ${onImage}`);
+    if (cyrillic) {
+      lines.push(
+        "CRITICAL — Russian Cyrillic on-image text: render using proper Cyrillic Unicode letters (Russian alphabet), not Latin lookalikes or gibberish. " +
+          "Use a clean sans-serif that supports Cyrillic (e.g. Inter, Manrope, PT Sans, Montserrat feel). " +
+          "Large font size, high contrast, straight baseline, no mirrored or melted glyphs. " +
+          "Do not transliterate Russian to Latin unless the exact line above is Latin."
+      );
+    }
     lines.push("Place text within safe margins; no logos; no watermarks.");
   } else {
     lines.push("No text overlay on image (unless user explicitly asks).");
