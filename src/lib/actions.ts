@@ -315,6 +315,25 @@ export async function regenerateOneImage(
   return fetchOneImage(state, imageId, slideId ?? "", prompt);
 }
 
+function formatMusicNotesForZip(music: StudioState["music"]): string {
+  const blocks: string[] = [];
+  blocks.push("Поисковые запросы / keywords");
+  blocks.push(
+    music.queries.length ? music.queries.map((q) => `• ${q}`).join("\n") : "(пока нет — запросите подбор в диалоге или внесите строки справа)"
+  );
+  blocks.push("");
+  blocks.push("Направление / рекомендации настроения");
+  blocks.push(
+    music.recommendations.length
+      ? music.recommendations.map((r) => `• ${r}`).join("\n")
+      : "(пока нет)"
+  );
+  blocks.push("");
+  blocks.push("Избегать");
+  blocks.push(music.avoid.length ? music.avoid.map((a) => `• ${a}`).join("\n") : "(не указано)");
+  return blocks.join("\n");
+}
+
 export async function downloadZip(state: StudioState) {
   const { default: JSZip } = await import("jszip");
   const zip = new JSZip();
@@ -333,6 +352,9 @@ export async function downloadZip(state: StudioState) {
   zip.file("prompts.txt", promptLines.join("\n\n"));
 
   zip.file("caption.txt", state.caption || "");
+
+  const musicNotes = formatMusicNotesForZip(state.music);
+  zip.file("music_notes.txt", musicNotes);
 
   const imagesFolder = zip.folder("images");
   if (imagesFolder) {
