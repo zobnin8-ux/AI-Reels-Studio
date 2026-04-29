@@ -63,10 +63,10 @@ export function ImageSlideCard({
         </span>
       </div>
 
-      <div className="mt-3 grid min-w-0 grid-cols-[minmax(0,120px)_minmax(0,1fr)] gap-3">
+      <div className="mt-3 grid min-w-0 grid-cols-1 gap-3">
         <div
           className={[
-            "min-w-0 overflow-hidden rounded-lg border border-border bg-black/25",
+            "mx-auto w-full max-w-[160px] min-w-0 overflow-hidden rounded-lg border border-border bg-black/25",
             state.contentType === "reels" ? "aspect-[9/16]" : "aspect-square"
           ].join(" ")}
         >
@@ -87,7 +87,7 @@ export function ImageSlideCard({
             value={localPrompt}
             onChange={(e) => setLocalPrompt(e.target.value)}
             onBlur={() => commitPromptToStore()}
-            className="min-h-20 w-full min-w-0 resize-y rounded-xl border border-border bg-black/30 px-3 py-2 font-mono text-xs outline-none focus:ring-2 focus:ring-accent/30"
+            className="min-h-20 w-full min-w-0 max-w-full resize-y rounded-xl border border-border bg-black/30 px-3 py-2 font-mono text-xs outline-none focus:ring-2 focus:ring-accent/30"
           />
           <div className="flex justify-end">
             <button
@@ -100,7 +100,7 @@ export function ImageSlideCard({
             </button>
           </div>
           {image.error ? (
-            <div className="max-w-full whitespace-pre-wrap break-words text-xs text-red-300">
+            <div className="max-w-full whitespace-pre-wrap break-all text-xs text-red-300">
               {image.error}
             </div>
           ) : null}
