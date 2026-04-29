@@ -17,6 +17,77 @@ function uid(p: string) {
   return `${p}_${Math.random().toString(16).slice(2)}`;
 }
 
+function tryExtractJson(text: string): Record<string, unknown> | null {
+  const start = text.indexOf("{");
+  const end = text.lastIndexOf("}");
+  if (start === -1 || end === -1 || end <= start) return null;
+  try {
+    return JSON.parse(text.slice(start, end + 1)) as Record<string, unknown>;
+  } catch {
+    return null;
+  }
+}
+
+function cleanTextValue(raw: string): string {
+  let s = (raw ?? "").trim();
+  if (!s) return "";
+  const fenced = s.match(/```(?:[\w-]*)?\s*\n([\s\S]*?)```/);
+  if (fenced?.[1]) s = fenced[1].trim();
+  s = s.replace(/^\s*(caption|подпись)\s*[:\-]\s*/i, "");
+  s = s.replace(/^[`"'«»\s]+|[`"'«»\s]+$/g, "");
+  s = s.replace(/\\n/g, "\n").replace(/\\"/g, "\"");
+  const jsonLike = s.match(/^\{\s*"?\w+"?\s*:\s*([\s\S]*?)\}$/);
+  if (jsonLike?.[1]) s = jsonLike[1].trim();
+  return s.trim();
+}
+
+function wantsCaption(text: string): boolean {
+  return /\b(caption|капшн|подпись)\b/i.test(text);
+}
+
+function wantsMusic(text: string): boolean {
+  return /\b(музык|music|трек|саунд|sound)\b/i.test(text);
+}
+
+function extractCaptionFromReply(reply: string): string {
+  const json = tryExtractJson(reply);
+  const c = json?.caption;
+  if (typeof c === "string" && c.trim()) return cleanTextValue(c);
+  const m = reply.match(/(?:caption|подпись)\s*[:\-]\s*([\s\S]*)/i);
+  if (m?.[1]) return cleanTextValue(m[1]);
+  return cleanTextValue(reply);
+}
+
+function extractMusicFromReply(reply: string): StudioState["music"] {
+  const json = tryExtractJson(reply);
+  const fallback = { queries: [] as string[], recommendations: [] as string[], avoid: [] as string[] };
+  const maybe = json?.music as
+    | { queries?: unknown; recommendations?: unknown; avoid?: unknown }
+    | undefined;
+  if (maybe) {
+    return {
+      queries: Array.isArray(maybe.queries)
+        ? maybe.queries.map((x) => cleanTextValue(String(x))).filter(Boolean)
+        : [],
+      recommendations: Array.isArray(maybe.recommendations)
+        ? maybe.recommendations.map((x) => cleanTextValue(String(x))).filter(Boolean)
+        : [],
+      avoid: Array.isArray(maybe.avoid) ? maybe.avoid.map((x) => cleanTextValue(String(x))).filter(Boolean) : []
+    };
+  }
+
+  const lines = reply
+    .split("\n")
+    .map((l) => l.trim())
+    .filter(Boolean);
+  for (const line of lines) {
+    if (/^(query|поиск)\s*[:\-]/i.test(line)) fallback.queries.push(cleanTextValue(line.replace(/^(query|поиск)\s*[:\-]/i, "")));
+    else if (/^(rec|recommend|направл)/i.test(line)) fallback.recommendations.push(cleanTextValue(line.replace(/^(rec|recommend|направл\w*)\s*[:\-]/i, "")));
+    else if (/^(avoid|избег)/i.test(line)) fallback.avoid.push(cleanTextValue(line.replace(/^(avoid|избег\w*)\s*[:\-]/i, "")));
+  }
+  return fallback;
+}
+
 const SHORTCUTS: { label: string; message: string }[] = [
   { label: "Жёстче", message: "Сделай текущий сценарий жёстче, сохрани структуру и CTA." },
   { label: "Через цифру", message: "Перепиши сценарий через числовой хук, сохрани идею." },
@@ -88,6 +159,16 @@ export function DialoguePanel() {
             patch.prompts = mergePromptForSlide(state, targetSlideId, promptCandidate);
           }
         }
+      }
+
+      // Fallback для caption/music: модель иногда пишет их в reply, но забывает statePatch.
+      if (!patch.caption && wantsCaption(text)) {
+        const c = extractCaptionFromReply(reply);
+        if (c) patch.caption = c;
+      }
+      if (!patch.music && wantsMusic(text)) {
+        const m = extractMusicFromReply(reply);
+        if (m.queries.length || m.recommendations.length || m.avoid.length) patch.music = m;
       }
 
       const merged: StudioState = {
