@@ -9,6 +9,7 @@ export type Mood = "aggressive" | "soft" | "provocative" | "positive" | "neutral
 export type VisualStyle =
   | "darkBrutal"
   | "lightMinimal"
+  | "brightPositive"
   | "portraLifestyle"
   | "editorial"
   | "tech";

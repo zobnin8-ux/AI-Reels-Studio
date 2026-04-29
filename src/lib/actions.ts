@@ -21,6 +21,8 @@ function typographyForStyle(style: StudioState["visualStyle"]) {
       return "Typography: Condensed bold sans (Inter Tight/Helvetica Condensed feel), big sizes, brutal contrast, minimal words.";
     case "lightMinimal":
       return "Typography: Minimal sans (Inter/SF Pro), light/regular weights, lots of whitespace, subtle hierarchy.";
+    case "brightPositive":
+      return "Typography: Bright, high-legibility sans (Inter/SF Pro). Bold headings, clear hierarchy, generous spacing. Use high-contrast text blocks or translucent pills; avoid tiny fonts.";
     case "portraLifestyle":
       return "Typography: Neutral modern sans (Inter/SF Pro), soft hierarchy, avoid heavy decorative fonts.";
   }

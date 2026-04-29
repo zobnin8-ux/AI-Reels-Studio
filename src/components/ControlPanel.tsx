@@ -175,6 +175,7 @@ export function ControlPanel() {
           >
             <option value="darkBrutal">Dark brutal</option>
             <option value="lightMinimal">Light minimal</option>
+            <option value="brightPositive">Bright positive</option>
             <option value="portraLifestyle">Portra lifestyle</option>
             <option value="editorial">Editorial</option>
             <option value="tech">Tech</option>

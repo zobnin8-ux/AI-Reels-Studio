@@ -12,6 +12,7 @@ const selectorsSchema = z.object({
   visualStyle: z.enum([
     "darkBrutal",
     "lightMinimal",
+    "brightPositive",
     "portraLifestyle",
     "editorial",
     "tech"
