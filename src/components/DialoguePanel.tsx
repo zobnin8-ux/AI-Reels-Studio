@@ -40,10 +40,16 @@ export function DialoguePanel() {
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);
   const endRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [state.messages.length]);
+
+  useEffect(() => {
+    // Держим фокус в поле диалога после отправки/ответа, чтобы не кликать мышкой каждый раз.
+    if (!busy) inputRef.current?.focus();
+  }, [busy, state.messages.length]);
 
   async function runTurn(userText: string) {
     const text = userText.trim();
@@ -167,6 +173,7 @@ export function DialoguePanel() {
 
       <div className="rounded-xl border border-border bg-black/20 p-3">
         <textarea
+          ref={inputRef}
           value={input}
           onChange={(e) => setInput(e.target.value)}
           placeholder="Сообщение…"
