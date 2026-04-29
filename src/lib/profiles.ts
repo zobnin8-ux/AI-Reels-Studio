@@ -12,7 +12,9 @@ function ctaText(state: Pick<StudioState, "ctaMode" | "website" | "triggerWord" 
     return "CTA mode NONE: absolutely no CTA in scenario/caption (no website, no trigger, no service offer) unless user explicitly asks to add CTA in this turn.";
   }
   if (mode === "website") return `Website CTA: ${state.website || "beznego.com / poslenego.com"}.`;
-  if (mode === "direct") return `Direct trigger word: «${state.triggerWord || "…"}».`;
+  if (mode === "direct") {
+    return `CTA mode DIRECT: you MUST use the exact trigger word «${state.triggerWord || "…"}» in the CTA (typically the final slide and/or caption). Do not use websites or other CTAs.`;
+  }
   return `Custom CTA: «${state.customCta || "…"}».`;
 }
 

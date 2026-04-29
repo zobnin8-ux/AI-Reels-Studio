@@ -11,6 +11,44 @@ function aspectFromContentType(contentType: StudioState["contentType"]) {
   return contentType === "reels" ? ("9:16" as const) : ("1:1" as const);
 }
 
+function typographyForStyle(style: StudioState["visualStyle"]) {
+  switch (style) {
+    case "tech":
+      return "Typography: Inter/SF Pro/Helvetica Neue, semi-bold headings, tight tracking, clean grid, generous margins.";
+    case "editorial":
+      return "Typography: Modern editorial — Inter or Helvetica for body + optional restrained serif for 1-2 words max; high contrast, clean margins.";
+    case "darkBrutal":
+      return "Typography: Condensed bold sans (Inter Tight/Helvetica Condensed feel), big sizes, brutal contrast, minimal words.";
+    case "lightMinimal":
+      return "Typography: Minimal sans (Inter/SF Pro), light/regular weights, lots of whitespace, subtle hierarchy.";
+    case "portraLifestyle":
+      return "Typography: Neutral modern sans (Inter/SF Pro), soft hierarchy, avoid heavy decorative fonts.";
+  }
+}
+
+function enrichPromptForGeneration(state: StudioState, slideText: string, basePrompt: string) {
+  const cleaned = sanitizePromptText(basePrompt);
+  const needsText = state.outputMode === "textInImages" || state.outputMode === "both";
+  const lines: string[] = [];
+  lines.push(cleaned);
+  lines.push(`Visual style preset: ${state.visualStyle}. Mood: ${state.mood}.`);
+  if (needsText) {
+    const onImage = slideText
+      .split("\n")
+      .map((l) => l.trim())
+      .filter(Boolean)
+      .slice(0, 6)
+      .join(" / ");
+    lines.push("On-image text required. Make the text fully readable, not warped, not tiny.");
+    lines.push(typographyForStyle(state.visualStyle));
+    lines.push(`On-image text (exact): ${onImage}`);
+    lines.push("Place text within safe margins; no logos; no watermarks.");
+  } else {
+    lines.push("No text overlay on image (unless user explicitly asks).");
+  }
+  return lines.filter(Boolean).join("\n");
+}
+
 function sanitizePromptText(raw: string): string {
   let s = (raw ?? "").trim();
   if (!s) return s;
@@ -119,6 +157,13 @@ export function mergeStatePatch(state: StudioState, patch: StatePatch | undefine
   }
   if (patch.caption !== undefined) out.caption = patch.caption;
   if (patch.music !== undefined) out.music = patch.music;
+
+  // Если сценарий изменился, а промпты не обновлялись в этом же ходе —
+  // считаем промпты/картинки устаревшими и сбрасываем их, чтобы не было рассинхрона.
+  if (patch.slides !== undefined && patch.prompts === undefined) {
+    out.prompts = [];
+    out.images = [];
+  }
   return out;
 }
 
@@ -173,8 +218,9 @@ export async function generateImagesFromState(state: StudioState): Promise<Gener
         continue;
       }
       try {
-        out.push({ id, slideId: slide.id, prompt, status: "generating" });
-        const img = await fetchOneImage(state, id, slide.id, prompt);
+        const finalPrompt = enrichPromptForGeneration(state, `${slide.title}\n${slide.text}`, prompt);
+        out.push({ id, slideId: slide.id, prompt: finalPrompt, status: "generating" });
+        const img = await fetchOneImage(state, id, slide.id, finalPrompt);
         out[out.length - 1] = img;
       } catch (e: unknown) {
         const msg = e instanceof Error ? e.message : "Image error";

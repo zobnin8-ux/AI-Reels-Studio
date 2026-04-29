@@ -106,6 +106,10 @@ RULES:
   - direct: CTA must use the selected trigger word.
   - custom: CTA must use customCta.
 - Respect VISUAL STYLE in all prompt-generation tasks; if user requests prompt rewrite, keep same visual style unless user asks to change it.
+- Typography / fonts (for prompt tasks):
+  - If OUTPUT MODE is textInImages or both, image prompts MUST specify a typography system: font family suggestion, weight, size hierarchy, alignment, and safe margins.
+  - Prefer clean, widely available fonts: Inter / SF Pro / Helvetica Neue for tech/editorial, and a restrained serif (e.g., Playfair/Georgia) only when VISUAL STYLE is editorial and user wants it.
+  - Text must be legible: high contrast, minimal words per line, avoid tiny captions.
 - When user asks for per-slide image prompts: fill "prompts" aligned with current slides (slideId must match slide id).
 - Caption / music: fill statePatch when user asks; caption must not blindly repeat slide body text.
 - If nothing structural changes, omit statePatch or use {}.
