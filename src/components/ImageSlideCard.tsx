@@ -53,7 +53,7 @@ export function ImageSlideCard({
           : "error";
 
   return (
-    <div className="min-w-0 rounded-xl border border-border bg-panel/40 p-3">
+    <div className="min-w-0 overflow-hidden rounded-xl border border-border bg-panel/40 p-3">
       <div className="flex min-w-0 items-start justify-between gap-3">
         <div className="text-sm font-semibold">
           {String(index + 1).padStart(2, "0")}. Кадр
@@ -81,7 +81,7 @@ export function ImageSlideCard({
             <div className="flex h-full items-center justify-center text-xs text-muted">preview</div>
           )}
         </div>
-        <div className="min-w-0 space-y-2">
+        <div className="min-w-0 space-y-2 overflow-hidden">
           <div className="text-xs font-medium text-muted">Промпт</div>
           <textarea
             value={localPrompt}
@@ -99,7 +99,11 @@ export function ImageSlideCard({
               {busy ? "…" : "Перегенерировать"}
             </button>
           </div>
-          {image.error ? <div className="text-xs text-red-300">{image.error}</div> : null}
+          {image.error ? (
+            <div className="max-w-full whitespace-pre-wrap break-words text-xs text-red-300">
+              {image.error}
+            </div>
+          ) : null}
         </div>
       </div>
     </div>

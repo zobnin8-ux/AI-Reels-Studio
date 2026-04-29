@@ -85,7 +85,7 @@ export function OutputPanel() {
       : state.prompts.some((p) => p.prompt.trim());
 
   return (
-    <div className="flex h-full min-h-0 flex-col gap-4 overflow-y-auto">
+    <div className="flex h-full min-h-0 min-w-0 flex-col gap-4 overflow-x-hidden overflow-y-auto">
       <div>
         <div className="text-sm font-medium text-muted">Вывод</div>
         <div className="text-xl font-semibold tracking-tight">Ассеты</div>
@@ -159,7 +159,7 @@ export function OutputPanel() {
         ) : null}
       </div>
 
-      <div className="min-h-0 space-y-3">
+      <div className="min-h-0 min-w-0 space-y-3">
         <div className="text-xs font-medium text-muted">Изображения</div>
         {state.images.length === 0 ? (
           <div className="rounded-xl border border-dashed border-border bg-black/10 p-4 text-center text-xs text-muted">
