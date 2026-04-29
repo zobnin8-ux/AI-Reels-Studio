@@ -68,6 +68,24 @@ function extractJsonObject(raw: string): unknown {
   return JSON.parse(candidate.slice(start, end + 1));
 }
 
+function extractReplyText(raw: string): string {
+  const trimmed = raw.trim();
+  try {
+    const obj = extractJsonObject(trimmed) as { reply?: unknown };
+    if (typeof obj?.reply === "string" && obj.reply.trim()) return obj.reply.trim();
+  } catch {
+    // ignore
+  }
+  const m = trimmed.match(/"reply"\s*:\s*"([\s\S]*?)"/i);
+  if (m?.[1]) {
+    return m[1]
+      .replace(/\\"/g, "\"")
+      .replace(/\\n/g, "\n")
+      .trim();
+  }
+  return trimmed;
+}
+
 function openAIMessages(
   system: string,
   msgs: { role: "user" | "assistant"; content: string }[]
@@ -190,9 +208,9 @@ export async function POST(request: Request) {
       return NextResponse.json(out);
     } catch {
       // Fallback: если модель нарушила JSON-контракт, не роняем диалог.
-      // Возвращаем текст как reply без statePatch.
+      // Пытаемся достать чистый reply из JSON-подобного текста.
       return NextResponse.json({
-        reply: raw.trim() || "Не удалось распарсить ответ модели. Повтори запрос чуть иначе.",
+        reply: extractReplyText(raw) || "Не удалось распарсить ответ модели. Повтори запрос чуть иначе.",
         statePatch: {}
       });
     }
