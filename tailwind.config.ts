@@ -5,13 +5,13 @@ export default {
   theme: {
     extend: {
       colors: {
-        panel: "rgb(16 18 22)",
-        panel2: "rgb(20 22 27)",
-        border: "rgb(38 41 48)",
-        text: "rgb(236 238 242)",
-        muted: "rgb(159 167 180)",
-        accent: "rgb(126 231 255)",
-        accent2: "rgb(180 140 255)"
+        panel: "rgb(18 24 33)",
+        panel2: "rgb(12 17 24)",
+        border: "rgb(43 54 71)",
+        text: "rgb(232 238 247)",
+        muted: "rgb(141 156 178)",
+        accent: "rgb(110 231 255)",
+        accent2: "rgb(155 140 255)"
       },
       boxShadow: {
         soft: "0 8px 30px rgba(0,0,0,0.45)"

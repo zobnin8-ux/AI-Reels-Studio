@@ -7,7 +7,7 @@ import { StudioProvider } from "@/lib/studio-store";
 export function AppShell() {
   return (
     <StudioProvider>
-      <div className="flex h-full min-h-0 flex-col overflow-hidden rounded-2xl border border-border bg-panel/60 shadow-soft backdrop-blur">
+      <div className="flex h-full min-h-0 flex-col overflow-hidden rounded-2xl border border-border/90 bg-panel/65 shadow-soft backdrop-blur">
         {/*
           min-w-0 + minmax: иначе длинный контент в центре раздувает грид, overflow-hidden срезает боковые колонки.
           overflow-x-auto: на узком окне можно прокрутить к боковым панелям.
