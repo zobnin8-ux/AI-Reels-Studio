@@ -31,8 +31,7 @@ async function generateWithOpenAI(prompt: string, aspect: "9:16" | "1:1") {
     body: JSON.stringify({
       model,
       prompt,
-      size,
-      response_format: "b64_json"
+      size
     })
   });
 
@@ -41,9 +40,25 @@ async function generateWithOpenAI(prompt: string, aspect: "9:16" | "1:1") {
     throw new Error(`OpenAI image error (${res.status}): ${t}`);
   }
   const data = (await res.json()) as any;
-  const b64 = data?.data?.[0]?.b64_json;
-  if (!b64) throw new Error("OpenAI image: empty b64_json");
-  return { imageBase64: b64 as string, mimeType: "image/png" };
+  const first = data?.data?.[0] ?? {};
+  const b64 = first?.b64_json;
+  if (b64) {
+    return { imageBase64: b64 as string, mimeType: "image/png" };
+  }
+
+  const url = first?.url as string | undefined;
+  if (!url) throw new Error("OpenAI image: empty image payload");
+
+  const imgRes = await fetch(url);
+  if (!imgRes.ok) throw new Error(`OpenAI image URL fetch failed (${imgRes.status})`);
+  const arr = new Uint8Array(await imgRes.arrayBuffer());
+  let binary = "";
+  for (let i = 0; i < arr.length; i++) {
+    binary += String.fromCharCode(arr[i]!);
+  }
+  const imageBase64 = btoa(binary);
+  const mimeType = imgRes.headers.get("content-type") || "image/png";
+  return { imageBase64, mimeType };
 }
 
 export async function POST(request: Request) {
