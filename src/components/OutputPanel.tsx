@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useStudio } from "@/lib/studio-store";
 import { ImageSlideCard } from "@/components/ImageSlideCard";
 import { downloadZip, generateImagesFromState } from "@/lib/actions";
@@ -10,6 +10,12 @@ export function OutputPanel() {
   const { state, dispatch } = useStudio();
   const [busy, setBusy] = useState<null | string>(null);
   const [scenarioOpen, setScenarioOpen] = useState(true);
+  const seenImageIdsRef = useRef<Set<string>>(new Set());
+
+  useEffect(() => {
+    const set = seenImageIdsRef.current;
+    state.images.forEach((img) => set.add(img.id));
+  }, [state.images]);
 
   const promptLinesText = useMemo(() => {
     if (state.slides.length === 0) {
@@ -87,24 +93,24 @@ export function OutputPanel() {
   return (
     <div className="flex h-full min-h-0 min-w-0 flex-col">
       <div className="min-h-0 flex-1 space-y-4 overflow-x-hidden overflow-y-auto pr-0.5">
-      <div>
-        <div className="text-sm font-medium text-muted">Вывод</div>
-        <div className="text-xl font-semibold tracking-tight">Ассеты</div>
-        <p className="mt-1 text-xs text-muted">
-          Здесь — сценарий, промпты, подпись и музыка после запросов в диалоге. Картинки — только кнопкой ниже.
-        </p>
-      </div>
+        <div>
+          <div className="text-sm font-medium text-muted">Вывод</div>
+          <div className="text-xl font-semibold tracking-tight">Ассеты</div>
+          <p className="mt-1 text-xs text-muted">
+            Здесь — сценарий, промпты, подпись и музыка после запросов в диалоге. Картинки — только кнопкой ниже.
+          </p>
+        </div>
 
-      {state.slides.length > 0 ? (
-        <div className="rounded-xl border border-border bg-black/20 p-3">
-          <button
+        {state.slides.length > 0 ? (
+          <div className="rounded-xl border border-border bg-black/20 p-3">
+            <button
             type="button"
             onClick={() => setScenarioOpen((o) => !o)}
             className="flex w-full items-center justify-between text-left text-xs font-medium text-muted"
           >
             Сценарий (preview)
             <span className="text-[10px]">{scenarioOpen ? "−" : "+"}</span>
-          </button>
+            </button>
           {scenarioOpen ? (
             <div className="mt-2 space-y-3 text-sm">
               {state.slides.map((s, i) => (
@@ -120,8 +126,8 @@ export function OutputPanel() {
               ) : null}
             </div>
           ) : null}
-        </div>
-      ) : null}
+          </div>
+        ) : null}
 
       <div className="rounded-xl border border-border bg-black/20 p-3">
         <div className="text-xs font-medium text-muted">Промпты по кадрам</div>
@@ -170,7 +176,12 @@ export function OutputPanel() {
           ) : (
             <div className="space-y-3">
               {state.images.map((img, idx) => (
-                <ImageSlideCard key={img.id} index={idx} image={img} />
+                <div
+                  key={img.id}
+                  className={!seenImageIdsRef.current.has(img.id) ? "studio-enter" : ""}
+                >
+                  <ImageSlideCard index={idx} image={img} />
+                </div>
               ))}
             </div>
           )}

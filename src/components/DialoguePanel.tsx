@@ -119,10 +119,17 @@ export function DialoguePanel() {
   const [busy, setBusy] = useState(false);
   const endRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  const seenMessageIdsRef = useRef<Set<string>>(new Set());
 
   useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [state.messages.length]);
+
+  useEffect(() => {
+    // отмечаем отрендеренные сообщения как «виденные», чтобы анимировать только новые
+    const set = seenMessageIdsRef.current;
+    state.messages.forEach((m) => set.add(m.id));
+  }, [state.messages]);
 
   useEffect(() => {
     // Держим фокус в поле диалога после отправки/ответа, чтобы не кликать мышкой каждый раз.
@@ -261,6 +268,7 @@ export function DialoguePanel() {
               <div
                 key={m.id}
                 className={[
+                  !seenMessageIdsRef.current.has(m.id) ? "studio-enter" : "",
                   "max-w-[95%] rounded-xl border px-3 py-2 text-sm leading-relaxed",
                   m.role === "user"
                     ? "ml-auto border-accent/25 bg-accent/5 text-text"
