@@ -3,6 +3,7 @@
 import type { GeneratedImage } from "@/lib/state";
 import { useStudio } from "@/lib/studio-store";
 import { regenerateOneImage } from "@/lib/actions";
+import { mergePromptForSlide } from "@/lib/prompt-sync";
 import { useEffect, useState } from "react";
 
 export function ImageSlideCard({
@@ -20,10 +21,20 @@ export function ImageSlideCard({
     setLocalPrompt(image.prompt);
   }, [image.prompt]);
 
+  function commitPromptToStore() {
+    if (!image.slideId?.trim()) return;
+    const prompts = mergePromptForSlide(state, image.slideId, localPrompt);
+    dispatch({ type: "set", patch: { prompts } });
+  }
+
   async function onRegenerate() {
+    if (!image.slideId?.trim()) return;
+    const prompts = mergePromptForSlide(state, image.slideId, localPrompt);
+    const mergedState = { ...state, prompts };
+    dispatch({ type: "set", patch: { prompts } });
     setBusy(true);
     try {
-      const nextImage = await regenerateOneImage(state, image.id, image.slideId, localPrompt);
+      const nextImage = await regenerateOneImage(mergedState, image.id, image.slideId, localPrompt);
       const next = state.images.map((x) => (x.id === image.id ? nextImage : x));
       dispatch({ type: "set", patch: { images: next } });
     } finally {
@@ -42,8 +53,8 @@ export function ImageSlideCard({
           : "error";
 
   return (
-    <div className="rounded-xl border border-border bg-panel/40 p-3">
-      <div className="flex items-start justify-between gap-3">
+    <div className="min-w-0 rounded-xl border border-border bg-panel/40 p-3">
+      <div className="flex min-w-0 items-start justify-between gap-3">
         <div className="text-sm font-semibold">
           {String(index + 1).padStart(2, "0")}. Кадр
         </div>
@@ -52,10 +63,10 @@ export function ImageSlideCard({
         </span>
       </div>
 
-      <div className="mt-3 grid grid-cols-[120px_1fr] gap-3">
+      <div className="mt-3 grid min-w-0 grid-cols-[minmax(0,120px)_minmax(0,1fr)] gap-3">
         <div
           className={[
-            "overflow-hidden rounded-lg border border-border bg-black/25",
+            "min-w-0 overflow-hidden rounded-lg border border-border bg-black/25",
             state.contentType === "reels" ? "aspect-[9/16]" : "aspect-square"
           ].join(" ")}
         >
@@ -70,12 +81,13 @@ export function ImageSlideCard({
             <div className="flex h-full items-center justify-center text-xs text-muted">preview</div>
           )}
         </div>
-        <div className="space-y-2">
+        <div className="min-w-0 space-y-2">
           <div className="text-xs font-medium text-muted">Промпт</div>
           <textarea
             value={localPrompt}
             onChange={(e) => setLocalPrompt(e.target.value)}
-            className="min-h-20 w-full resize-y rounded-xl border border-border bg-black/30 px-3 py-2 font-mono text-xs outline-none focus:ring-2 focus:ring-accent/30"
+            onBlur={() => commitPromptToStore()}
+            className="min-h-20 w-full min-w-0 resize-y rounded-xl border border-border bg-black/30 px-3 py-2 font-mono text-xs outline-none focus:ring-2 focus:ring-accent/30"
           />
           <div className="flex justify-end">
             <button

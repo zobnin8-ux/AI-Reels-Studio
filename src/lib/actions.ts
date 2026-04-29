@@ -187,7 +187,11 @@ async function fetchOneImage(
       stylePreset: state.visualStyle
     })
   });
-  if (!res.ok) throw new Error(`Image failed (${res.status})`);
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    const detail = (err as { error?: string }).error;
+    throw new Error(detail ?? `Image failed (${res.status})`);
+  }
   const json = (await res.json()) as { imageBase64: string; mimeType: string };
   return { id, slideId, prompt, status: "done", imageBase64: json.imageBase64, mimeType: json.mimeType };
 }

@@ -74,6 +74,11 @@ export function OutputPanel() {
     state.messages.length > 0 ||
     state.images.some((i) => i.status === "done");
 
+  const allSlidesHavePrompts =
+    state.slides.length > 0
+      ? state.slides.every((s) => state.prompts.find((p) => p.slideId === s.id)?.prompt?.trim())
+      : state.prompts.length > 0 && state.prompts.every((p) => p.prompt.trim());
+
   const canGenerateImages =
     state.slides.length > 0
       ? state.slides.some((s) => state.prompts.find((p) => p.slideId === s.id)?.prompt?.trim())
@@ -120,8 +125,8 @@ export function OutputPanel() {
       <div className="rounded-xl border border-border bg-black/20 p-3">
         <div className="text-xs font-medium text-muted">Промпты по кадрам</div>
         <p className="mt-1 text-[11px] leading-snug text-muted">
-          Одна строка — один кадр (порядок как у слайдов). Можно править вручную; диалог не перезаписывает без
-          запроса.
+          Одна строка — один кадр (порядок как у слайдов 1→N). То же попадает в «Generate images». Если правишь
+          промпт в карточке кадра ниже — кликни мимо поля (blur), чтобы сохранить в состояние.
         </p>
         <textarea
           value={promptLinesText}
@@ -142,6 +147,16 @@ export function OutputPanel() {
         >
           {busy === "images" ? "Генерация…" : "Generate images"}
         </button>
+        {!canGenerateImages ? (
+          <p className="mt-1 text-[11px] text-muted">
+            Кнопка активна, когда есть хотя бы один непустой промпт в блоке выше (или из диалога в state).
+          </p>
+        ) : state.slides.length > 0 && !allSlidesHavePrompts ? (
+          <p className="mt-1 text-[11px] text-amber-200/90">
+            Для всех {state.slides.length} слайдов должна быть строка промпта; иначе часть кадров выдаст ошибку.
+            Допиши пустые строки или попроси полный список промптов в диалоге.
+          </p>
+        ) : null}
       </div>
 
       <div className="min-h-0 space-y-3">
