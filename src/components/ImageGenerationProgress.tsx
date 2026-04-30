@@ -22,12 +22,6 @@ export function ImageGenerationProgress({ images }: { images: GeneratedImage[] }
 
   return (
     <div className="space-y-2 rounded-lg border border-accent/25 bg-black/25 px-3 py-2.5">
-      <div className="flex items-center justify-between gap-2 text-[11px] text-muted">
-        <span className="font-medium text-text/90">Генерация изображений</span>
-        <span className="tabular-nums text-text/80">
-          готово {finished} / {total}
-        </span>
-      </div>
       <div className="h-2 w-full overflow-hidden rounded-full bg-black/45 ring-1 ring-border/60">
         <div
           className="h-full rounded-full bg-gradient-to-r from-accent/70 to-accent2/90 transition-[width] duration-300 ease-out"
@@ -38,7 +32,12 @@ export function ImageGenerationProgress({ images }: { images: GeneratedImage[] }
           aria-valuemax={total}
         />
       </div>
-      {subtitle ? <p className="text-[10px] leading-snug text-muted">{subtitle}</p> : null}
+      <div className="flex items-center justify-between gap-2 text-[10px] text-muted">
+        <span className="tabular-nums text-text/80">
+          {finished}/{total}
+        </span>
+        {subtitle ? <span className="truncate">{subtitle}</span> : <span />}
+      </div>
     </div>
   );
 }
