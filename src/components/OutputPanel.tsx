@@ -10,6 +10,8 @@ export function OutputPanel() {
   const { state, dispatch } = useStudio();
   const [busy, setBusy] = useState<null | string>(null);
   const [scenarioOpen, setScenarioOpen] = useState(true);
+  const [genError, setGenError] = useState<string | null>(null);
+  const [promptsShake, setPromptsShake] = useState(false);
   const showBatchProgress =
     state.images.length > 0 && state.images.some((x) => x.status === "waiting" || x.status === "generating");
 
@@ -48,6 +50,7 @@ export function OutputPanel() {
         : state.prompts.some((p) => p.prompt.trim());
     if (!hasPrompt) return;
 
+    setGenError(null);
     setBusy("images");
     try {
       const images = await generateImagesFromState(state, {
@@ -56,6 +59,11 @@ export function OutputPanel() {
         }
       });
       dispatch({ type: "set", patch: { images } });
+    } catch (e: unknown) {
+      const m = e instanceof Error ? e.message : "Ошибка генерации изображений";
+      setGenError(m);
+      setPromptsShake(true);
+      window.setTimeout(() => setPromptsShake(false), 500);
     } finally {
       setBusy(null);
     }
@@ -65,6 +73,11 @@ export function OutputPanel() {
     setBusy("zip");
     try {
       await downloadZip(state);
+    } catch (e: unknown) {
+      const m = e instanceof Error ? e.message : "Ошибка архива";
+      setGenError(m);
+      setPromptsShake(true);
+      window.setTimeout(() => setPromptsShake(false), 500);
     } finally {
       setBusy(null);
     }
@@ -130,7 +143,12 @@ export function OutputPanel() {
           </div>
         ) : null}
 
-      <div className="rounded-xl border border-border bg-black/20 p-3">
+      <div
+        className={[
+          "rounded-xl border border-border bg-black/20 p-3",
+          promptsShake ? "studio-shake border-red-400/35" : ""
+        ].join(" ")}
+      >
         <div className="text-xs font-medium text-muted">Промпты по кадрам</div>
         <p className="mt-1 text-[11px] leading-snug text-muted">
           Одна строка — один кадр (порядок как у слайдов 1→N). То же попадает в «Generate images». Если правишь
@@ -151,12 +169,15 @@ export function OutputPanel() {
           type="button"
           onClick={() => void onGenerateImages()}
           disabled={!!busy || !canGenerateImages}
-          className="mt-2 w-full rounded-xl border border-border bg-black/20 px-3 py-2 text-sm text-text hover:bg-black/30 disabled:opacity-50"
+          className="studio-btn-primary mt-2 w-full rounded-xl border border-border bg-black/20 px-3 py-2 text-sm text-text hover:bg-black/30 disabled:opacity-50"
         >
           {busy === "images" ? "Генерация…" : "Generate images"}
         </button>
         {showBatchProgress ? (
           <ImageGenerationProgress images={state.images} />
+        ) : null}
+        {genError ? (
+          <p className="mt-2 text-[11px] leading-snug text-red-300/95">{genError}</p>
         ) : null}
         {!canGenerateImages ? (
           <p className="mt-1 text-[11px] text-muted">
@@ -252,7 +273,7 @@ export function OutputPanel() {
           type="button"
           onClick={() => void onDownload()}
           disabled={!!busy || !hasSomethingToExport}
-          className="w-full rounded-xl border border-accent/30 bg-accent/10 px-3 py-2 text-sm text-text hover:bg-accent/15 disabled:opacity-50"
+          className="studio-btn-primary w-full rounded-xl border border-accent/30 bg-accent/10 px-3 py-2 text-sm text-text hover:bg-accent/15 disabled:opacity-50"
         >
           {busy === "zip" ? "Архив…" : "Download ZIP"}
         </button>

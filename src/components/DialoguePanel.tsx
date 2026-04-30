@@ -1,7 +1,9 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { useStudioActivity } from "@/lib/studio-activity";
 import { useStudio } from "@/lib/studio-store";
+import { getSoundEnabled, playSendClick, setSoundEnabled } from "@/lib/ui-sound";
 import { generateImagesFromState, mergeStatePatch, sendDialogueTurn } from "@/lib/actions";
 import { canRunImageGeneration, userWantsImageGeneration } from "@/lib/auto-image-intent";
 import type { ChatMessage, StudioState } from "@/lib/state";
@@ -88,15 +90,25 @@ const SHORTCUTS: { label: string; message: string }[] = [
 
 export function DialoguePanel() {
   const { state, dispatch } = useStudio();
+  const { setChatBusy } = useStudioActivity();
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);
+  const [showJumpLatest, setShowJumpLatest] = useState(false);
+  const [inputShake, setInputShake] = useState(false);
+  const [soundOn, setSoundOn] = useState(false);
   const endRef = useRef<HTMLDivElement>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const seenMessageIdsRef = useRef<Set<string>>(new Set());
+  const followNextRef = useRef(true);
 
   useEffect(() => {
-    endRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [state.messages.length]);
+    setSoundOn(getSoundEnabled());
+  }, []);
+
+  useEffect(() => {
+    setChatBusy(busy);
+  }, [busy, setChatBusy]);
 
   useEffect(() => {
     // отмечаем отрендеренные сообщения как «виденные», чтобы анимировать только новые
@@ -109,10 +121,33 @@ export function DialoguePanel() {
     if (!busy) inputRef.current?.focus();
   }, [busy, state.messages.length]);
 
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    const threshold = 120;
+    const d = el.scrollHeight - el.scrollTop - el.clientHeight;
+    if (followNextRef.current || d < threshold) {
+      requestAnimationFrame(() => endRef.current?.scrollIntoView({ behavior: "smooth" }));
+      setShowJumpLatest(false);
+    } else {
+      setShowJumpLatest(true);
+    }
+    followNextRef.current = false;
+  }, [state.messages.length]);
+
+  function onScrollArea() {
+    const el = scrollRef.current;
+    if (!el) return;
+    const d = el.scrollHeight - el.scrollTop - el.clientHeight;
+    if (d < 80) setShowJumpLatest(false);
+  }
+
   async function runTurn(userText: string) {
     const text = userText.trim();
     if (!text || busy) return;
 
+    followNextRef.current = true;
+    playSendClick();
     setBusy(true);
     const history = state.messages.map((m) => ({ role: m.role, content: m.content }));
     try {
@@ -203,6 +238,8 @@ export function DialoguePanel() {
           ]
         }
       });
+      setInputShake(true);
+      window.setTimeout(() => setInputShake(false), 500);
     } finally {
       setBusy(false);
     }
@@ -229,14 +266,19 @@ export function DialoguePanel() {
             type="button"
             disabled={busy}
             onClick={() => void runTurn(s.message)}
-            className="rounded-lg border border-border bg-black/25 px-2 py-1 text-[11px] text-muted hover:bg-black/35 hover:text-text disabled:opacity-50"
+            className="studio-btn-ghost rounded-lg border border-border bg-black/25 px-2 py-1 text-[11px] text-muted hover:bg-black/35 hover:text-text disabled:opacity-50"
           >
             {s.label}
           </button>
         ))}
       </div>
 
-      <div className="min-h-0 flex-1 overflow-y-auto rounded-xl border border-border bg-black/15 p-3">
+      <div className="relative min-h-0 flex-1">
+      <div
+        ref={scrollRef}
+        onScroll={onScrollArea}
+        className="h-full min-h-0 overflow-y-auto rounded-xl border border-border bg-black/15 p-3"
+      >
         {state.messages.length === 0 ? (
           <div className="flex h-full min-h-[200px] items-center justify-center text-center text-sm text-muted">
             Напиши первое сообщение — тему, настроение или вопрос по сценарию.
@@ -265,7 +307,27 @@ export function DialoguePanel() {
         )}
       </div>
 
-      <div className="rounded-xl border border-border bg-black/20 p-3">
+      {showJumpLatest && state.messages.length > 0 ? (
+        <button
+          type="button"
+          className="studio-btn-ghost absolute bottom-3 right-4 rounded-full border border-accent/35 bg-black/70 px-3 py-1.5 text-[11px] text-text shadow-lg backdrop-blur hover:bg-black/85"
+          onClick={() => {
+            followNextRef.current = true;
+            endRef.current?.scrollIntoView({ behavior: "smooth" });
+            setShowJumpLatest(false);
+          }}
+        >
+          Новые ниже ↓
+        </button>
+      ) : null}
+      </div>
+
+      <div
+        className={[
+          "rounded-xl border border-border bg-black/20 p-3",
+          inputShake ? "studio-shake border-red-400/40" : ""
+        ].join(" ")}
+      >
         <textarea
           ref={inputRef}
           value={input}
@@ -281,12 +343,25 @@ export function DialoguePanel() {
             }
           }}
         />
-        <div className="mt-2 flex justify-end gap-2">
+        <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
+          <label className="flex cursor-pointer items-center gap-2 text-[11px] text-muted">
+            <input
+              type="checkbox"
+              checked={soundOn}
+              onChange={(e) => {
+                const on = e.target.checked;
+                setSoundEnabled(on);
+                setSoundOn(on);
+              }}
+              className="rounded border-border bg-black/40"
+            />
+            Тихий звук при отправке
+          </label>
           <button
             type="button"
             onClick={() => void onSend()}
             disabled={busy || !input.trim()}
-            className="rounded-xl border border-accent/30 bg-accent/10 px-4 py-2 text-sm font-medium text-text hover:bg-accent/15 disabled:opacity-50"
+            className="studio-btn-primary rounded-xl border border-accent/30 bg-accent/10 px-4 py-2 text-sm font-medium text-text hover:bg-accent/15 disabled:opacity-50"
           >
             {busy ? "Отправка…" : "Отправить"}
           </button>

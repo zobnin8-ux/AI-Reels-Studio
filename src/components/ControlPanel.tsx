@@ -100,7 +100,7 @@ export function ControlPanel() {
 
   return (
     <div className="flex h-full flex-col gap-4">
-      <div className="flex items-center justify-between">
+      <div className="studio-sheen flex items-center justify-between rounded-xl border border-border/60 bg-black/18 px-3 py-2.5">
         <div>
           <div className="text-sm font-medium text-muted">AI Reels Studio</div>
           <div className="text-xl font-semibold tracking-tight">Control Panel</div>
@@ -282,7 +282,7 @@ export function ControlPanel() {
             type="button"
             onClick={() => dispatch({ type: "set", patch: { provider: "openai" } })}
             className={[
-              "flex-1 rounded-lg border px-3 py-2 text-sm",
+              "studio-btn-ghost flex-1 rounded-lg border px-3 py-2 text-sm",
               state.provider === "openai"
                 ? "border-accent/40 bg-accent/10 text-text"
                 : "border-border bg-black/20 text-muted hover:bg-black/30"
@@ -294,7 +294,7 @@ export function ControlPanel() {
             type="button"
             onClick={() => dispatch({ type: "set", patch: { provider: "anthropic" } })}
             className={[
-              "flex-1 rounded-lg border px-3 py-2 text-sm",
+              "studio-btn-ghost flex-1 rounded-lg border px-3 py-2 text-sm",
               state.provider === "anthropic"
                 ? "border-accent2/40 bg-accent2/10 text-text"
                 : "border-border bg-black/20 text-muted hover:bg-black/30"

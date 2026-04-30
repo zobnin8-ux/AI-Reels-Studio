@@ -4,7 +4,7 @@ import type { GeneratedImage } from "@/lib/state";
 import { useStudio } from "@/lib/studio-store";
 import { regenerateOneImage } from "@/lib/actions";
 import { mergePromptForSlide } from "@/lib/prompt-sync";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 export function ImageSlideCard({
   index,
@@ -19,10 +19,20 @@ export function ImageSlideCard({
   const { state, dispatch } = useStudio();
   const [localPrompt, setLocalPrompt] = useState(image.prompt);
   const [busy, setBusy] = useState(false);
+  const [errorShake, setErrorShake] = useState(false);
+  const prevErrorRef = useRef<string | undefined>(undefined);
 
   useEffect(() => {
     setLocalPrompt(image.prompt);
   }, [image.prompt]);
+
+  useEffect(() => {
+    if (image.error && image.error !== prevErrorRef.current) {
+      setErrorShake(true);
+      window.setTimeout(() => setErrorShake(false), 500);
+    }
+    prevErrorRef.current = image.error;
+  }, [image.error]);
 
   function commitPromptToStore() {
     if (!image.slideId?.trim()) return;
@@ -56,7 +66,12 @@ export function ImageSlideCard({
           : "ошибка";
 
   return (
-    <div className="min-w-0 overflow-hidden rounded-xl border border-border bg-panel/40 p-3">
+    <div
+      className={[
+        "studio-card-frame min-w-0 overflow-hidden rounded-xl border border-border bg-panel/40 p-3",
+        errorShake ? "studio-shake border-red-400/35" : ""
+      ].join(" ")}
+    >
       <div className="flex min-w-0 items-start justify-between gap-3">
         <div className="text-sm font-semibold">
           {String(index + 1).padStart(2, "0")}. Кадр
@@ -87,6 +102,15 @@ export function ImageSlideCard({
                   alt=""
                   className="h-full w-full object-cover transition group-hover:opacity-95"
                 />
+                <span
+                  className="pointer-events-none absolute right-2 top-2 inline-flex h-8 w-8 items-center justify-center rounded-full border border-white/25 bg-black/45 text-white/90 opacity-0 shadow-md backdrop-blur-sm transition group-hover:opacity-100"
+                  aria-hidden
+                >
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <circle cx="11" cy="11" r="7" />
+                    <path d="M21 21l-4.3-4.3" strokeLinecap="round" />
+                  </svg>
+                </span>
                 <span className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 to-transparent py-2 text-center text-[10px] text-white/90 opacity-0 transition group-hover:opacity-100">
                   Нажми для превью
                 </span>
@@ -124,7 +148,7 @@ export function ImageSlideCard({
               type="button"
               onClick={() => void onRegenerate()}
               disabled={!localPrompt.trim() || busy}
-              className="rounded-xl border border-border bg-black/20 px-3 py-2 text-sm text-text hover:bg-black/30 disabled:opacity-50"
+              className="studio-btn-ghost rounded-xl border border-border bg-black/20 px-3 py-2 text-sm text-text hover:bg-black/30 disabled:opacity-50"
             >
               {busy ? "…" : "Перегенерировать"}
             </button>
