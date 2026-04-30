@@ -9,12 +9,15 @@ import { useEffect, useRef, useState } from "react";
 export function ImageSlideCard({
   index,
   image,
-  onPreview
+  onPreview,
+  variant = "card"
 }: {
   index: number;
   image: GeneratedImage;
   /** Клик по готовому превью — полноэкранный просмотр (если передан). */
   onPreview?: () => void;
+  /** В колонке v2026 — компактный вид внутри `.reel-frame`. */
+  variant?: "card" | "frame";
 }) {
   const { state, dispatch } = useStudio();
   const [localPrompt, setLocalPrompt] = useState(image.prompt);
@@ -65,26 +68,39 @@ export function ImageSlideCard({
           ? "готово"
           : "ошибка";
 
+  const isFrame = variant === "frame";
+
   return (
     <div
       className={[
-        "studio-card-frame min-w-0 overflow-hidden rounded-xl border border-border bg-panel/40 p-3",
+        isFrame
+          ? "reel-frame-inner overflow-y-auto p-2"
+          : "studio-card-frame min-w-0 overflow-hidden rounded-xl border border-border bg-panel/40 p-3",
         errorShake ? "studio-shake border-red-400/35" : ""
       ].join(" ")}
     >
-      <div className="flex min-w-0 items-start justify-between gap-3">
-        <div className="text-sm font-semibold">
-          {String(index + 1).padStart(2, "0")}. Кадр
+      {!isFrame ? (
+        <div className="flex min-w-0 items-start justify-between gap-3">
+          <div className="text-sm font-semibold">
+            {String(index + 1).padStart(2, "0")}. Кадр
+          </div>
+          <span className="rounded-full border border-border bg-black/30 px-2 py-1 text-xs text-muted">
+            {statusLabel}
+          </span>
         </div>
-        <span className="rounded-full border border-border bg-black/30 px-2 py-1 text-xs text-muted">
-          {statusLabel}
-        </span>
-      </div>
+      ) : null}
 
-      <div className="mt-3 grid min-w-0 grid-cols-1 gap-3">
+      <div
+        className={[
+          "min-w-0 min-h-0 gap-2",
+          isFrame ? "mt-0 flex flex-1 flex-col" : "mt-3 grid grid-cols-1 gap-3"
+        ].join(" ")}
+      >
         <div
           className={[
-            "mx-auto w-full max-w-[min(100%,320px)] min-w-0 overflow-hidden rounded-lg border border-border bg-black/25",
+            isFrame
+              ? "mx-auto w-full min-w-0 flex-1 overflow-hidden rounded-md border border-[var(--border-subtle)] bg-[var(--bg-elev-3)]"
+              : "mx-auto w-full max-w-[min(100%,320px)] min-w-0 overflow-hidden rounded-lg border border-border bg-black/25",
             state.contentType === "reels" ? "aspect-[9/16]" : "aspect-square"
           ].join(" ")}
         >
@@ -136,19 +152,27 @@ export function ImageSlideCard({
           )}
         </div>
         <div className="min-w-0 space-y-2 overflow-hidden">
-          <div className="text-xs font-medium text-muted">Промпт</div>
+          {!isFrame ? <div className="text-xs font-medium text-muted">Промпт</div> : null}
           <textarea
             value={localPrompt}
             onChange={(e) => setLocalPrompt(e.target.value)}
             onBlur={() => commitPromptToStore()}
-            className="min-h-20 w-full min-w-0 max-w-full resize-y rounded-xl border border-border bg-black/30 px-3 py-2 font-mono text-xs outline-none focus:ring-2 focus:ring-accent/30"
+            className={
+              isFrame
+                ? "textarea min-h-[72px] font-mono text-[11px]"
+                : "min-h-20 w-full min-w-0 max-w-full resize-y rounded-xl border border-border bg-black/30 px-3 py-2 font-mono text-xs outline-none focus:ring-2 focus:ring-accent/30"
+            }
           />
           <div className="flex justify-end">
             <button
               type="button"
               onClick={() => void onRegenerate()}
               disabled={!localPrompt.trim() || busy}
-              className="studio-btn-ghost rounded-xl border border-border bg-black/20 px-3 py-2 text-sm text-text hover:bg-black/30 disabled:opacity-50"
+              className={
+                isFrame
+                  ? "gen-btn mt-1 py-2 text-[11px]"
+                  : "studio-btn-ghost rounded-xl border border-border bg-black/20 px-3 py-2 text-sm text-text hover:bg-black/30 disabled:opacity-50"
+              }
             >
               {busy ? "…" : "Перегенерировать"}
             </button>

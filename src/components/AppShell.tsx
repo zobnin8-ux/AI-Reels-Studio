@@ -6,6 +6,7 @@ import { ImageActivitySync } from "@/components/ImageActivitySync";
 import { ImageStripPanel } from "@/components/ImageStripPanel";
 import { OutputPanel } from "@/components/OutputPanel";
 import { PanelErrorBoundary } from "@/components/PanelErrorBoundary";
+import { StudioTopBar } from "@/components/StudioTopBar";
 import { StudioActivityProvider, useStudioActivity } from "@/lib/studio-activity";
 import { StudioProvider } from "@/lib/studio-store";
 
@@ -13,8 +14,8 @@ function AppGrid() {
   const { chatBusy, imagePipelineBusy } = useStudioActivity();
 
   return (
-    <div className="grid h-full min-h-0 w-full min-w-[1480px] flex-1 grid-cols-[minmax(260px,300px)_minmax(0,1fr)_456px_minmax(0,1.15fr)] gap-0 overflow-x-auto overflow-y-hidden rounded-2xl">
-      <aside className="min-h-0 min-w-0 border-r border-border bg-panel p-4">
+    <main className="layout">
+      <aside className="panel anim-1 min-h-0">
         <PanelErrorBoundary label="Control Panel">
           <ControlPanel />
         </PanelErrorBoundary>
@@ -22,8 +23,8 @@ function AppGrid() {
 
       <section
         className={[
-          "relative min-h-0 min-w-0 rounded-xl border-2 border-solid bg-panel2 p-4",
-          chatBusy ? "studio-panel-chat-active border-violet-400/70" : "border-transparent"
+          "panel stage anim-2 flex-col min-h-0",
+          chatBusy ? "is-chat-busy" : ""
         ].join(" ")}
       >
         <PanelErrorBoundary label="Диалог">
@@ -31,42 +32,35 @@ function AppGrid() {
         </PanelErrorBoundary>
       </section>
 
-      <div
-        className={[
-          "relative min-h-0 min-w-0 rounded-xl border-2 border-solid",
-          imagePipelineBusy ? "studio-panel-images-active border-cyan-400/65" : "border-transparent"
-        ].join(" ")}
-      >
+      <section className={["panel frames anim-3 min-h-0", imagePipelineBusy ? "is-images-busy" : ""].join(" ")}>
         <PanelErrorBoundary label="Кадры">
           <ImageStripPanel />
         </PanelErrorBoundary>
-      </div>
+      </section>
 
-      <aside
-        className={[
-          "relative min-h-0 min-w-0 rounded-xl bg-panel p-4",
-          imagePipelineBusy
-            ? "border-2 border-solid studio-panel-images-active border-cyan-400/65"
-            : "border-l border-border"
-        ].join(" ")}
-      >
+      <aside className="panel anim-4 min-h-0">
         <PanelErrorBoundary label="Вывод">
           <OutputPanel />
         </PanelErrorBoundary>
       </aside>
-    </div>
+    </main>
   );
 }
 
 export function AppShell() {
   return (
-    <StudioProvider>
-      <StudioActivityProvider>
-        <ImageActivitySync />
-        <div className="flex h-full min-h-0 flex-col overflow-hidden rounded-2xl border border-border/90 bg-panel/65 shadow-soft backdrop-blur">
+    <div className="v2026-shell">
+      <div className="bg-grid" aria-hidden />
+      <div className="bg-glow" aria-hidden />
+      <div className="bg-noise" aria-hidden />
+      <div className="scan-line" aria-hidden />
+      <StudioProvider>
+        <StudioActivityProvider>
+          <ImageActivitySync />
+          <StudioTopBar />
           <AppGrid />
-        </div>
-      </StudioActivityProvider>
-    </StudioProvider>
+        </StudioActivityProvider>
+      </StudioProvider>
+    </div>
   );
 }

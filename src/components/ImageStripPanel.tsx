@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useStudio } from "@/lib/studio-store";
 import { ImageSlideCard } from "@/components/ImageSlideCard";
 
@@ -9,13 +9,22 @@ type LightboxState = {
   title: string;
 };
 
-/** Колонка превью кадров у чата; клик по картинке — полноразмерное превью. */
 export function ImageStripPanel() {
   const { state } = useStudio();
   const seenImageIdsRef = useRef<Set<string>>(new Set());
   const [lightbox, setLightbox] = useState<LightboxState | null>(null);
   const showBatchProgress =
     state.images.length > 0 && state.images.some((x) => x.status === "waiting" || x.status === "generating");
+
+  const doneCount = useMemo(
+    () => state.images.filter((x) => x.status === "done").length,
+    [state.images]
+  );
+
+  const telePct = useMemo(() => {
+    if (state.images.length === 0) return 0;
+    return Math.round((doneCount / state.images.length) * 100);
+  }, [doneCount, state.images.length]);
 
   useEffect(() => {
     const set = seenImageIdsRef.current;
@@ -31,55 +40,100 @@ export function ImageStripPanel() {
     return () => window.removeEventListener("keydown", onKey);
   }, [lightbox]);
 
+  const stripMeta =
+    state.slides.length > 0
+      ? `${state.slides.length} слайд${state.slides.length > 1 ? "ов" : ""}`
+      : state.images.length > 0
+        ? `${state.images.length} кадр${state.images.length > 1 ? "ов" : ""}`
+        : "ожидание";
+
   return (
     <>
-      <aside className="flex h-full min-h-0 min-w-0 flex-col border-x border-border bg-panel/80 p-3">
-        <div className="shrink-0">
-          {showBatchProgress ? (
-            <div
-              role="status"
-              aria-live="polite"
-              className="mb-2 flex items-center gap-2 rounded-lg border border-cyan-400/55 bg-cyan-950/50 px-2.5 py-1.5 text-[11px] font-medium leading-snug text-cyan-50"
-            >
-              <span className="studio-dot-soft h-2 w-2 shrink-0 rounded-full bg-cyan-300" aria-hidden />
-              Идёт генерация кадров
-            </div>
-          ) : null}
-          <div className="text-[11px] font-medium uppercase tracking-wide text-muted">Кадры</div>
-          <p className="mt-0.5 text-[10px] leading-snug text-muted">
-            Превью кадров здесь; полоса прогресса — в колонке «Вывод» под «Generate images». Кадр — нажми для
-            полного размера.
-          </p>
+      <div className="panel-strip">
+        <div className="strip-row">
+          <span className="strip-tag">Раскадровка</span>
+          <span className="strip-meta">{stripMeta}</span>
         </div>
+        <h2 className="strip-title">
+          Кадры <b>·</b> превью
+        </h2>
+        <p className="strip-sub">Превью после Generate images; клик по готовому кадру — полный экран.</p>
+      </div>
 
-        <div className="mt-3 min-h-0 flex-1 overflow-y-auto overflow-x-hidden pr-0.5">
-          {state.images.length === 0 ? (
-            <div className="rounded-lg border border-dashed border-border/80 bg-black/15 p-3 text-center text-[10px] leading-relaxed text-muted">
-              После «Generate images» превью появятся в этой полосе.
+      <div className="frames-body min-h-0">
+        {showBatchProgress ? (
+          <div className="busy-ribbon mb-3" role="status" aria-live="polite">
+            <span className="dot-pulse" aria-hidden />
+            Идёт генерация кадров…
+          </div>
+        ) : null}
+
+        {state.images.length === 0 ? (
+          <div className="reel-row">
+            <div className="reel-frame placeholder">
+              <span style={{ fontSize: 11, color: "var(--text-muted)", letterSpacing: "0.12em" }}>
+                ПУСТО
+              </span>
             </div>
-          ) : (
-            <div className="flex flex-col gap-3">
-              {state.images.map((img, idx) => (
-                <div key={img.id} className={!seenImageIdsRef.current.has(img.id) ? "studio-enter" : ""}>
-                  <ImageSlideCard
-                    index={idx}
-                    image={img}
-                    onPreview={
-                      img.status === "done" && img.imageBase64
-                        ? () =>
-                            setLightbox({
-                              dataUrl: `data:${img.mimeType ?? "image/png"};base64,${img.imageBase64}`,
-                              title: `Кадр ${String(idx + 1).padStart(2, "0")}`
-                            })
-                        : undefined
-                    }
-                  />
-                </div>
-              ))}
-            </div>
-          )}
+            <div className="reel-frame placeholder" aria-hidden />
+          </div>
+        ) : (
+          <div className="reel-row reel-row-stack">
+            {state.images.map((img, idx) => (
+              <div
+                key={img.id}
+                className={[
+                  "reel-frame",
+                  !seenImageIdsRef.current.has(img.id) ? "studio-enter" : ""
+                ]
+                  .filter(Boolean)
+                  .join(" ")}
+              >
+                <span className="frame-num">#{String(idx + 1).padStart(2, "0")}</span>
+                <span className="frame-status">
+                  {img.status === "generating"
+                    ? "генерация"
+                    : img.status === "waiting"
+                      ? "очередь"
+                      : img.status === "done"
+                        ? "готово"
+                        : "ошибка"}
+                </span>
+                <ImageSlideCard
+                  variant="frame"
+                  index={idx}
+                  image={img}
+                  onPreview={
+                    img.status === "done" && img.imageBase64
+                      ? () =>
+                          setLightbox({
+                            dataUrl: `data:${img.mimeType ?? "image/png"};base64,${img.imageBase64}`,
+                            title: `Кадр ${String(idx + 1).padStart(2, "0")}`
+                          })
+                      : undefined
+                  }
+                />
+              </div>
+            ))}
+          </div>
+        )}
+
+        <div className="telemetry">
+          <div className="tele-row">
+            <span className="tele-label">IMAGES</span>
+            <span className="tele-value">
+              {doneCount}/{state.images.length || 0} DONE
+            </span>
+          </div>
+          <div className="tele-row">
+            <span className="tele-label">LANE</span>
+            <span className="tele-value">GPU</span>
+          </div>
+          <div className="progress-bar">
+            <div className="progress-fill" style={{ width: `${telePct}%` }} />
+          </div>
         </div>
-      </aside>
+      </div>
 
       {lightbox ? (
         <div
@@ -116,4 +170,3 @@ export function ImageStripPanel() {
     </>
   );
 }
-

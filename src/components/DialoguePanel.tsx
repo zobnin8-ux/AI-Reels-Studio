@@ -95,6 +95,7 @@ export function DialoguePanel() {
   const [showJumpLatest, setShowJumpLatest] = useState(false);
   const [inputShake, setInputShake] = useState(false);
   const [soundOn, setSoundOn] = useState(false);
+  const [clock, setClock] = useState(() => new Date());
   const endRef = useRef<HTMLDivElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -103,6 +104,11 @@ export function DialoguePanel() {
 
   useEffect(() => {
     setSoundOn(getSoundEnabled());
+  }, []);
+
+  useEffect(() => {
+    const id = window.setInterval(() => setClock(new Date()), 1000);
+    return () => window.clearInterval(id);
   }, []);
 
   useEffect(() => {
@@ -251,139 +257,186 @@ export function DialoguePanel() {
     await runTurn(input);
   }
 
-  return (
-    <div className="flex h-full min-h-0 flex-col gap-3">
-      {busy ? (
-        <div
-          role="status"
-          aria-live="polite"
-          className="flex shrink-0 items-center gap-2 rounded-lg border border-violet-400/65 bg-violet-950/75 px-3 py-2 text-[12px] font-medium leading-snug text-violet-50 shadow-[inset_0_0_28px_rgba(139,92,246,0.28)]"
-        >
-          <span
-            className="studio-dot-soft h-2.5 w-2.5 shrink-0 rounded-full bg-violet-300 shadow-[0_0_10px_rgba(167,139,250,0.6)]"
-            aria-hidden
-          />
-          Запрос к модели… ответ появится в ленте ниже.
-        </div>
-      ) : null}
+  const clockStr = clock.toLocaleTimeString("ru-RU", { hour12: false });
 
-      <div>
-        <div className="text-sm font-medium text-muted">Диалог</div>
-        <div className="text-xl font-semibold tracking-tight">Творческая сессия</div>
-        <p className="mt-1 text-xs text-muted">
-          Центр — источник правды по сценарию. Справа — промпты, картинки и экспорт только после явных шагов.
+  return (
+    <>
+      <div className="panel-strip">
+        <div className="strip-row">
+          <span className="strip-tag">Эфир</span>
+          <span className="stage-status">
+            <span className="indicator" aria-hidden />
+            <span className="key">{clockStr}</span>
+          </span>
+        </div>
+        <h1 className="stage-h1">
+          Сценарий собирается <b>здесь</b>
+        </h1>
+        <p className="stage-lead">
+          Опиши идею — тему, цифру, диалог или настроение. Студия разложит её на{" "}
+          <span>{state.slideCount} кадров</span>, подберёт промпты, caption и музыку по запросу.
         </p>
       </div>
 
-      <div className="flex flex-wrap gap-1.5">
-        {SHORTCUTS.map((s) => (
+      <div className="prompts">
+        {SHORTCUTS.map((s, i) => (
           <button
             key={s.label}
             type="button"
             disabled={busy}
             onClick={() => void runTurn(s.message)}
-            className="studio-btn-ghost rounded-lg border border-border bg-black/25 px-2 py-1 text-[11px] text-muted hover:bg-black/35 hover:text-text disabled:opacity-50"
+            className={i === 0 ? "chip primary" : "chip"}
           >
             {s.label}
           </button>
         ))}
       </div>
 
-      <div className="relative min-h-0 flex-1">
-      <div
-        ref={scrollRef}
-        onScroll={onScrollArea}
-        className="h-full min-h-0 overflow-y-auto rounded-xl border border-border bg-black/15 p-3"
-      >
-        {state.messages.length === 0 ? (
-          <div className="flex h-full min-h-[200px] items-center justify-center text-center text-sm text-muted">
-            Напиши первое сообщение — тему, настроение или вопрос по сценарию.
-          </div>
-        ) : (
-          <div className="space-y-4">
-            {state.messages.map((m) => (
-              <div
-                key={m.id}
-                className={[
-                  !seenMessageIdsRef.current.has(m.id) ? "studio-enter" : "",
-                  "max-w-[95%] rounded-xl border px-3 py-2 text-sm leading-relaxed",
-                  m.role === "user"
-                    ? "ml-auto border-accent/25 bg-accent/5 text-text"
-                    : "mr-auto border-border bg-black/25 text-text"
-                ].join(" ")}
-              >
-                <div className="mb-1 text-[10px] font-medium uppercase tracking-wide text-muted">
-                  {m.role === "user" ? "Вы" : "Ассистент"}
-                </div>
-                <div className="max-w-full min-w-0 break-words whitespace-pre-wrap">{m.content}</div>
-              </div>
-            ))}
-            <div ref={endRef} />
-          </div>
-        )}
-      </div>
+      {busy ? (
+        <div className="busy-ribbon" role="status" aria-live="polite">
+          <span className="dot-pulse" aria-hidden />
+          Запрос к модели… ответ появится в ленте ниже.
+        </div>
+      ) : null}
 
-      {showJumpLatest && state.messages.length > 0 ? (
-        <button
-          type="button"
-          className="studio-btn-ghost absolute bottom-3 right-4 rounded-full border border-accent/35 bg-black/70 px-3 py-1.5 text-[11px] text-text shadow-lg backdrop-blur hover:bg-black/85"
-          onClick={() => {
+      <div className="relative min-h-0 flex-1">
+        <div
+          ref={scrollRef}
+          onScroll={onScrollArea}
+          className={[
+            "dialog-scroll",
+            state.messages.length === 0 ? "is-empty" : ""
+          ].join(" ")}
+        >
+          {state.messages.length === 0 ? (
+            <div className="empty">
+              <div className="holo-core">
+                <div className="crosshair-h" />
+                <div className="crosshair-v" />
+                <div className="core-glow" />
+                <svg className="ring1" viewBox="0 0 120 120" fill="none" stroke="currentColor" strokeWidth="0.7">
+                  <circle cx="60" cy="60" r="58" strokeDasharray="3 5" />
+                  <circle cx="60" cy="2" r="1.6" fill="currentColor" />
+                </svg>
+                <svg className="ring2" viewBox="0 0 120 120" fill="none" stroke="currentColor" strokeWidth="0.7">
+                  <circle cx="60" cy="60" r="46" strokeDasharray="2 7" />
+                </svg>
+                <svg className="ring3" viewBox="0 0 120 120" fill="none" stroke="currentColor" strokeWidth="0.5">
+                  <circle cx="60" cy="60" r="34" />
+                  <circle cx="94" cy="60" r="1.2" fill="currentColor" />
+                </svg>
+                <svg viewBox="0 0 120 120" fill="none" stroke="currentColor" strokeWidth="0.9">
+                  <circle cx="60" cy="60" r="18" />
+                  <circle cx="60" cy="60" r="5" fill="currentColor" />
+                </svg>
+              </div>
+              <h3 className="empty-h">
+                Готов принять <b>направление</b>
+              </h3>
+              <p className="empty-p">
+                Опиши тему, настроение или одну фразу — и я разложу её на сценарий.
+                <br />
+                <kbd>Enter</kbd> — отправить · <kbd>Shift</kbd> + <kbd>Enter</kbd> — новая строка
+              </p>
+            </div>
+          ) : (
+            <>
+              {state.messages.map((m) => (
+                <div
+                  key={m.id}
+                  className={["bubble-row", m.role === "user" ? "user" : "assistant"].join(" ")}
+                >
+                  <div
+                    className={[
+                      "bubble",
+                      m.role === "user" ? "bubble-user" : "bubble-assistant",
+                      !seenMessageIdsRef.current.has(m.id) ? "studio-enter" : ""
+                    ]
+                      .filter(Boolean)
+                      .join(" ")}
+                  >
+                    <div className="bubble-role">{m.role === "user" ? "Вы" : "Ассистент"}</div>
+                    <div>{m.content}</div>
+                  </div>
+                </div>
+              ))}
+              <div ref={endRef} />
+            </>
+          )}
+        </div>
+
+        {showJumpLatest && state.messages.length > 0 ? (
+          <button type="button" className="jump-latest" onClick={() => {
             followNextRef.current = true;
             endRef.current?.scrollIntoView({ behavior: "smooth" });
             setShowJumpLatest(false);
           }}
-        >
-          Новые ниже ↓
-        </button>
-      ) : null}
+          >
+            Новые ниже ↓
+          </button>
+        ) : null}
       </div>
 
-      <div
-        className={[
-          "rounded-xl border border-border bg-black/20 p-3",
-          inputShake ? "studio-shake border-red-400/40" : ""
-        ].join(" ")}
-      >
-        <textarea
-          ref={inputRef}
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          placeholder="Сообщение…"
-          rows={3}
-          disabled={busy}
-          className="w-full resize-y rounded-xl border border-border bg-black/30 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-accent/30 disabled:opacity-50"
-          onKeyDown={(e) => {
-            if (e.key === "Enter" && !e.shiftKey) {
-              e.preventDefault();
-              void onSend();
-            }
-          }}
-        />
-        <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
-          <label className="flex cursor-pointer items-center gap-2 text-[11px] text-muted">
-            <input
-              type="checkbox"
-              checked={soundOn}
-              onChange={(e) => {
-                const on = e.target.checked;
-                setSoundEnabled(on);
-                setSoundOn(on);
+      <div className="composer">
+        <div className="composer-prefix">
+          <span>▸ ввод направления</span>
+          <span style={{ display: "inline-flex", alignItems: "center" }}>
+            {busy ? "думаю" : "готов"}
+            <span className="blink" aria-hidden />
+          </span>
+        </div>
+        <div className="composer-body">
+          <div className={["composer-input-wrap", inputShake ? "composer-input-shake" : ""].filter(Boolean).join(" ")}>
+            <textarea
+              ref={inputRef}
+              className="composer-input"
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              placeholder="Расскажи, о чём думаешь сегодня…"
+              rows={2}
+              disabled={busy}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && !e.shiftKey) {
+                  e.preventDefault();
+                  void onSend();
+                }
               }}
-              className="rounded border-border bg-black/40"
             />
-            Тихий звук при отправке
-          </label>
-          <button
-            type="button"
-            onClick={() => void onSend()}
-            disabled={busy || !input.trim()}
-            className="studio-btn-primary rounded-xl border border-accent/30 bg-accent/10 px-4 py-2 text-sm font-medium text-text hover:bg-accent/15 disabled:opacity-50"
-          >
+          </div>
+        </div>
+        <div className="composer-foot">
+          <div className="tools">
+            <button type="button" className="tool" disabled title="Скоро">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6">
+                <path d="M21 15V19A2 2 0 0119 21H5A2 2 0 013 19V15M7 10L12 15L17 10M12 15V3" />
+              </svg>
+              Прикрепить
+            </button>
+            <label className="tool" style={{ cursor: "pointer" }}>
+              <input
+                type="checkbox"
+                checked={soundOn}
+                onChange={(e) => {
+                  const on = e.target.checked;
+                  setSoundEnabled(on);
+                  setSoundOn(on);
+                }}
+                className="sr-only"
+              />
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6">
+                <path d="M12 2A3 3 0 009 5V12A3 3 0 0015 12V5A3 3 0 0012 2ZM19 10V12A7 7 0 015 12V10M12 19V22" />
+              </svg>
+              Звук {soundOn ? "вкл" : "выкл"}
+            </label>
+          </div>
+          <button type="button" className="send" onClick={() => void onSend()} disabled={busy || !input.trim()}>
             {busy ? "Отправка…" : "Отправить"}
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4">
+              <path d="M5 12H19M13 6L19 12L13 18" />
+            </svg>
           </button>
         </div>
-        <div className="mt-2 text-xs text-muted">Enter — отправить, Shift+Enter — новая строка.</div>
       </div>
-    </div>
+    </>
   );
 }

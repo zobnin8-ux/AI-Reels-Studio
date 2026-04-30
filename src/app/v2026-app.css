@@ -1,0 +1,217 @@
+/* Next.js shell — extends v2026 mock tokens */
+
+.brand-mark,
+.strip-title,
+.stage-h1,
+.export-dock-title,
+.download-btn {
+  font-family: var(--font-orbitron), "Orbitron", sans-serif;
+}
+
+.strip-tag,
+.strip-meta,
+.stage-tag,
+.meta-chip .key,
+.meta-chip .val,
+.composer-prefix,
+.frame-num,
+.frame-status,
+.tele-row .tele-value,
+.asset-badge {
+  font-family: var(--font-jetbrains), "JetBrains Mono", monospace;
+}
+
+button.asset-badge {
+  cursor: pointer;
+  border: none;
+  background: var(--bg-elev-3);
+  font: inherit;
+}
+
+.v2026-shell {
+  position: relative;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.layout {
+  flex: 1;
+  min-height: 0;
+  min-width: 1480px;
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+
+.panel.min-h-0 {
+  min-height: 0;
+}
+
+.panel-body.min-h-0 {
+  min-height: 0;
+}
+
+.stage.flex-col {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.dialog-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 20px 28px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  align-items: stretch;
+  justify-content: flex-start;
+}
+
+.dialog-scroll.is-empty {
+  justify-content: center;
+  align-items: center;
+}
+
+.bubble-row {
+  display: flex;
+  width: 100%;
+}
+
+.bubble-row.user {
+  justify-content: flex-end;
+}
+
+.bubble-row.assistant {
+  justify-content: flex-start;
+}
+
+.bubble {
+  max-width: 92%;
+  border-radius: var(--r-md);
+  border: 1px solid var(--border-subtle);
+  padding: 10px 14px;
+  font-size: 13px;
+  line-height: 1.55;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.bubble .bubble-role {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 9px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: 6px;
+}
+
+.bubble-user {
+  background: var(--accent-tint);
+  border-color: var(--border-strong);
+  color: var(--text);
+}
+
+.bubble-assistant {
+  background: rgba(8, 16, 20, 0.55);
+  border-color: var(--border-soft);
+}
+
+.busy-ribbon {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0 24px 12px;
+  padding: 10px 14px;
+  border-radius: var(--r-md);
+  border: 1px solid var(--accent);
+  background: rgba(91, 224, 218, 0.08);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--accent-bright);
+  box-shadow: inset 0 0 22px rgba(91, 224, 218, 0.12);
+}
+
+.busy-ribbon .dot-pulse {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--accent-bright);
+  box-shadow: 0 0 10px var(--accent-glow);
+  animation: livePulse 2.4s ease-in-out infinite;
+}
+
+.jump-latest {
+  position: absolute;
+  bottom: 12px;
+  right: 16px;
+  z-index: 4;
+  padding: 8px 14px;
+  border-radius: 999px;
+  border: 1px solid var(--border-strong);
+  background: rgba(5, 11, 14, 0.88);
+  color: var(--text);
+  font-size: 11px;
+  cursor: pointer;
+  backdrop-filter: blur(10px);
+}
+
+.jump-latest:hover {
+  border-color: var(--accent);
+  color: var(--accent-bright);
+}
+
+.panel.stage.is-chat-busy {
+  box-shadow:
+    0 0 0 1px rgba(91, 224, 218, 0.35),
+    inset 0 0 48px rgba(91, 224, 218, 0.08);
+}
+
+.panel.frames.is-images-busy {
+  box-shadow:
+    0 0 0 1px rgba(91, 224, 218, 0.4),
+    inset 0 0 40px rgba(91, 224, 218, 0.1);
+}
+
+.reel-frame-inner {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.reel-frame-inner img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.mock-pill {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 9px;
+  letter-spacing: 0.12em;
+  padding: 4px 8px;
+  border-radius: 999px;
+  border: 1px solid var(--accent);
+  color: var(--accent-bright);
+  background: var(--accent-tint);
+}
+
+.composer-input-wrap.composer-input-shake {
+  animation: studio-shake 0.45s ease-out both;
+}
+
+/* Список кадров — равные ячейки (макет v2026 изначально под hero-кадр). */
+.reel-row.reel-row-stack {
+  grid-template-columns: 1fr;
+}
+
+.reel-row.reel-row-stack .reel-frame:first-child {
+  grid-column: auto;
+  aspect-ratio: 9 / 16;
+}

@@ -44,9 +44,7 @@ export function OutputPanel() {
   async function onGenerateImages() {
     const hasPrompt =
       state.slides.length > 0
-        ? state.slides.some((s) =>
-            state.prompts.find((p) => p.slideId === s.id)?.prompt?.trim()
-          )
+        ? state.slides.some((s) => state.prompts.find((p) => p.slideId === s.id)?.prompt?.trim())
         : state.prompts.some((p) => p.prompt.trim());
     if (!hasPrompt) return;
 
@@ -106,139 +104,151 @@ export function OutputPanel() {
   const pipelineBusy = showBatchProgress || busy === "images";
 
   return (
-    <div className="flex h-full min-h-0 min-w-0 flex-col">
-      <div className="min-h-0 flex-1 space-y-4 overflow-x-hidden overflow-y-auto pr-0.5">
-        {pipelineBusy ? (
-          <div
-            role="status"
-            aria-live="polite"
-            className="flex items-center gap-2 rounded-lg border border-cyan-400/60 bg-cyan-950/55 px-3 py-2 text-[12px] font-medium leading-snug text-cyan-50 shadow-[inset_0_0_26px_rgba(6,182,212,0.22)]"
-          >
-            <span
-              className="studio-dot-soft h-2.5 w-2.5 shrink-0 rounded-full bg-cyan-300 shadow-[0_0_10px_rgba(34,211,238,0.55)]"
-              aria-hidden
-            />
-            Генерация кадров… ждите завершения полосы прогресса.
-          </div>
-        ) : null}
+    <>
+      <div className="panel-strip">
+        <div className="strip-row">
+          <span className="strip-tag">Вывод</span>
+          <span className="strip-meta">ассеты</span>
+        </div>
+        <h2 className="strip-title">
+          Экспорт <b>·</b> ZIP
+        </h2>
+        <p className="strip-sub">Сценарий, промпты, подпись, музыка и сборка архива.</p>
+      </div>
+
+      <div className="assets-body min-h-0">
         {busy === "zip" ? (
-          <div
-            role="status"
-            aria-live="polite"
-            className="flex items-center gap-2 rounded-lg border border-amber-400/55 bg-amber-950/45 px-3 py-2 text-[12px] font-medium leading-snug text-amber-50"
-          >
-            <span className="h-2.5 w-2.5 shrink-0 rounded-full bg-amber-300/90" aria-hidden />
+          <div className="busy-ribbon mb-3" role="status" aria-live="polite">
+            <span className="dot-pulse" aria-hidden />
             Сборка ZIP…
           </div>
         ) : null}
 
-        <div>
-          <div className="text-sm font-medium text-muted">Вывод</div>
-          <div className="text-xl font-semibold tracking-tight">Ассеты</div>
-          <p className="mt-1 text-xs text-muted">
-            Сценарий, промпты, подпись и музыка. Превью кадров — в узкой колонке у чата; здесь кнопка генерации и
-            ZIP.
-          </p>
-        </div>
-
         {state.slides.length > 0 ? (
-          <div className="rounded-xl border border-border bg-black/20 p-3">
-            <button
-            type="button"
-            onClick={() => setScenarioOpen((o) => !o)}
-            className="flex w-full items-center justify-between text-left text-xs font-medium text-muted"
-          >
-            Сценарий (preview)
-            <span className="text-[10px]">{scenarioOpen ? "−" : "+"}</span>
-            </button>
-          {scenarioOpen ? (
-            <div className="mt-2 space-y-3 text-sm">
-              {state.slides.map((s, i) => (
-                <div key={s.id} className="rounded-lg border border-border/60 bg-black/20 p-2">
-                  <div className="text-[11px] font-semibold text-muted">
-                    {String(i + 1).padStart(2, "0")}. {s.title}
-                  </div>
-                  <div className="mt-1 whitespace-pre-wrap text-xs leading-relaxed">{s.text}</div>
-                </div>
-              ))}
-              {state.approved ? (
-                <div className="text-[11px] font-medium text-accent">Сценарий отмечен как утверждённый.</div>
-              ) : null}
+          <div className="asset-block">
+            <div className="asset-head">
+              <div className="asset-h">
+                Сценарий <b>preview</b>
+              </div>
+              <button
+                type="button"
+                className="asset-badge"
+                onClick={() => setScenarioOpen((o) => !o)}
+              >
+                {scenarioOpen ? "свернуть" : "развернуть"}
+              </button>
             </div>
-          ) : null}
+            <p className="asset-desc">Структура слайдов из диалога.</p>
+            {scenarioOpen ? (
+              <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                {state.slides.map((s, i) => (
+                  <div
+                    key={s.id}
+                    style={{
+                      borderRadius: "var(--r-sm)",
+                      border: "1px solid var(--border-subtle)",
+                      padding: 10,
+                      background: "rgba(8,16,20,0.45)"
+                    }}
+                  >
+                    <div style={{ fontSize: 11, fontWeight: 600, color: "var(--text-dim)" }}>
+                      {String(i + 1).padStart(2, "0")}. {s.title}
+                    </div>
+                    <div style={{ marginTop: 6, fontSize: 12, lineHeight: 1.55, whiteSpace: "pre-wrap" }}>
+                      {s.text}
+                    </div>
+                  </div>
+                ))}
+                {state.approved ? (
+                  <div style={{ fontSize: 11, fontWeight: 500, color: "var(--ok)" }}>Сценарий утверждён.</div>
+                ) : null}
+              </div>
+            ) : null}
           </div>
         ) : null}
 
-      <div
-        className={[
-          "rounded-xl border border-border bg-black/20 p-3",
-          promptsShake ? "studio-shake border-red-400/35" : ""
-        ].join(" ")}
-      >
-        <div className="text-xs font-medium text-muted">Промпты по кадрам</div>
-        <p className="mt-1 text-[11px] leading-snug text-muted">
-          Одна строка — один кадр (порядок как у слайдов 1→N). То же попадает в «Generate images». Если правишь
-          промпт в карточке кадра ниже — кликни мимо поля (blur), чтобы сохранить в состояние.
-        </p>
-        <textarea
-          value={promptLinesText}
-          onChange={(e) => applyPromptTextarea(e.target.value)}
-          placeholder={
-            state.slides.length
-              ? "Промпты по строкам — совпадают со слайдами слева направо."
-              : "Сначала появятся слайды в диалоге, или введи промпты построчно."
-          }
-          rows={10}
-          className="mt-2 w-full resize-y rounded-xl border border-border bg-black/30 px-3 py-2 font-mono text-xs outline-none focus:ring-2 focus:ring-accent/30"
-        />
-        <button
-          type="button"
-          onClick={() => void onGenerateImages()}
-          disabled={!!busy || !canGenerateImages}
-          className="studio-btn-primary mt-2 w-full rounded-xl border border-border bg-black/20 px-3 py-2 text-sm text-text hover:bg-black/30 disabled:opacity-50"
-        >
-          {busy === "images" ? (
-            <span className="studio-pulse-slow">Генерация…</span>
-          ) : (
-            "Generate images"
-          )}
-        </button>
-        {showBatchProgress ? (
-          <ImageGenerationProgress images={state.images} />
-        ) : null}
-        {genError ? (
-          <p className="mt-2 text-[11px] leading-snug text-red-300/95">{genError}</p>
-        ) : null}
-        {!canGenerateImages ? (
-          <p className="mt-1 text-[11px] text-muted">
-            Кнопка активна, когда есть хотя бы один непустой промпт в блоке выше (или из диалога в state).
+        <div className={["asset-block", promptsShake ? "studio-shake" : ""].filter(Boolean).join(" ")}>
+          <div className="asset-head">
+            <div className="asset-h">
+              Промпты <b>по кадрам</b>
+            </div>
+            <span className="asset-badge">lines</span>
+          </div>
+          <p className="asset-desc">
+            Одна строка — один кадр. Совпадает с Generate images. Blur поля промпта в карточке кадра сохраняет
+            state.
           </p>
-        ) : state.slides.length > 0 && !allSlidesHavePrompts ? (
-          <p className="mt-1 text-[11px] text-amber-200/90">
-            Для всех {state.slides.length} слайдов должна быть строка промпта; иначе часть кадров выдаст ошибку.
-            Допиши пустые строки или попроси полный список промптов в диалоге.
-          </p>
-        ) : null}
-      </div>
+          <textarea
+            className="textarea"
+            value={promptLinesText}
+            onChange={(e) => applyPromptTextarea(e.target.value)}
+            placeholder={
+              state.slides.length
+                ? "Промпты по строкам — как слайды слева направо."
+                : "Сначала слайды из диалога, или введи строки вручную."
+            }
+            rows={10}
+          />
+          <button
+            type="button"
+            className="gen-btn"
+            onClick={() => void onGenerateImages()}
+            disabled={!!busy || !canGenerateImages}
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+              <path d="M12 3v10M8 7l4-4 4 4M5 21h14" />
+            </svg>
+            {busy === "images" ? <span className="studio-pulse-slow">Генерация…</span> : "Generate images"}
+          </button>
+          {pipelineBusy && busy === "images" ? (
+            <p style={{ marginTop: 10, fontSize: 11, color: "var(--text-muted)" }}>
+              Полоса прогресса по кадрам — ниже.
+            </p>
+          ) : null}
+          {showBatchProgress ? <ImageGenerationProgress images={state.images} /> : null}
+          {genError ? (
+            <p style={{ marginTop: 10, fontSize: 11, color: "#fca5a5" }}>{genError}</p>
+          ) : null}
+          {!canGenerateImages ? (
+            <p style={{ marginTop: 8, fontSize: 11, color: "var(--text-muted)" }}>
+              Нужен хотя бы один непустой промпт.
+            </p>
+          ) : state.slides.length > 0 && !allSlidesHavePrompts ? (
+            <p style={{ marginTop: 8, fontSize: 11, color: "var(--warn)" }}>
+              Для всех {state.slides.length} слайдов нужна строка промпта.
+            </p>
+          ) : null}
+        </div>
 
-      <div className="rounded-xl border border-border bg-black/20 p-3">
-        <div className="text-xs font-medium text-muted">Caption</div>
-        <textarea
-          value={state.caption}
-          onChange={(e) => dispatch({ type: "set", patch: { caption: e.target.value } })}
-          placeholder="Подпись из диалога или правка здесь…"
-          rows={4}
-          className="mt-2 w-full resize-y rounded-xl border border-border bg-black/30 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-accent/30"
-        />
-      </div>
+        <div className="asset-block">
+          <div className="asset-head">
+            <div className="asset-h">
+              Caption <b>пост</b>
+            </div>
+            <span className="asset-badge">text</span>
+          </div>
+          <p className="asset-desc">Подпись из диалога или правка здесь.</p>
+          <textarea
+            className="textarea"
+            value={state.caption}
+            onChange={(e) => dispatch({ type: "set", patch: { caption: e.target.value } })}
+            placeholder="Подпись…"
+            rows={4}
+          />
+        </div>
 
-      <div className="rounded-xl border border-border bg-black/20 p-3">
-        <div className="text-xs font-medium text-muted">Музыка</div>
-        <p className="mt-1 text-[11px] text-muted">Поисковые запросы и направления (без стриминга).</p>
-        <div className="mt-2 space-y-2">
-          <div>
-            <div className="text-[10px] font-medium uppercase text-muted">Поиск</div>
+        <div className="asset-block">
+          <div className="asset-head">
+            <div className="asset-h">
+              Музыка <b>meta</b>
+            </div>
+            <span className="asset-badge">library</span>
+          </div>
+          <p className="asset-desc">Поисковые запросы и направления (без стриминга).</p>
+          <div className="field">
+            <span className="label mono">Поиск</span>
             <textarea
+              className="textarea"
               value={state.music.queries.join("\n")}
               onChange={(e) =>
                 dispatch({
@@ -251,14 +261,14 @@ export function OutputPanel() {
                   }
                 })
               }
-              placeholder="Одна строка — один запрос к библиотеке"
+              placeholder="Одна строка — один запрос"
               rows={3}
-              className="mt-1 w-full resize-y rounded-xl border border-border bg-black/30 px-3 py-2 text-xs outline-none focus:ring-2 focus:ring-accent/30"
             />
           </div>
-          <div>
-            <div className="text-[10px] font-medium uppercase text-muted">Направления</div>
+          <div className="field">
+            <span className="label mono">Направления</span>
             <textarea
+              className="textarea"
               value={state.music.recommendations.join("\n")}
               onChange={(e) =>
                 dispatch({
@@ -272,12 +282,12 @@ export function OutputPanel() {
                 })
               }
               rows={3}
-              className="mt-1 w-full resize-y rounded-xl border border-border bg-black/30 px-3 py-2 text-xs outline-none focus:ring-2 focus:ring-accent/30"
             />
           </div>
-          <div>
-            <div className="text-[10px] font-medium uppercase text-muted">Избегать</div>
+          <div className="field">
+            <span className="label mono">Избегать</span>
             <textarea
+              className="textarea"
               value={state.music.avoid.join("\n")}
               onChange={(e) =>
                 dispatch({
@@ -291,23 +301,29 @@ export function OutputPanel() {
                 })
               }
               rows={2}
-              className="mt-1 w-full resize-y rounded-xl border border-border bg-black/30 px-3 py-2 text-xs outline-none focus:ring-2 focus:ring-accent/30"
             />
           </div>
         </div>
-      </div>
-      </div>
 
-      <div className="shrink-0 border-t border-border bg-panel pt-3">
-        <button
-          type="button"
-          onClick={() => void onDownload()}
-          disabled={!!busy || !hasSomethingToExport}
-          className="studio-btn-primary w-full rounded-xl border border-accent/30 bg-accent/10 px-3 py-2 text-sm text-text hover:bg-accent/15 disabled:opacity-50"
-        >
-          {busy === "zip" ? "Архив…" : "Download ZIP"}
-        </button>
+        <div className="export-dock">
+          <div className="export-dock-title">Финальный пакет</div>
+          <div className="export-list">
+            В архив попадут: <span>сценарий</span>, <span>промпты</span>, <span>кадры</span>,{" "}
+            <span>caption</span> и <span>музыка</span> (если заполнены).
+          </div>
+          <button
+            type="button"
+            className="download-btn"
+            onClick={() => void onDownload()}
+            disabled={!!busy || !hasSomethingToExport}
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M12 3v12M8 11l4 4 4-4M5 21h14" />
+            </svg>
+            {busy === "zip" ? "Сборка…" : "Download ZIP"}
+          </button>
+        </div>
       </div>
-    </div>
+    </>
   );
 }
