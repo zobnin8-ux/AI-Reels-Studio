@@ -17,53 +17,101 @@ function textHasCyrillic(s: string) {
   return /[\u0400-\u04FF]/.test(s);
 }
 
-function typographyForStyle(style: StudioState["visualStyle"]) {
-  switch (style) {
-    case "tech":
-      return "Typography: Inter/SF Pro/Helvetica Neue, semi-bold headings, tight tracking, clean grid, generous margins.";
-    case "editorial":
-      return "Typography: Modern editorial — Inter or Helvetica for body + optional restrained serif for 1-2 words max; high contrast, clean margins.";
-    case "darkBrutal":
-      return "Typography: Condensed bold sans (Inter Tight/Helvetica Condensed feel), big sizes, brutal contrast, minimal words.";
-    case "lightMinimal":
-      return "Typography: Minimal sans (Inter/SF Pro), light/regular weights, lots of whitespace, subtle hierarchy.";
-    case "brightPositive":
-      return "Typography: Bright, high-legibility sans (Inter/SF Pro). Bold headings, clear hierarchy, generous spacing. Use high-contrast text blocks or translucent pills; avoid tiny fonts.";
-    case "portraLifestyle":
-      return "Typography: Neutral modern sans (Inter/SF Pro), soft hierarchy, avoid heavy decorative fonts.";
-  }
-}
-
 function enrichPromptForGeneration(state: StudioState, slideText: string, basePrompt: string) {
   const cleaned = sanitizePromptText(basePrompt);
   const needsText = state.outputMode === "textInImages" || state.outputMode === "both";
-  const lines: string[] = [];
-  lines.push(cleaned);
-  lines.push(`Visual style preset: ${state.visualStyle}. Mood: ${state.mood}.`);
+
+  function styleBlock(style: StudioState["visualStyle"]) {
+    switch (style) {
+      case "darkBrutal":
+        return `Dark brutalist Instagram visual. Black or near-black background, aggressive contrast, minimal elements, bold dominant layout.`;
+
+      case "tech":
+        return `Futuristic tech aesthetic. Clean grid, precise alignment, subtle glow accents, sharp details.`;
+
+      case "editorial":
+        return `High-end editorial design. Minimal layout, strong typography, lots of whitespace, premium feel.`;
+
+      case "lightMinimal":
+        return `Ultra minimal light composition. Soft tones, lots of air, clean hierarchy.`;
+
+      case "brightPositive":
+        return `Bright, energetic, positive visual. Clean layout, vibrant accents, high readability.`;
+
+      default:
+        return `Clean modern Instagram visual. Balanced composition, minimal noise.`;
+    }
+  }
+
+  let textBlock = "No text on image.";
+
   if (needsText) {
-    const onImage = slideText
+    const lines = slideText
       .split("\n")
       .map((l) => l.trim())
       .filter(Boolean)
-      .slice(0, 6)
-      .join(" / ");
-    const cyrillic = textHasCyrillic(onImage) || textHasCyrillic(cleaned);
-    lines.push("On-image text required. Make the text fully readable, not warped, not tiny.");
-    lines.push(typographyForStyle(state.visualStyle));
-    lines.push(`On-image text (exact): ${onImage}`);
+      .slice(0, 5);
+
+    const joined = lines.join(" / ");
+    const cyrillic = textHasCyrillic(joined) || textHasCyrillic(cleaned);
+
+    textBlock = `
+On-image text (exact):
+"${joined}"
+
+Rules:
+- MUST be perfectly readable
+- Large bold font
+- No distortion or perspective warp
+- No overlapping with background elements
+`;
+
     if (cyrillic) {
-      lines.push(
-        "CRITICAL — Russian Cyrillic on-image text: render using proper Cyrillic Unicode letters (Russian alphabet), not Latin lookalikes or gibberish. " +
-          "Use a clean sans-serif that supports Cyrillic (e.g. Inter, Manrope, PT Sans, Montserrat feel). " +
-          "Large font size, high contrast, straight baseline, no mirrored or melted glyphs. " +
-          "Do not transliterate Russian to Latin unless the exact line above is Latin."
-      );
+      textBlock += `
+CRITICAL:
+Use correct Russian Cyrillic letters only.
+No Latin substitutions.
+Use clean sans-serif (Inter / Manrope style).
+`;
     }
-    lines.push("Place text within safe margins; no logos; no watermarks.");
-  } else {
-    lines.push("No text overlay on image (unless user explicitly asks).");
   }
-  return lines.filter(Boolean).join("\n");
+
+  const finalPrompt = `
+${cleaned}
+
+Scene:
+Instagram Reel slide, vertical 9:16.
+
+Style:
+${styleBlock(state.visualStyle)}
+
+Composition:
+Clear visual hierarchy.
+Centered or strong dominant layout.
+Safe margins.
+No clutter.
+
+Lighting:
+High contrast, sharp, cinematic.
+
+Typography:
+Large bold sans-serif.
+High readability.
+Clean baseline.
+
+${textBlock}
+
+Constraints:
+No logos.
+No watermarks.
+No artifacts.
+No broken faces or hands.
+Clean professional layout.
+`;
+
+  return finalPrompt
+    .replace(/\n\s*\n/g, "\n\n")
+    .trim();
 }
 
 function sanitizePromptText(raw: string): string {
@@ -289,8 +337,8 @@ export async function generateImagesFromState(
   const promptJobs: { idx: number; row: SlidePrompt; prompt: string; id: string }[] = [];
   for (let i = 0; i < state.prompts.length; i++) {
     const row = state.prompts[i]!;
-    const prompt = row.prompt.trim();
-    if (!prompt) continue;
+    if (!row.prompt.trim()) continue;
+    const prompt = enrichPromptForGeneration(state, row.prompt, row.prompt);
     promptJobs.push({ idx: i, row, prompt, id: `img_${i}` });
   }
 
