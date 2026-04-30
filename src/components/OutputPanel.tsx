@@ -1,8 +1,7 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useMemo, useState } from "react";
 import { useStudio } from "@/lib/studio-store";
-import { ImageSlideCard } from "@/components/ImageSlideCard";
 import { downloadZip, generateImagesFromState } from "@/lib/actions";
 import type { SlidePrompt } from "@/lib/state";
 
@@ -10,12 +9,6 @@ export function OutputPanel() {
   const { state, dispatch } = useStudio();
   const [busy, setBusy] = useState<null | string>(null);
   const [scenarioOpen, setScenarioOpen] = useState(true);
-  const seenImageIdsRef = useRef<Set<string>>(new Set());
-
-  useEffect(() => {
-    const set = seenImageIdsRef.current;
-    state.images.forEach((img) => set.add(img.id));
-  }, [state.images]);
 
   const promptLinesText = useMemo(() => {
     if (state.slides.length === 0) {
@@ -97,7 +90,8 @@ export function OutputPanel() {
           <div className="text-sm font-medium text-muted">Вывод</div>
           <div className="text-xl font-semibold tracking-tight">Ассеты</div>
           <p className="mt-1 text-xs text-muted">
-            Здесь — сценарий, промпты, подпись и музыка после запросов в диалоге. Картинки — только кнопкой ниже.
+            Сценарий, промпты, подпись и музыка. Превью кадров — в узкой колонке у чата; здесь кнопка генерации и
+            ZIP.
           </p>
         </div>
 
@@ -164,28 +158,6 @@ export function OutputPanel() {
             Допиши пустые строки или попроси полный список промптов в диалоге.
           </p>
         ) : null}
-      </div>
-
-      <div className="min-h-0 min-w-0 space-y-3">
-        <div className="text-xs font-medium text-muted">Изображения</div>
-        <div className="max-h-[min(52vh,560px)] overflow-y-auto pr-1">
-          {state.images.length === 0 ? (
-            <div className="rounded-xl border border-dashed border-border bg-black/10 p-4 text-center text-xs text-muted">
-              После промптов нажми «Generate images». Перегенерация — у каждого кадра.
-            </div>
-          ) : (
-            <div className="space-y-3">
-              {state.images.map((img, idx) => (
-                <div
-                  key={img.id}
-                  className={!seenImageIdsRef.current.has(img.id) ? "studio-enter" : ""}
-                >
-                  <ImageSlideCard index={idx} image={img} />
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
       </div>
 
       <div className="rounded-xl border border-border bg-black/20 p-3">
