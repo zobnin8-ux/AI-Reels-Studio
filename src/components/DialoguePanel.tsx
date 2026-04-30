@@ -7,6 +7,13 @@ import { canRunImageGeneration, userWantsImageGeneration } from "@/lib/auto-imag
 import type { ChatMessage, StudioState } from "@/lib/state";
 import { mergePromptForSlide } from "@/lib/prompt-sync";
 import {
+  extractMusicFromReply,
+  isMusicBlockEmpty,
+  looksLikeMusicReply,
+  wantsMusicKeyword,
+  wantsMusicRefinement
+} from "@/lib/music-reply-sync";
+import {
   extractSlideIndexFromAssistantReply,
   extractSlideIndexFromUserMessage,
   normalizeImagePromptFromReply,
@@ -45,10 +52,6 @@ function wantsCaption(text: string): boolean {
   return /\b(caption|капшн|подпись)\b/i.test(text);
 }
 
-function wantsMusic(text: string): boolean {
-  return /\b(музык|music|трек|саунд|sound)\b/i.test(text);
-}
-
 function extractCaptionFromReply(reply: string): string {
   const json = tryExtractJson(reply);
   const c = json?.caption;
@@ -56,36 +59,6 @@ function extractCaptionFromReply(reply: string): string {
   const m = reply.match(/(?:caption|подпись)\s*[:\-]\s*([\s\S]*)/i);
   if (m?.[1]) return cleanTextValue(m[1]);
   return cleanTextValue(reply);
-}
-
-function extractMusicFromReply(reply: string): StudioState["music"] {
-  const json = tryExtractJson(reply);
-  const fallback = { queries: [] as string[], recommendations: [] as string[], avoid: [] as string[] };
-  const maybe = json?.music as
-    | { queries?: unknown; recommendations?: unknown; avoid?: unknown }
-    | undefined;
-  if (maybe) {
-    return {
-      queries: Array.isArray(maybe.queries)
-        ? maybe.queries.map((x) => cleanTextValue(String(x))).filter(Boolean)
-        : [],
-      recommendations: Array.isArray(maybe.recommendations)
-        ? maybe.recommendations.map((x) => cleanTextValue(String(x))).filter(Boolean)
-        : [],
-      avoid: Array.isArray(maybe.avoid) ? maybe.avoid.map((x) => cleanTextValue(String(x))).filter(Boolean) : []
-    };
-  }
-
-  const lines = reply
-    .split("\n")
-    .map((l) => l.trim())
-    .filter(Boolean);
-  for (const line of lines) {
-    if (/^(query|поиск)\s*[:\-]/i.test(line)) fallback.queries.push(cleanTextValue(line.replace(/^(query|поиск)\s*[:\-]/i, "")));
-    else if (/^(rec|recommend|направл)/i.test(line)) fallback.recommendations.push(cleanTextValue(line.replace(/^(rec|recommend|направл\w*)\s*[:\-]/i, "")));
-    else if (/^(avoid|избег)/i.test(line)) fallback.avoid.push(cleanTextValue(line.replace(/^(avoid|избег\w*)\s*[:\-]/i, "")));
-  }
-  return fallback;
 }
 
 const SHORTCUTS: { label: string; message: string }[] = [
@@ -173,9 +146,11 @@ export function DialoguePanel() {
         const c = extractCaptionFromReply(reply);
         if (c) patch.caption = c;
       }
-      if (!patch.music && wantsMusic(text)) {
+      const musicIntent =
+        wantsMusicKeyword(text) || wantsMusicRefinement(text) || looksLikeMusicReply(reply);
+      if (musicIntent && isMusicBlockEmpty(patch.music)) {
         const m = extractMusicFromReply(reply);
-        if (m.queries.length || m.recommendations.length || m.avoid.length) patch.music = m;
+        if (!isMusicBlockEmpty(m)) patch.music = m;
       }
 
       const merged: StudioState = {
