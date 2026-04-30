@@ -2,6 +2,7 @@
 
 import type { ChatMessage, GeneratedImage, StudioState } from "@/lib/state";
 import type { StatePatch } from "@/lib/chat-response";
+import { formatTypographyNotesForZip } from "@/lib/typography-export";
 
 function uid(prefix: string) {
   return `${prefix}_${Math.random().toString(16).slice(2)}_${Date.now().toString(16)}`;
@@ -355,6 +356,8 @@ export async function downloadZip(state: StudioState) {
 
   const musicNotes = formatMusicNotesForZip(state.music);
   zip.file("music_notes.txt", musicNotes);
+
+  zip.file("fonts_recommendations.txt", formatTypographyNotesForZip(state));
 
   const imagesFolder = zip.folder("images");
   if (imagesFolder) {

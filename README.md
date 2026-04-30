@@ -62,6 +62,8 @@ Uncomment and set variables in `.env.local`; lines starting with `#` are ignored
 - `scenario.txt` — slide titles and bodies  
 - `prompts.txt` — one block per slide  
 - `caption.txt`  
+- `music_notes.txt` — queries / recommendations / avoid  
+- `fonts_recommendations.txt` — типографика под Canva по селекторам (в UI не показывается)  
 - `images/01.png`, … — generated frames  
 
 ## Project structure (main files)
@@ -73,6 +75,7 @@ Uncomment and set variables in `.env.local`; lines starting with `#` are ignored
 | `src/lib/dialogue-context.ts` | Full system prompt + selector injection + JSON contract |
 | `src/lib/chat-response.ts` | Zod schemas for API JSON |
 | `src/lib/actions.ts` | `sendDialogueTurn`, `mergeStatePatch`, `generateImagesFromState`, `downloadZip` |
+| `src/lib/typography-export.ts` | Текст `fonts_recommendations.txt` для ZIP |
 | `src/app/api/chat/route.ts` | Chat proxy + mock mode |
 | `src/app/api/image/route.ts` | Image generation |
 | `src/components/ControlPanel.tsx` | Selectors |
