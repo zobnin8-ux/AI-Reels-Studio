@@ -65,6 +65,7 @@ Uncomment and set variables in `.env.local`; lines starting with `#` are ignored
 - `music_notes.txt` — queries / recommendations / avoid  
 - `fonts_recommendations.txt` — типографика под Canva по селекторам (в UI не показывается)  
 - `images/01.png`, … — generated frames  
+- Имя скачиваемого `.zip`: **тема** (поле Topic) + `_reels` или `_post` по формату. Если тема пуста — `export_reels.zip` / `export_post.zip`.  
 
 ## Project structure (main files)
 

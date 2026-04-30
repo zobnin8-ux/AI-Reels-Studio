@@ -335,6 +335,21 @@ function formatMusicNotesForZip(music: StudioState["music"]): string {
   return blocks.join("\n");
 }
 
+/** Имя архива: тема из левой панели + _reels | _post (безопасные символы для файловой системы). */
+function buildZipDownloadFileName(state: StudioState): string {
+  const kind = state.contentType === "reels" ? "reels" : "post";
+  let base = (state.topic ?? "").trim();
+  if (!base) base = "export";
+  base = base
+    .replace(/[\\/:*?"<>|]/g, "")
+    .replace(/\s+/g, "_")
+    .replace(/_+/g, "_")
+    .replace(/^_|_$/g, "");
+  if (!base) base = "export";
+  if (base.length > 90) base = base.slice(0, 90);
+  return `${base}_${kind}.zip`;
+}
+
 export async function downloadZip(state: StudioState) {
   const { default: JSZip } = await import("jszip");
   const zip = new JSZip();
@@ -374,7 +389,7 @@ export async function downloadZip(state: StudioState) {
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
-  a.download = "ai-reels-studio-export.zip";
+  a.download = buildZipDownloadFileName(state);
   document.body.appendChild(a);
   a.click();
   a.remove();
