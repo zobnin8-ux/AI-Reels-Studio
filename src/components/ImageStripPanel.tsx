@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { ImageGenerationProgress } from "@/components/ImageGenerationProgress";
 import { useStudio } from "@/lib/studio-store";
 import { ImageSlideCard } from "@/components/ImageSlideCard";
 
@@ -15,9 +14,6 @@ export function ImageStripPanel() {
   const { state } = useStudio();
   const seenImageIdsRef = useRef<Set<string>>(new Set());
   const [lightbox, setLightbox] = useState<LightboxState | null>(null);
-
-  const showBatchProgress =
-    state.images.length > 0 && state.images.some((x) => x.status === "waiting" || x.status === "generating");
 
   useEffect(() => {
     const set = seenImageIdsRef.current;
@@ -39,13 +35,9 @@ export function ImageStripPanel() {
         <div className="shrink-0">
           <div className="text-[11px] font-medium uppercase tracking-wide text-muted">Кадры</div>
           <p className="mt-0.5 text-[10px] leading-snug text-muted">
-            Генерация здесь; промпты и подпись — в колонке справа. Кадр — нажми для полного размера.
+            Превью кадров здесь; полоса прогресса — в колонке «Вывод» под «Generate images». Кадр — нажми для
+            полного размера.
           </p>
-          {showBatchProgress ? (
-            <div className="mt-2">
-              <ImageGenerationProgress images={state.images} />
-            </div>
-          ) : null}
         </div>
 
         <div className="mt-3 min-h-0 flex-1 overflow-y-auto overflow-x-hidden pr-0.5">
