@@ -126,7 +126,7 @@ export function ImageSlideCard({
           ) : (
             <div className="flex h-full flex-col items-center justify-center gap-1 px-2 text-center text-[11px] text-muted">
               {status === "generating" ? (
-                <span className="studio-pulse font-medium text-accent">Генерация…</span>
+                <span className="studio-pulse-slow font-medium text-accent/95">Генерация…</span>
               ) : status === "waiting" ? (
                 <span>В очереди</span>
               ) : (

@@ -70,6 +70,25 @@ body {
   animation: studio-soft-pulse 900ms ease-in-out infinite;
 }
 
+/** Пульс надписи в 2 раза медленнее, чем `.studio-pulse` (900ms → 1800ms). */
+.studio-pulse-slow {
+  animation: studio-soft-pulse 1800ms ease-in-out infinite;
+}
+
+/* Медленный мягкий пульс для точек-индикаторов (вместо частого animate-pulse) */
+@keyframes studio-dot-soft {
+  0%,
+  100% {
+    opacity: 0.5;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+.studio-dot-soft {
+  animation: studio-dot-soft 6.4s ease-in-out infinite;
+}
+
 /* ---- Stage 3: focus, glow, lamp pulse, error shake ---- */
 :focus-visible {
   outline: none;
@@ -85,40 +104,45 @@ input:focus-visible,
     0 0 22px rgba(139, 92, 246, 0.2);
 }
 
+/* Только inset — внешний box-shadow обрезается у родителей с overflow:hidden */
 @keyframes studio-lamp-chat {
   0%,
   100% {
+    border-color: rgba(167, 139, 250, 0.55);
     box-shadow:
-      inset 0 0 0 1px rgba(139, 92, 246, 0.22),
-      0 0 14px rgba(139, 92, 246, 0.06);
+      inset 0 0 0 2px rgba(139, 92, 246, 0.35),
+      inset 0 0 42px rgba(139, 92, 246, 0.14);
   }
   50% {
+    border-color: rgba(216, 180, 254, 0.9);
     box-shadow:
-      inset 0 0 0 1px rgba(139, 92, 246, 0.42),
-      0 0 26px rgba(139, 92, 246, 0.12);
+      inset 0 0 0 2px rgba(167, 139, 250, 0.65),
+      inset 0 0 56px rgba(139, 92, 246, 0.26);
   }
 }
 
 @keyframes studio-lamp-images {
   0%,
   100% {
+    border-color: rgba(34, 211, 238, 0.45);
     box-shadow:
-      inset 0 0 0 1px rgba(110, 231, 255, 0.2),
-      0 0 14px rgba(110, 231, 255, 0.06);
+      inset 0 0 0 2px rgba(34, 211, 238, 0.28),
+      inset 0 0 40px rgba(6, 182, 212, 0.12);
   }
   50% {
+    border-color: rgba(103, 232, 249, 0.85);
     box-shadow:
-      inset 0 0 0 1px rgba(110, 231, 255, 0.38),
-      0 0 24px rgba(110, 231, 255, 0.11);
+      inset 0 0 0 2px rgba(34, 211, 238, 0.55),
+      inset 0 0 52px rgba(6, 182, 212, 0.22);
   }
 }
 
 .studio-panel-chat-active {
-  animation: studio-lamp-chat 1.85s ease-in-out infinite;
+  animation: studio-lamp-chat 1.6s ease-in-out infinite;
 }
 
 .studio-panel-images-active {
-  animation: studio-lamp-images 1.85s ease-in-out infinite;
+  animation: studio-lamp-images 1.6s ease-in-out infinite;
 }
 
 @keyframes studio-shake {
@@ -202,13 +226,24 @@ input:focus-visible,
 
 @media (prefers-reduced-motion: reduce) {
   .studio-enter,
-  .studio-pulse {
+  .studio-pulse,
+  .studio-pulse-slow,
+  .studio-dot-soft {
     animation: none !important;
   }
-  .studio-panel-chat-active,
+  .studio-panel-chat-active {
+    animation: none !important;
+    border-color: rgba(167, 139, 250, 0.55) !important;
+    box-shadow:
+      inset 0 0 0 2px rgba(139, 92, 246, 0.45),
+      inset 0 0 36px rgba(139, 92, 246, 0.16) !important;
+  }
   .studio-panel-images-active {
     animation: none !important;
-    box-shadow: inset 0 0 0 1px rgba(139, 92, 246, 0.25);
+    border-color: rgba(34, 211, 238, 0.55) !important;
+    box-shadow:
+      inset 0 0 0 2px rgba(34, 211, 238, 0.35),
+      inset 0 0 36px rgba(6, 182, 212, 0.14) !important;
   }
   .studio-shake {
     animation: none !important;

@@ -128,7 +128,8 @@ RULES:
   - Text must be legible: high contrast, minimal words per line, avoid tiny captions.
   - If slide text or on-image copy is in Russian (Cyrillic): keep authentic Cyrillic in slide bodies and in image prompts — do NOT Latinize/transliterate Russian unless the user asks. Image generators struggle with text; spell short on-image phrases clearly and repeat the exact Cyrillic phrase in the prompt when needed.
 - When user asks for per-slide image prompts: fill "prompts" aligned with current slides (slideId must match slide id).
-- Caption / music: fill statePatch when user asks; caption must not blindly repeat slide body text.
+- Caption: fill statePatch.caption when the user asks for a caption / подпись.
+- Music: put statePatch.music ONLY when the user explicitly asks for music / soundtrack / треки / подбор музыки. Never fill "music" from scenario slides, numbered slide titles, or creative script content. If the user did not ask for music this turn, omit "music" entirely from statePatch.
 - If nothing structural changes, omit statePatch or use {}.
 - When the user asks for image prompts for any slide, you MUST also put the full "prompts" array in statePatch (one entry per slide, slideId must match), not only text in "reply" — the right panel reads state, not the chat text.
 - When the user asks to improve/refine/rewrite a slide image prompt ("улучши промпт", "перепиши промпт для кадра N"), you MUST update statePatch.prompts for that slideId with the new prompt text.

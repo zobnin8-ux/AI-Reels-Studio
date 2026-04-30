@@ -103,9 +103,35 @@ export function OutputPanel() {
       ? state.slides.some((s) => state.prompts.find((p) => p.slideId === s.id)?.prompt?.trim())
       : state.prompts.some((p) => p.prompt.trim());
 
+  const pipelineBusy = showBatchProgress || busy === "images";
+
   return (
     <div className="flex h-full min-h-0 min-w-0 flex-col">
       <div className="min-h-0 flex-1 space-y-4 overflow-x-hidden overflow-y-auto pr-0.5">
+        {pipelineBusy ? (
+          <div
+            role="status"
+            aria-live="polite"
+            className="flex items-center gap-2 rounded-lg border border-cyan-400/60 bg-cyan-950/55 px-3 py-2 text-[12px] font-medium leading-snug text-cyan-50 shadow-[inset_0_0_26px_rgba(6,182,212,0.22)]"
+          >
+            <span
+              className="studio-dot-soft h-2.5 w-2.5 shrink-0 rounded-full bg-cyan-300 shadow-[0_0_10px_rgba(34,211,238,0.55)]"
+              aria-hidden
+            />
+            Генерация кадров… ждите завершения полосы прогресса.
+          </div>
+        ) : null}
+        {busy === "zip" ? (
+          <div
+            role="status"
+            aria-live="polite"
+            className="flex items-center gap-2 rounded-lg border border-amber-400/55 bg-amber-950/45 px-3 py-2 text-[12px] font-medium leading-snug text-amber-50"
+          >
+            <span className="h-2.5 w-2.5 shrink-0 rounded-full bg-amber-300/90" aria-hidden />
+            Сборка ZIP…
+          </div>
+        ) : null}
+
         <div>
           <div className="text-sm font-medium text-muted">Вывод</div>
           <div className="text-xl font-semibold tracking-tight">Ассеты</div>
@@ -171,7 +197,11 @@ export function OutputPanel() {
           disabled={!!busy || !canGenerateImages}
           className="studio-btn-primary mt-2 w-full rounded-xl border border-border bg-black/20 px-3 py-2 text-sm text-text hover:bg-black/30 disabled:opacity-50"
         >
-          {busy === "images" ? "Генерация…" : "Generate images"}
+          {busy === "images" ? (
+            <span className="studio-pulse-slow">Генерация…</span>
+          ) : (
+            "Generate images"
+          )}
         </button>
         {showBatchProgress ? (
           <ImageGenerationProgress images={state.images} />

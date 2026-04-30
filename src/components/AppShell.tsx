@@ -22,8 +22,8 @@ function AppGrid() {
 
       <section
         className={[
-          "min-h-0 min-w-0 bg-panel2 p-4",
-          chatBusy ? "studio-panel-chat-active rounded-xl" : ""
+          "relative min-h-0 min-w-0 rounded-xl border-2 border-solid bg-panel2 p-4",
+          chatBusy ? "studio-panel-chat-active border-violet-400/70" : "border-transparent"
         ].join(" ")}
       >
         <PanelErrorBoundary label="Диалог">
@@ -32,7 +32,10 @@ function AppGrid() {
       </section>
 
       <div
-        className={imagePipelineBusy ? "min-h-0 min-w-0 studio-panel-images-active rounded-xl" : "min-h-0 min-w-0"}
+        className={[
+          "relative min-h-0 min-w-0 rounded-xl border-2 border-solid",
+          imagePipelineBusy ? "studio-panel-images-active border-cyan-400/65" : "border-transparent"
+        ].join(" ")}
       >
         <PanelErrorBoundary label="Кадры">
           <ImageStripPanel />
@@ -41,8 +44,10 @@ function AppGrid() {
 
       <aside
         className={[
-          "min-h-0 min-w-0 border-l border-border bg-panel p-4",
-          imagePipelineBusy ? "studio-panel-images-active rounded-xl" : ""
+          "relative min-h-0 min-w-0 rounded-xl bg-panel p-4",
+          imagePipelineBusy
+            ? "border-2 border-solid studio-panel-images-active border-cyan-400/65"
+            : "border-l border-border"
         ].join(" ")}
       >
         <PanelErrorBoundary label="Вывод">

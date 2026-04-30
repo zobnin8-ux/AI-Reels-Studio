@@ -19,6 +19,16 @@ function cleanLine(raw: string): string {
   return s.replace(/\s+/g, " ").trim();
 }
 
+/** Строки из сценария (слайды), не поисковые запросы к библиотеке музыки. */
+export function looksLikeScenarioSlideLine(line: string): boolean {
+  const s = line.trim();
+  if (/^[\-*•]\s*Слайд\s*\d/i.test(s)) return true;
+  if (/Слайд\s*\d\s*[—–-]/i.test(s)) return true;
+  if (/^\d+[\).]\s*\*?\s*Слайд\s*\d/i.test(s)) return true;
+  if (/\bСлайд\s*\d\s*[—–-]\s*(Hook|Recognition|Impact|Хук|Признание)/i.test(s)) return true;
+  return false;
+}
+
 export function isMusicBlockEmpty(m: StudioState["music"] | undefined): boolean {
   if (!m) return true;
   return m.queries.length === 0 && m.recommendations.length === 0 && m.avoid.length === 0;
@@ -29,10 +39,38 @@ export function wantsMusicKeyword(text: string): boolean {
   return /\b(музык|music|трек|саунд|sound|плейлист|playlist|spotify)\b/i.test(text);
 }
 
-/** Уточнение к уже начатому разговору о музыке без слова «музыка». */
+/**
+ * Заполняем блок «Музыка» в UI только если это явный запрос подбора музыки.
+ * Не используем широкие эвристики по тексту ответа модели без запроса пользователя.
+ */
+export function userExplicitMusicIntent(text: string): boolean {
+  const t = text.trim();
+  if (!t) return false;
+  if (wantsMusicKeyword(t)) return true;
+  if (
+    /\b(подбери|подобрать|наподбери|найди|найти|предложи|выбери|порекомендуй|дай)\s+(музыку|музык|треки?|трек|саунд|плейлист|подбор\s+музык|музыкальн\w+\s+ряд)/i.test(
+      t
+    )
+  ) {
+    return true;
+  }
+  if (/\b(музыкальн\w+\s+подбор|подбор\s+треков|саундтрек|звук\w*\s+к\s+ролику|бордер\s+под)\b/i.test(t)) {
+    return true;
+  }
+  if (/\b(как(ой|ие)\s+трек|как(ая|ую)\s+музык|что\s+поставить\s+под)\b/i.test(t)) return true;
+  return false;
+}
+
+/** Уточнение только если уже шли реплики про музыку (узкий набор, без «по кадрам» и т.п.). */
 export function wantsMusicRefinement(text: string): boolean {
-  return /\b(подбери\s+сам|выбери\s+сам|сам(а)?\s+(реши|подбери)|по\s+смыслу|по\s+теме|по\s+кадрам|для\s+инстаграм|for\s+instagram|you\s+pick)\b/i.test(
-    text
+  return /\b(подбери\s+сам|выбери\s+сам|сам(а)?\s+(реши|подбери))\b/i.test(text);
+}
+
+/** Продолжение темы музыки: «ещё варианты треков», «другая музыка» — без повторного «подбери музыку». */
+export function wantsMusicFollowUp(text: string): boolean {
+  return (
+    /\b(ещё|еще|друг(ие|ой)|вариант|переподбери)\s+(музык|трек|саунд|плейлист)/i.test(text) ||
+    /\b(музык|треки?|саунд).{0,40}(ещё|еще|друг|вариант)/i.test(text)
   );
 }
 
@@ -93,6 +131,7 @@ export function extractMusicFromReply(reply: string): StudioState["music"] {
     const inner = row.replace(/^\s*\d+[\).]\s*/, "").trim();
     const line = cleanLine(inner);
     if (line.length < 6) continue;
+    if (looksLikeScenarioSlideLine(line)) continue;
     if (/—|–|-/.test(line) || /"/.test(line) || /\b(feat|ft\.)/i.test(line)) {
       out.recommendations.push(line);
       const q = line
@@ -113,6 +152,7 @@ export function extractMusicFromReply(reply: string): StudioState["music"] {
     for (const row of bullets) {
       const inner = row.replace(/^\s*[-*•]\s*/, "").trim();
       const line = cleanLine(inner);
+      if (looksLikeScenarioSlideLine(line)) continue;
       if (line.length >= 8 && (/—|–|-/.test(line) || /"/.test(line))) {
         out.recommendations.push(line);
         const q = line.replace(/\([^)]*\)/g, "").replace(/["'`«»]/g, "").trim().slice(0, 120);

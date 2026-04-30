@@ -14,6 +14,8 @@ export function ImageStripPanel() {
   const { state } = useStudio();
   const seenImageIdsRef = useRef<Set<string>>(new Set());
   const [lightbox, setLightbox] = useState<LightboxState | null>(null);
+  const showBatchProgress =
+    state.images.length > 0 && state.images.some((x) => x.status === "waiting" || x.status === "generating");
 
   useEffect(() => {
     const set = seenImageIdsRef.current;
@@ -33,6 +35,16 @@ export function ImageStripPanel() {
     <>
       <aside className="flex h-full min-h-0 min-w-0 flex-col border-x border-border bg-panel/80 p-3">
         <div className="shrink-0">
+          {showBatchProgress ? (
+            <div
+              role="status"
+              aria-live="polite"
+              className="mb-2 flex items-center gap-2 rounded-lg border border-cyan-400/55 bg-cyan-950/50 px-2.5 py-1.5 text-[11px] font-medium leading-snug text-cyan-50"
+            >
+              <span className="studio-dot-soft h-2 w-2 shrink-0 rounded-full bg-cyan-300" aria-hidden />
+              Идёт генерация кадров
+            </div>
+          ) : null}
           <div className="text-[11px] font-medium uppercase tracking-wide text-muted">Кадры</div>
           <p className="mt-0.5 text-[10px] leading-snug text-muted">
             Превью кадров здесь; полоса прогресса — в колонке «Вывод» под «Generate images». Кадр — нажми для

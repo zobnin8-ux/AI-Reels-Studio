@@ -11,9 +11,8 @@ import { mergePromptForSlide } from "@/lib/prompt-sync";
 import {
   extractMusicFromReply,
   isMusicBlockEmpty,
-  looksLikeMusicReply,
-  wantsMusicKeyword,
-  wantsMusicRefinement
+  userExplicitMusicIntent,
+  wantsMusicFollowUp
 } from "@/lib/music-reply-sync";
 import {
   extractSlideIndexFromAssistantReply,
@@ -157,6 +156,11 @@ export function DialoguePanel() {
       const assistantMsg: ChatMessage = { id: uid("a"), role: "assistant", content: reply };
       const patch = mergeStatePatch(state, statePatch);
 
+      const allowMusicFill = userExplicitMusicIntent(text) || wantsMusicFollowUp(text);
+      if (patch.music !== undefined && !allowMusicFill) {
+        delete patch.music;
+      }
+
       // Если модель не положила промпт в statePatch — пробуем вытащить из reply:
       // явный номер слайда в сообщении, режим «улучши промпт», номер кадра из текста ответа.
       if (!patch.prompts && state.slides.length > 0) {
@@ -181,9 +185,7 @@ export function DialoguePanel() {
         const c = extractCaptionFromReply(reply);
         if (c) patch.caption = c;
       }
-      const musicIntent =
-        wantsMusicKeyword(text) || wantsMusicRefinement(text) || looksLikeMusicReply(reply);
-      if (musicIntent && isMusicBlockEmpty(patch.music)) {
+      if (allowMusicFill && isMusicBlockEmpty(patch.music)) {
         const m = extractMusicFromReply(reply);
         if (!isMusicBlockEmpty(m)) patch.music = m;
       }
@@ -251,6 +253,20 @@ export function DialoguePanel() {
 
   return (
     <div className="flex h-full min-h-0 flex-col gap-3">
+      {busy ? (
+        <div
+          role="status"
+          aria-live="polite"
+          className="flex shrink-0 items-center gap-2 rounded-lg border border-violet-400/65 bg-violet-950/75 px-3 py-2 text-[12px] font-medium leading-snug text-violet-50 shadow-[inset_0_0_28px_rgba(139,92,246,0.28)]"
+        >
+          <span
+            className="studio-dot-soft h-2.5 w-2.5 shrink-0 rounded-full bg-violet-300 shadow-[0_0_10px_rgba(167,139,250,0.6)]"
+            aria-hidden
+          />
+          Запрос к модели… ответ появится в ленте ниже.
+        </div>
+      ) : null}
+
       <div>
         <div className="text-sm font-medium text-muted">Диалог</div>
         <div className="text-xl font-semibold tracking-tight">Творческая сессия</div>
