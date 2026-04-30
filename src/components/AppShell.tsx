@@ -10,10 +10,10 @@ export function AppShell() {
     <StudioProvider>
       <div className="flex h-full min-h-0 flex-col overflow-hidden rounded-2xl border border-border/90 bg-panel/65 shadow-soft backdrop-blur">
         {/*
-          На всю ширину окна: последняя колонка — 1fr, чтобы не было «чёрной дыры» справа.
-          Диалог и вывод делят оставшееся место (~1 : 1.35), лента кадров фикс 228px.
+          Лента кадров 456px (~вдвое от 228px). Справа «Вывод» уже по flex — место уходит с полей правее.
+          Диалог 1fr : вывод 1.15fr (правый блок чуть уже относительно чата).
         */}
-        <div className="grid h-full min-h-0 w-full min-w-[1280px] flex-1 grid-cols-[minmax(260px,300px)_minmax(0,1fr)_228px_minmax(0,1.35fr)] gap-0 overflow-x-auto overflow-y-hidden rounded-2xl">
+        <div className="grid h-full min-h-0 w-full min-w-[1480px] flex-1 grid-cols-[minmax(260px,300px)_minmax(0,1fr)_456px_minmax(0,1.15fr)] gap-0 overflow-x-auto overflow-y-hidden rounded-2xl">
           <aside className="min-h-0 min-w-0 border-r border-border bg-panel p-4">
             <PanelErrorBoundary label="Control Panel">
               <ControlPanel />

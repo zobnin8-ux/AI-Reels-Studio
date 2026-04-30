@@ -8,10 +8,13 @@ import { useEffect, useState } from "react";
 
 export function ImageSlideCard({
   index,
-  image
+  image,
+  onPreview
 }: {
   index: number;
   image: GeneratedImage;
+  /** Клик по готовому превью — полноэкранный просмотр (если передан). */
+  onPreview?: () => void;
 }) {
   const { state, dispatch } = useStudio();
   const [localPrompt, setLocalPrompt] = useState(image.prompt);
@@ -66,17 +69,36 @@ export function ImageSlideCard({
       <div className="mt-3 grid min-w-0 grid-cols-1 gap-3">
         <div
           className={[
-            "mx-auto w-full max-w-[160px] min-w-0 overflow-hidden rounded-lg border border-border bg-black/25",
+            "mx-auto w-full max-w-[min(100%,320px)] min-w-0 overflow-hidden rounded-lg border border-border bg-black/25",
             state.contentType === "reels" ? "aspect-[9/16]" : "aspect-square"
           ].join(" ")}
         >
           {image.imageBase64 ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={`data:${image.mimeType ?? "image/png"};base64,${image.imageBase64}`}
-              alt=""
-              className="h-full w-full object-cover"
-            />
+            onPreview ? (
+              <button
+                type="button"
+                className="group relative h-full w-full cursor-zoom-in focus:outline-none focus:ring-2 focus:ring-accent/40"
+                onClick={() => onPreview()}
+                aria-label="Открыть кадр на весь экран"
+              >
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={`data:${image.mimeType ?? "image/png"};base64,${image.imageBase64}`}
+                  alt=""
+                  className="h-full w-full object-cover transition group-hover:opacity-95"
+                />
+                <span className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 to-transparent py-2 text-center text-[10px] text-white/90 opacity-0 transition group-hover:opacity-100">
+                  Нажми для превью
+                </span>
+              </button>
+            ) : (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={`data:${image.mimeType ?? "image/png"};base64,${image.imageBase64}`}
+                alt=""
+                className="h-full w-full object-cover"
+              />
+            )
           ) : (
             <div className="flex h-full items-center justify-center text-xs text-muted">preview</div>
           )}
