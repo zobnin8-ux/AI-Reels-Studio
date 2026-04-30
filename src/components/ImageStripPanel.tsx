@@ -16,14 +16,13 @@ export function ImageStripPanel() {
   const seenImageIdsRef = useRef<Set<string>>(new Set());
   const [lightbox, setLightbox] = useState<LightboxState | null>(null);
 
+  const showBatchProgress =
+    state.images.length > 0 && state.images.some((x) => x.status === "waiting" || x.status === "generating");
+
   useEffect(() => {
     const set = seenImageIdsRef.current;
     state.images.forEach((img) => set.add(img.id));
   }, [state.images]);
-
-  const showBatchProgress =
-    state.images.length > 0 &&
-    state.images.some((x) => x.status === "waiting" || x.status === "generating");
 
   useEffect(() => {
     if (!lightbox) return;
@@ -39,17 +38,17 @@ export function ImageStripPanel() {
       <aside className="flex h-full min-h-0 min-w-0 flex-col border-x border-border bg-panel/80 p-3">
         <div className="shrink-0">
           <div className="text-[11px] font-medium uppercase tracking-wide text-muted">Кадры</div>
-        <p className="mt-0.5 text-[10px] leading-snug text-muted">
-          Генерация здесь; промпты и подпись — в колонке справа. Кадр — нажми для полного размера.
-        </p>
-        {showBatchProgress ? (
-          <div className="mt-2 scale-[0.92] origin-top">
-            <ImageGenerationProgress images={state.images} />
-          </div>
-        ) : null}
-      </div>
+          <p className="mt-0.5 text-[10px] leading-snug text-muted">
+            Генерация здесь; промпты и подпись — в колонке справа. Кадр — нажми для полного размера.
+          </p>
+          {showBatchProgress ? (
+            <div className="mt-2">
+              <ImageGenerationProgress images={state.images} />
+            </div>
+          ) : null}
+        </div>
 
-      <div className="mt-3 min-h-0 flex-1 overflow-y-auto overflow-x-hidden pr-0.5">
+        <div className="mt-3 min-h-0 flex-1 overflow-y-auto overflow-x-hidden pr-0.5">
           {state.images.length === 0 ? (
             <div className="rounded-lg border border-dashed border-border/80 bg-black/15 p-3 text-center text-[10px] leading-relaxed text-muted">
               После «Generate images» превью появятся в этой полосе.
@@ -57,10 +56,7 @@ export function ImageStripPanel() {
           ) : (
             <div className="flex flex-col gap-3">
               {state.images.map((img, idx) => (
-                <div
-                  key={img.id}
-                  className={!seenImageIdsRef.current.has(img.id) ? "studio-enter" : ""}
-                >
+                <div key={img.id} className={!seenImageIdsRef.current.has(img.id) ? "studio-enter" : ""}>
                   <ImageSlideCard
                     index={idx}
                     image={img}
@@ -116,3 +112,4 @@ export function ImageStripPanel() {
     </>
   );
 }
+

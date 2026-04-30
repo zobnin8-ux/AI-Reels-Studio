@@ -10,6 +10,8 @@ export function OutputPanel() {
   const { state, dispatch } = useStudio();
   const [busy, setBusy] = useState<null | string>(null);
   const [scenarioOpen, setScenarioOpen] = useState(true);
+  const showBatchProgress =
+    state.images.length > 0 && state.images.some((x) => x.status === "waiting" || x.status === "generating");
 
   const promptLinesText = useMemo(() => {
     if (state.slides.length === 0) {
@@ -153,7 +155,7 @@ export function OutputPanel() {
         >
           {busy === "images" ? "Генерация…" : "Generate images"}
         </button>
-        {busy === "images" && state.images.length > 0 ? (
+        {showBatchProgress ? (
           <ImageGenerationProgress images={state.images} />
         ) : null}
         {!canGenerateImages ? (

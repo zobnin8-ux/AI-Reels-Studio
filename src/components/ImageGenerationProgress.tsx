@@ -16,10 +16,12 @@ export function ImageGenerationProgress({ images }: { images: GeneratedImage[] }
   else if (finished < total && images.some((x) => x.status === "waiting")) {
     const w = images.findIndex((x) => x.status === "waiting");
     if (w >= 0) subtitle = `В очереди: кадр ${w + 1} из ${total}`;
+  } else if (finished === total) {
+    subtitle = "Готово.";
   }
 
   return (
-    <div className="mt-2 space-y-2 rounded-lg border border-accent/25 bg-black/25 px-3 py-2.5">
+    <div className="space-y-2 rounded-lg border border-accent/25 bg-black/25 px-3 py-2.5">
       <div className="flex items-center justify-between gap-2 text-[11px] text-muted">
         <span className="font-medium text-text/90">Генерация изображений</span>
         <span className="tabular-nums text-text/80">
@@ -40,3 +42,4 @@ export function ImageGenerationProgress({ images }: { images: GeneratedImage[] }
     </div>
   );
 }
+
