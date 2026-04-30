@@ -1,6 +1,6 @@
 "use client";
 
-import type { ChatMessage, GeneratedImage, StudioState } from "@/lib/state";
+import type { ChatMessage, GeneratedImage, SlidePrompt, StudioState } from "@/lib/state";
 import type { StatePatch } from "@/lib/chat-response";
 import { formatTypographyNotesForZip } from "@/lib/typography-export";
 
@@ -214,58 +214,107 @@ export async function sendDialogueTurn(
   return (await res.json()) as { reply: string; statePatch?: StatePatch };
 }
 
-/** Генерация картинок только по кнопке; использует текущие prompts[] и порядок слайдов. Не вызывает диалог. */
-export async function generateImagesFromState(state: StudioState): Promise<GeneratedImage[]> {
-  const out: GeneratedImage[] = [];
+export type GenerateImagesProgressPayload = {
+  images: GeneratedImage[];
+};
+
+/** Генерация картинок только по кнопке; использует текущие prompts[] и порядок слайдов. Не вызывает диалог.
+ *  onProgress вызывается после каждого изменения массива (очередь → генерация → готово/ошибка) для Stage 2 UI.
+ */
+export async function generateImagesFromState(
+  state: StudioState,
+  options?: { onProgress?: (p: GenerateImagesProgressPayload) => void }
+): Promise<GeneratedImage[]> {
+  const onProgress = options?.onProgress;
 
   if (state.slides.length > 0) {
-    for (let i = 0; i < state.slides.length; i++) {
-      const slide = state.slides[i]!;
+    type SlideJob =
+      | { ok: false; id: string; slideId: string; error: string }
+      | { ok: true; id: string; slideId: string; finalPrompt: string; rawPrompt: string };
+
+    const jobs: SlideJob[] = state.slides.map((slide) => {
       const row = state.prompts.find((p) => p.slideId === slide.id);
-      const prompt = row?.prompt?.trim() ?? "";
+      const rawPrompt = row?.prompt?.trim() ?? "";
       const id = `img_${slide.id}`;
-      if (!prompt) {
-        out.push({
+      if (!rawPrompt) {
+        return {
+          ok: false as const,
           id,
           slideId: slide.id,
-          prompt: "",
-          status: "error",
           error: "Нет промпта для этого слайда — запроси промпты в диалоге или вставь вручную справа."
-        });
-        continue;
+        };
       }
+      const finalPrompt = enrichPromptForGeneration(state, `${slide.title}\n${slide.text}`, rawPrompt);
+      return { ok: true as const, id, slideId: slide.id, finalPrompt, rawPrompt };
+    });
+
+    const out: GeneratedImage[] = jobs.map((j) =>
+      j.ok
+        ? { id: j.id, slideId: j.slideId, prompt: j.finalPrompt, status: "waiting" as const }
+        : {
+            id: j.id,
+            slideId: j.slideId,
+            prompt: "",
+            status: "error" as const,
+            error: j.error
+          }
+    );
+    onProgress?.({ images: [...out] });
+
+    for (let i = 0; i < jobs.length; i++) {
+      const j = jobs[i]!;
+      if (!j.ok) continue;
+
+      out[i] = { id: j.id, slideId: j.slideId, prompt: j.finalPrompt, status: "generating" };
+      onProgress?.({ images: [...out] });
+
       try {
-        const finalPrompt = enrichPromptForGeneration(state, `${slide.title}\n${slide.text}`, prompt);
-        out.push({ id, slideId: slide.id, prompt: finalPrompt, status: "generating" });
-        const img = await fetchOneImage(state, id, slide.id, finalPrompt);
-        out[out.length - 1] = img;
+        const img = await fetchOneImage(state, j.id, j.slideId, j.finalPrompt);
+        out[i] = img;
       } catch (e: unknown) {
         const msg = e instanceof Error ? e.message : "Image error";
-        out[out.length - 1] = {
-          id,
-          slideId: slide.id,
-          prompt,
+        out[i] = {
+          id: j.id,
+          slideId: j.slideId,
+          prompt: j.finalPrompt,
           status: "error",
           error: msg
         };
       }
+      onProgress?.({ images: [...out] });
     }
     return out;
   }
 
+  const promptJobs: { idx: number; row: SlidePrompt; prompt: string; id: string }[] = [];
   for (let i = 0; i < state.prompts.length; i++) {
     const row = state.prompts[i]!;
     const prompt = row.prompt.trim();
     if (!prompt) continue;
-    const id = `img_${i}`;
+    promptJobs.push({ idx: i, row, prompt, id: `img_${i}` });
+  }
+
+  const out: GeneratedImage[] = promptJobs.map(({ row, prompt, id }) => ({
+    id,
+    slideId: row.slideId,
+    prompt,
+    status: "waiting" as const
+  }));
+  onProgress?.({ images: [...out] });
+
+  for (let k = 0; k < promptJobs.length; k++) {
+    const { row, prompt, id } = promptJobs[k]!;
+    out[k] = { id, slideId: row.slideId, prompt, status: "generating" };
+    onProgress?.({ images: [...out] });
+
     try {
-      out.push({ id, slideId: row.slideId, prompt, status: "generating" });
       const img = await fetchOneImage(state, id, row.slideId, prompt);
-      out[out.length - 1] = img;
+      out[k] = img;
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : "Image error";
-      out[out.length - 1] = { id, slideId: row.slideId, prompt, status: "error", error: msg };
+      out[k] = { id, slideId: row.slideId, prompt, status: "error", error: msg };
     }
+    onProgress?.({ images: [...out] });
   }
 
   return out;

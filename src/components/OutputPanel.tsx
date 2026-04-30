@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { useStudio } from "@/lib/studio-store";
+import { ImageGenerationProgress } from "@/components/ImageGenerationProgress";
 import { downloadZip, generateImagesFromState } from "@/lib/actions";
 import type { SlidePrompt } from "@/lib/state";
 
@@ -47,7 +48,11 @@ export function OutputPanel() {
 
     setBusy("images");
     try {
-      const images = await generateImagesFromState(state);
+      const images = await generateImagesFromState(state, {
+        onProgress: ({ images: next }) => {
+          dispatch({ type: "set", patch: { images: next } });
+        }
+      });
       dispatch({ type: "set", patch: { images } });
     } finally {
       setBusy(null);
@@ -148,6 +153,9 @@ export function OutputPanel() {
         >
           {busy === "images" ? "Генерация…" : "Generate images"}
         </button>
+        {busy === "images" && state.images.length > 0 ? (
+          <ImageGenerationProgress images={state.images} />
+        ) : null}
         {!canGenerateImages ? (
           <p className="mt-1 text-[11px] text-muted">
             Кнопка активна, когда есть хотя бы один непустой промпт в блоке выше (или из диалога в state).

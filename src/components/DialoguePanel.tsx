@@ -170,7 +170,11 @@ export function DialoguePanel() {
 
       if (userWantsImageGeneration(text) && canRunImageGeneration(merged)) {
         try {
-          const images = await generateImagesFromState(merged);
+          const images = await generateImagesFromState(merged, {
+            onProgress: ({ images: next }) => {
+              dispatch({ type: "set", patch: { images: next } });
+            }
+          });
           dispatch({ type: "set", patch: { images } });
         } catch (imgErr: unknown) {
           const m = imgErr instanceof Error ? imgErr.message : "Image gen error";

@@ -48,12 +48,12 @@ export function ImageSlideCard({
   const status = image.status;
   const statusLabel =
     status === "waiting"
-      ? "waiting"
+      ? "очередь"
       : status === "generating"
-        ? "generating"
+        ? "генерация"
         : status === "done"
-          ? "done"
-          : "error";
+          ? "готово"
+          : "ошибка";
 
   return (
     <div className="min-w-0 overflow-hidden rounded-xl border border-border bg-panel/40 p-3">
@@ -100,7 +100,15 @@ export function ImageSlideCard({
               />
             )
           ) : (
-            <div className="flex h-full items-center justify-center text-xs text-muted">preview</div>
+            <div className="flex h-full flex-col items-center justify-center gap-1 px-2 text-center text-[11px] text-muted">
+              {status === "generating" ? (
+                <span className="studio-pulse font-medium text-accent">Генерация…</span>
+              ) : status === "waiting" ? (
+                <span>В очереди</span>
+              ) : (
+                <span>preview</span>
+              )}
+            </div>
           )}
         </div>
         <div className="min-w-0 space-y-2 overflow-hidden">
