@@ -410,7 +410,12 @@ export async function regenerateOneImage(
   slideId: string | undefined,
   prompt: string
 ): Promise<GeneratedImage> {
-  return fetchOneImage(state, imageId, slideId ?? "", prompt);
+  const slide = slideId ? state.slides.find((s) => s.id === slideId) : undefined;
+  const slideText = slide ? `${slide.title}\n${slide.text}` : prompt;
+  const finalPrompt = enrichPromptForGeneration(state, slideText, prompt);
+  const img = await fetchOneImage(state, imageId, slideId ?? "", finalPrompt);
+  /** В UI и в `prompts[]` держим «сырой» промпт пользователя; в API ушёл обогащённый. */
+  return { ...img, prompt };
 }
 
 function formatMusicNotesForZip(music: StudioState["music"]): string {

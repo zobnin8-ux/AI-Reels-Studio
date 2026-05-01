@@ -1,6 +1,7 @@
 "use client";
 
 import React, { createContext, useContext, useMemo, useReducer } from "react";
+import { syncImagesWithSlidePrompts } from "@/lib/prompt-sync";
 import { createInitialState, type StudioState } from "@/lib/state";
 
 type Action =
@@ -9,8 +10,14 @@ type Action =
 
 function reducer(state: StudioState, action: Action): StudioState {
   switch (action.type) {
-    case "set":
-      return { ...state, ...action.patch };
+    case "set": {
+      const patch = action.patch;
+      const next: StudioState = { ...state, ...patch };
+      if (patch.prompts !== undefined && patch.images === undefined) {
+        next.images = syncImagesWithSlidePrompts(next.images, next.prompts);
+      }
+      return next;
+    }
     case "resetAll":
       return createInitialState();
     default:

@@ -48,7 +48,7 @@ export function userExplicitMusicIntent(text: string): boolean {
   if (!t) return false;
   if (wantsMusicKeyword(t)) return true;
   if (
-    /\b(подбери|подобрать|наподбери|найди|найти|предложи|выбери|порекомендуй|дай)\s+(музыку|музык|треки?|трек|саунд|плейлист|подбор\s+музык|музыкальн\w+\s+ряд)/i.test(
+    /\b(подбери|подобрать|наподбери|найди|найти|предложи|выбери|порекомендуй|дай|накидай|сгенерируй)\s+(музыку|музык|треки?|трек|саунд|аудио|плейлист|подбор\s+музык|музыкальн\w+\s+ряд)/i.test(
       t
     )
   ) {
@@ -58,6 +58,9 @@ export function userExplicitMusicIntent(text: string): boolean {
     return true;
   }
   if (/\b(как(ой|ие)\s+трек|как(ая|ую)\s+музык|что\s+поставить\s+под)\b/i.test(t)) return true;
+  if (/\b(аудио|инструментал|фонов\w*\s+трек|плейлист)\b/i.test(t)) return true;
+  if (/\bмузык\w*\s*(к\s+ролику|для\s+ролика|под\s+видео|в\s+рилс|для\s+рилс)/i.test(t)) return true;
+  if (/\b(перегенерир|обнови|друг\w+)\s+.*\bмузык/i.test(t)) return true;
   return false;
 }
 
@@ -125,14 +128,14 @@ export function extractMusicFromReply(reply: string): StudioState["music"] {
     }
   }
 
-  // Нумерованные треки: 1. **Artist — "Title"** или 1. Artist — Title
-  const numbered = body.match(/^\s*\d+[\).]\s*([^\n]+)/gm) ?? [];
-  for (const row of numbered) {
-    const inner = row.replace(/^\s*\d+[\).]\s*/, "").trim();
-    const line = cleanLine(inner);
+  // Нумерованные треки построчно (без флага `m` у `^` матчился только первый пункт в начале всего текста).
+  for (const rawLine of body.split("\n")) {
+    const numberedM = rawLine.match(/^\s*\d+[\).]\s*(.+)$/);
+    if (!numberedM) continue;
+    const line = cleanLine(numberedM[1] ?? "");
     if (line.length < 6) continue;
     if (looksLikeScenarioSlideLine(line)) continue;
-    if (/—|–|-/.test(line) || /"/.test(line) || /\b(feat|ft\.)/i.test(line)) {
+    if (/—|–|-/.test(line) || /["'`«»]/.test(line) || /\b(feat|ft\.)/i.test(line)) {
       out.recommendations.push(line);
       const q = line
         .replace(/\([^)]*\)/g, "")
@@ -148,12 +151,12 @@ export function extractMusicFromReply(reply: string): StudioState["music"] {
 
   // Маркированный список треков
   if (out.recommendations.length === 0) {
-    const bullets = body.match(/^\s*[-*•]\s*([^\n]+)$/gm) ?? [];
-    for (const row of bullets) {
-      const inner = row.replace(/^\s*[-*•]\s*/, "").trim();
-      const line = cleanLine(inner);
+    for (const rawLine of body.split("\n")) {
+      const bulletM = rawLine.match(/^\s*[-*•]\s*(.+)$/);
+      if (!bulletM) continue;
+      const line = cleanLine(bulletM[1] ?? "");
       if (looksLikeScenarioSlideLine(line)) continue;
-      if (line.length >= 8 && (/—|–|-/.test(line) || /"/.test(line))) {
+      if (line.length >= 8 && (/—|–|-/.test(line) || /["'`«»]/.test(line))) {
         out.recommendations.push(line);
         const q = line.replace(/\([^)]*\)/g, "").replace(/["'`«»]/g, "").trim().slice(0, 120);
         if (q.length > 2) out.queries.push(q);
@@ -174,6 +177,28 @@ export function extractMusicFromReply(reply: string): StudioState["music"] {
         out.avoid.push(cleanLine(line.replace(/^(avoid|избег\w*)\s*[:\-]/i, "")));
       }
     }
+  }
+
+  // Свободные строки «исполнитель — трек» без нумерации (частый ответ модели в prose).
+  if (out.recommendations.length === 0) {
+    for (const rawLine of body.split("\n")) {
+      const line = cleanLine(rawLine);
+      if (line.length < 12 || line.length > 220) continue;
+      if (looksLikeScenarioSlideLine(line)) continue;
+      if (/^(#{1,3}\s|\*\*|[-*•]\s)/.test(rawLine.trim())) continue;
+      if ((/—|–/.test(line) || /\s-\s/.test(line)) && /[A-Za-zА-Яа-яЁё]{2,}/.test(line)) {
+        out.recommendations.push(line);
+        const q = line
+          .replace(/\([^)]*\)/g, "")
+          .replace(/["'`«»]/g, "")
+          .replace(/\s*[—–-]\s*/g, " ")
+          .trim()
+          .slice(0, 120);
+        if (q.length > 2) out.queries.push(q);
+      }
+      if (out.recommendations.length >= 8) break;
+    }
+    out.queries = [...new Set(out.queries)];
   }
 
   return out;
