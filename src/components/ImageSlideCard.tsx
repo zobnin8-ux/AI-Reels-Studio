@@ -107,7 +107,7 @@ export function ImageSlideCard({
                 ? "mx-auto flex w-full min-w-0 flex-1 items-center justify-center overflow-hidden rounded-md border border-[var(--border-subtle)] bg-[var(--bg-elev-3)]"
                 : "mx-auto flex w-full max-w-[min(100%,320px)] min-w-0 items-center justify-center overflow-hidden rounded-lg border border-border bg-black/40",
             !isThumb && state.contentType === "reels" ? "aspect-[9/16]" : "",
-            !isThumb && state.contentType !== "reels" ? "aspect-square" : ""
+            !isThumb && state.contentType !== "reels" ? "aspect-[4/5]" : ""
           ].join(" ")}
         >
           {image.imageBase64 ? (

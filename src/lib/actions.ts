@@ -9,7 +9,7 @@ function uid(prefix: string) {
 }
 
 function aspectFromContentType(contentType: StudioState["contentType"]) {
-  return contentType === "reels" ? ("9:16" as const) : ("1:1" as const);
+  return contentType === "reels" ? ("9:16" as const) : ("4:5" as const);
 }
 
 /** Есть ли кириллица — усиливаем инструкции для текста на изображении. */
@@ -76,11 +76,16 @@ Use clean sans-serif (Inter / Manrope style).
     }
   }
 
+  const sceneHint =
+    state.contentType === "reels"
+      ? "Instagram Reel slide, vertical 9:16."
+      : "Instagram feed post slide, portrait 4:5 (1080×1350 px).";
+
   const finalPrompt = `
 ${cleaned}
 
 Scene:
-Instagram Reel slide, vertical 9:16.
+${sceneHint}
 
 Style:
 ${styleBlock(state.visualStyle)}

@@ -29,7 +29,7 @@ export type SelectorSnapshotForApi = Pick<
 >;
 
 function selectorsBlock(sel: SelectorSnapshotForApi) {
-  const aspect = sel.contentType === "reels" ? "9:16" : "1:1";
+  const aspect = sel.contentType === "reels" ? "9:16" : "4:5 (1080×1350)";
   const customExtra =
     sel.project === "custom"
       ? `\nCUSTOM SYSTEM (project Custom): ${sel.customSystemPrompt.slice(0, 500)}${sel.customSystemPrompt.length > 500 ? "…" : ""}`

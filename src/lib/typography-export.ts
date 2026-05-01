@@ -80,7 +80,9 @@ export function formatTypographyNotesForZip(state: StudioState): string {
   lines.push(CANVA_NOTE);
   lines.push("");
   lines.push(`Проект: ${state.project}`);
-  lines.push(`Формат: ${state.contentType === "reels" ? "Reels 9:16" : "Пост 1:1"}`);
+  lines.push(
+    `Формат: ${state.contentType === "reels" ? "Reels 9:16" : "Пост Instagram 4:5 — 1080×1350 px"}`
+  );
   lines.push(`Визуальный стиль (селектор): ${state.visualStyle}`);
   lines.push(`Настроение: ${state.mood}`);
   lines.push(`Режим текста: ${state.outputMode}`);

@@ -168,7 +168,7 @@ export function ControlPanel() {
                 }
               >
                 <option value="reels">Reels · 9:16</option>
-                <option value="post">Post · 1:1</option>
+                <option value="post">Post · 4:5 (1080×1350)</option>
               </select>
             </div>
             <div className="field">
