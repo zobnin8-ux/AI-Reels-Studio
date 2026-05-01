@@ -3,7 +3,7 @@ import sharp from "sharp";
 import { z } from "zod";
 
 /** Instagram feed portrait (4:5) — целевой размер после генерации */
-export const INSTAGRAM_POST_PX = { w: 1080, h: 1350 } as const;
+const INSTAGRAM_POST_PX = { w: 1080, h: 1350 } as const;
 
 const reqSchema = z.object({
   prompt: z.string().min(1),
