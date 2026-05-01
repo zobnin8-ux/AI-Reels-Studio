@@ -72,12 +72,82 @@ button.asset-badge {
   overflow-x: auto;
   overflow-y: hidden;
   grid-template-rows: minmax(0, 1fr);
+  /* v2026 base CSS sets a fixed 4-col grid; override to 3 columns */
+  grid-template-columns: 320px minmax(0, 1fr) 380px !important;
+}
+
+.center-stack {
+  min-height: 0;
+  min-width: 0;
+  flex: 1 1 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-3);
+  overflow: hidden;
+}
+
+.frames-bar {
+  flex: 0 0 auto;
+  height: 240px;
+  overflow: hidden;
+}
+
+.frames-bar-body {
+  padding: var(--s-4);
+  flex: 1 1 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-3);
+  overflow: hidden;
+}
+
+.frames-bar-row {
+  display: flex;
+  gap: var(--s-3);
+  flex: 1 1 0;
+  min-height: 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding-bottom: 6px;
+  scroll-snap-type: x proximity;
+}
+
+.frames-bar-empty {
+  display: flex;
+  gap: var(--s-3);
+  flex: 1 1 0;
+  min-height: 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding-bottom: 6px;
+}
+
+.reel-frame.frames-bar-slot {
+  scroll-snap-align: start;
+  flex: 0 0 auto;
+  width: 240px;
+  height: 100%;
+  aspect-ratio: auto;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.frames-bar-telemetry {
+  margin-top: 0;
+  flex-shrink: 0;
 }
 
 .layout > .panel {
   min-height: 0;
   max-height: 100%;
   overflow: hidden;
+}
+
+.panel.stage {
+  flex: 1 1 0;
+  min-height: 0;
 }
 
 /* Центр: один flex-столбец, чат скроллится, композер всегда внизу панели */
@@ -142,6 +212,19 @@ button.asset-badge {
 /* Плотнее hero — меньше вертикаль на ноутбуке */
 .panel.stage .panel-strip {
   padding: 14px 20px 12px;
+}
+
+.panel.frames.frames-bar .panel-strip {
+  padding: 10px 16px 8px;
+}
+
+.panel.frames.frames-bar .strip-title {
+  font-size: clamp(0.95rem, 1.6vw, 1.15rem);
+  margin: 2px 0 0;
+}
+
+.panel.frames.frames-bar .strip-sub {
+  display: none;
 }
 
 .panel.stage .stage-h1 {
@@ -310,9 +393,11 @@ aside.panel.anim-4 .panel-strip {
 }
 
 .reel-frame-inner img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
+  max-width: 100%;
+  max-height: 100%;
+  width: auto;
+  height: auto;
+  object-fit: contain;
 }
 
 .mock-pill {

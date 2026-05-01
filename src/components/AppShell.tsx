@@ -21,21 +21,23 @@ function AppGrid() {
         </PanelErrorBoundary>
       </aside>
 
-      <section
-        className={[
-          "panel stage anim-2 flex-col min-h-0",
-          chatBusy ? "is-chat-busy" : ""
-        ].join(" ")}
-      >
-        <PanelErrorBoundary label="Диалог">
-          <DialoguePanel />
-        </PanelErrorBoundary>
-      </section>
+      <section className="center-stack min-h-0">
+        <section className={["panel frames frames-bar anim-2 min-h-0", imagePipelineBusy ? "is-images-busy" : ""].join(" ")}>
+          <PanelErrorBoundary label="Кадры">
+            <ImageStripPanel variant="bar" />
+          </PanelErrorBoundary>
+        </section>
 
-      <section className={["panel frames anim-3 min-h-0", imagePipelineBusy ? "is-images-busy" : ""].join(" ")}>
-        <PanelErrorBoundary label="Кадры">
-          <ImageStripPanel />
-        </PanelErrorBoundary>
+        <section
+          className={[
+            "panel stage anim-3 flex-col min-h-0",
+            chatBusy ? "is-chat-busy" : ""
+          ].join(" ")}
+        >
+          <PanelErrorBoundary label="Диалог">
+            <DialoguePanel />
+          </PanelErrorBoundary>
+        </section>
       </section>
 
       <aside className="panel anim-4 min-h-0">
