@@ -81,7 +81,7 @@ export function formatTypographyNotesForZip(state: StudioState): string {
   lines.push("");
   lines.push(`Проект: ${state.project}`);
   lines.push(
-    `Формат: ${state.contentType === "reels" ? "Reels 9:16" : "Пост Instagram 4:5 — 1080×1350 px"}`
+    `Формат: ${state.contentType === "reels" ? "Reels 9:16 — 1080×1920 px" : "Пост Instagram 4:5 — 1080×1350 px"}`
   );
   lines.push(`Визуальный стиль (селектор): ${state.visualStyle}`);
   lines.push(`Настроение: ${state.mood}`);

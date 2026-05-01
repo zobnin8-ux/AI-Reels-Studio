@@ -4,6 +4,8 @@ import { z } from "zod";
 
 /** Instagram feed portrait (4:5) — целевой размер после генерации */
 const INSTAGRAM_POST_PX = { w: 1080, h: 1350 } as const;
+/** Instagram Reels (9:16) — целевой размер после генерации */
+const INSTAGRAM_REELS_PX = { w: 1080, h: 1920 } as const;
 
 const reqSchema = z.object({
   prompt: z.string().min(1),
@@ -19,10 +21,14 @@ function mockEnabled() {
   return process.env.AI_MOCK_MODE === "1";
 }
 
-async function resizeToInstagramPostPng(imageBase64: string): Promise<{ imageBase64: string; mimeType: string }> {
+async function resizeCoverToPng(
+  imageBase64: string,
+  w: number,
+  h: number
+): Promise<{ imageBase64: string; mimeType: string }> {
   const buf = Buffer.from(imageBase64, "base64");
   const out = await sharp(buf)
-    .resize(INSTAGRAM_POST_PX.w, INSTAGRAM_POST_PX.h, {
+    .resize(w, h, {
       fit: "cover",
       position: "centre"
     })
@@ -36,8 +42,8 @@ async function generateWithOpenAI(prompt: string, aspect: "9:16" | "4:5") {
   if (!apiKey) throw new Error("Missing OPENAI_API_KEY");
 
   const model = process.env.OPENAI_IMAGE_MODEL || "gpt-image-2";
-  // Доступные пресеты API; для поста 4:5 берём портрет 1024×1536 и затем приводим к 1080×1350.
-  const size = aspect === "9:16" ? "1024x1536" : "1024x1536";
+  // Доступные пресеты API: портрет 1024×1536; затем sharp приводит к 1080×1350 (пост) или 1080×1920 (Reels).
+  const size = "1024x1536";
 
   const isGptImageFamily = /^gpt-image/i.test(model);
   const qualityRaw = (process.env.OPENAI_IMAGE_QUALITY ?? "high").trim().toLowerCase();
@@ -104,16 +110,20 @@ export async function POST(request: Request) {
         "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8DwHwAFhQJ/lb0u9QAAAABJRU5ErkJggg==";
       const out =
         body.aspect === "4:5"
-          ? await resizeToInstagramPostPng(tiny)
-          : { imageBase64: tiny, mimeType: "image/png" };
+          ? await resizeCoverToPng(tiny, INSTAGRAM_POST_PX.w, INSTAGRAM_POST_PX.h)
+          : await resizeCoverToPng(tiny, INSTAGRAM_REELS_PX.w, INSTAGRAM_REELS_PX.h);
       return NextResponse.json(out);
     }
 
     const raw = await generateWithOpenAI(body.prompt, body.aspect);
     if (body.aspect === "4:5") {
-      return NextResponse.json(await resizeToInstagramPostPng(raw.imageBase64));
+      return NextResponse.json(
+        await resizeCoverToPng(raw.imageBase64, INSTAGRAM_POST_PX.w, INSTAGRAM_POST_PX.h)
+      );
     }
-    return NextResponse.json(raw);
+    return NextResponse.json(
+      await resizeCoverToPng(raw.imageBase64, INSTAGRAM_REELS_PX.w, INSTAGRAM_REELS_PX.h)
+    );
   } catch (e: unknown) {
     const msg = e instanceof Error ? e.message : "Image error";
     return jsonError(msg, 500);

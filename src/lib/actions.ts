@@ -78,7 +78,7 @@ Use clean sans-serif (Inter / Manrope style).
 
   const sceneHint =
     state.contentType === "reels"
-      ? "Instagram Reel slide, vertical 9:16."
+      ? "Instagram Reel slide, vertical 9:16 (1080×1920 px)."
       : "Instagram feed post slide, portrait 4:5 (1080×1350 px).";
 
   const finalPrompt = `

@@ -167,7 +167,7 @@ export function ControlPanel() {
                   dispatch({ type: "set", patch: { contentType: e.target.value as StudioState["contentType"] } })
                 }
               >
-                <option value="reels">Reels · 9:16</option>
+                <option value="reels">Reels · 9:16 · 1080×1920</option>
                 <option value="post">Post · 4:5 (1080×1350)</option>
               </select>
             </div>
