@@ -8,6 +8,7 @@ import { generateImagesFromState, mergeStatePatch, sendDialogueTurn } from "@/li
 import { canRunImageGeneration, userWantsImageGeneration } from "@/lib/auto-image-intent";
 import type { ChatMessage, StudioState } from "@/lib/state";
 import { mergePromptForSlide } from "@/lib/prompt-sync";
+import { ImageStripPanel } from "@/components/ImageStripPanel";
 import {
   extractMusicFromReply,
   isMusicBlockEmpty,
@@ -298,6 +299,8 @@ export function DialoguePanel() {
           Запрос к модели… ответ появится в ленте ниже.
         </div>
       ) : null}
+
+      <ImageStripPanel variant="rail" />
 
       <div className="dialog-middle">
         <div

@@ -9,8 +9,9 @@ type LightboxState = {
   title: string;
 };
 
-export function ImageStripPanel({ variant = "column" }: { variant?: "column" | "bar" }) {
+export function ImageStripPanel({ variant = "column" }: { variant?: "column" | "rail" | "bar" }) {
   const { state } = useStudio();
+  const layout = variant === "column" ? "column" : "rail";
   const seenImageIdsRef = useRef<Set<string>>(new Set());
   const [lightbox, setLightbox] = useState<LightboxState | null>(null);
   const showBatchProgress =
@@ -47,158 +48,174 @@ export function ImageStripPanel({ variant = "column" }: { variant?: "column" | "
         ? `${state.images.length} кадр${state.images.length > 1 ? "ов" : ""}`
         : "ожидание";
 
+  const framesBody = (
+    <>
+      {showBatchProgress ? (
+        <div className="busy-ribbon mb-3" role="status" aria-live="polite">
+          <span className="dot-pulse" aria-hidden />
+          Идёт генерация кадров…
+        </div>
+      ) : null}
+
+      {state.images.length === 0 ? (
+        layout === "rail" ? (
+          <div className="stage-frames-rail-scroll is-empty-rail">
+            <div className="reel-frame placeholder stage-frames-slot">
+              <span style={{ fontSize: 11, color: "var(--text-muted)", letterSpacing: "0.12em" }}>ПУСТО</span>
+            </div>
+            <div className="reel-frame placeholder stage-frames-slot" aria-hidden />
+            <div className="reel-frame placeholder stage-frames-slot" aria-hidden />
+          </div>
+        ) : (
+          <div className="reel-row">
+            <div className="reel-frame placeholder">
+              <span style={{ fontSize: 11, color: "var(--text-muted)", letterSpacing: "0.12em" }}>
+                ПУСТО
+              </span>
+            </div>
+            <div className="reel-frame placeholder" aria-hidden />
+          </div>
+        )
+      ) : layout === "rail" ? (
+        <div className="stage-frames-rail-scroll" role="list">
+          {state.images.map((img, idx) => (
+            <div
+              key={img.id}
+              className={[
+                "reel-frame stage-frames-slot",
+                !seenImageIdsRef.current.has(img.id) ? "studio-enter" : ""
+              ]
+                .filter(Boolean)
+                .join(" ")}
+            >
+              <span className="frame-num">#{String(idx + 1).padStart(2, "0")}</span>
+              <span className="frame-status">
+                {img.status === "generating"
+                  ? "генерация"
+                  : img.status === "waiting"
+                    ? "очередь"
+                    : img.status === "done"
+                      ? "готово"
+                      : "ошибка"}
+              </span>
+              <ImageSlideCard
+                variant="frame"
+                index={idx}
+                image={img}
+                onPreview={
+                  img.status === "done" && img.imageBase64
+                    ? () =>
+                        setLightbox({
+                          dataUrl: `data:${img.mimeType ?? "image/png"};base64,${img.imageBase64}`,
+                          title: `Кадр ${String(idx + 1).padStart(2, "0")}`
+                        })
+                    : undefined
+                }
+              />
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div className="reel-row reel-row-stack">
+          {state.images.map((img, idx) => (
+            <div
+              key={img.id}
+              className={[
+                "reel-frame",
+                !seenImageIdsRef.current.has(img.id) ? "studio-enter" : ""
+              ]
+                .filter(Boolean)
+                .join(" ")}
+            >
+              <span className="frame-num">#{String(idx + 1).padStart(2, "0")}</span>
+              <span className="frame-status">
+                {img.status === "generating"
+                  ? "генерация"
+                  : img.status === "waiting"
+                    ? "очередь"
+                    : img.status === "done"
+                      ? "готово"
+                      : "ошибка"}
+              </span>
+              <ImageSlideCard
+                variant="frame"
+                index={idx}
+                image={img}
+                onPreview={
+                  img.status === "done" && img.imageBase64
+                    ? () =>
+                        setLightbox({
+                          dataUrl: `data:${img.mimeType ?? "image/png"};base64,${img.imageBase64}`,
+                          title: `Кадр ${String(idx + 1).padStart(2, "0")}`
+                        })
+                    : undefined
+                }
+              />
+            </div>
+          ))}
+        </div>
+      )}
+
+      {layout === "rail" ? (
+        <div className="telemetry stage-frames-rail-telemetry">
+          <div className="tele-row">
+            <span className="tele-label">IMAGES</span>
+            <span className="tele-value">
+              {doneCount}/{state.images.length || 0} DONE
+            </span>
+          </div>
+          <div className="progress-bar">
+            <div className="progress-fill" style={{ width: `${telePct}%` }} />
+          </div>
+        </div>
+      ) : (
+        <div className="telemetry">
+          <div className="tele-row">
+            <span className="tele-label">IMAGES</span>
+            <span className="tele-value">
+              {doneCount}/{state.images.length || 0} DONE
+            </span>
+          </div>
+          <div className="tele-row">
+            <span className="tele-label">LANE</span>
+            <span className="tele-value">GPU</span>
+          </div>
+          <div className="progress-bar">
+            <div className="progress-fill" style={{ width: `${telePct}%` }} />
+          </div>
+        </div>
+      )}
+    </>
+  );
+
   return (
     <>
-      <div className="panel-strip">
-        <div className="strip-row">
-          <span className="strip-tag">Раскадровка</span>
-          <span className="strip-meta">{stripMeta}</span>
+      {layout === "rail" ? (
+        <div className="stage-frames-rail">
+          <div className="stage-frames-rail-head">
+            <div className="strip-row">
+              <span className="strip-tag">Кадры</span>
+              <span className="strip-meta">{stripMeta}</span>
+            </div>
+          </div>
+          <div className="stage-frames-rail-body">{framesBody}</div>
         </div>
-        <h2 className="strip-title">
-          Кадры <b>·</b> превью
-        </h2>
-        <p className="strip-sub">Превью после Generate images; клик по готовому кадру — полный экран.</p>
-      </div>
-
-      <div className={variant === "bar" ? "frames-bar-body min-h-0" : "frames-body min-h-0"}>
-        {showBatchProgress ? (
-          <div className="busy-ribbon mb-3" role="status" aria-live="polite">
-            <span className="dot-pulse" aria-hidden />
-            Идёт генерация кадров…
+      ) : (
+        <>
+          <div className="panel-strip">
+            <div className="strip-row">
+              <span className="strip-tag">Раскадровка</span>
+              <span className="strip-meta">{stripMeta}</span>
+            </div>
+            <h2 className="strip-title">
+              Кадры <b>·</b> превью
+            </h2>
+            <p className="strip-sub">Превью после Generate images; клик по готовому кадру — полный экран.</p>
           </div>
-        ) : null}
 
-        {state.images.length === 0 ? (
-          variant === "bar" ? (
-            <div className="frames-bar-empty">
-              <div className="reel-frame placeholder" style={{ width: 220, aspectRatio: "9 / 16" }}>
-                <span style={{ fontSize: 11, color: "var(--text-muted)", letterSpacing: "0.12em" }}>ПУСТО</span>
-              </div>
-              <div className="reel-frame placeholder" aria-hidden style={{ width: 220, aspectRatio: "9 / 16" }} />
-              <div className="reel-frame placeholder" aria-hidden style={{ width: 220, aspectRatio: "9 / 16" }} />
-            </div>
-          ) : (
-            <div className="reel-row">
-              <div className="reel-frame placeholder">
-                <span style={{ fontSize: 11, color: "var(--text-muted)", letterSpacing: "0.12em" }}>
-                  ПУСТО
-                </span>
-              </div>
-              <div className="reel-frame placeholder" aria-hidden />
-            </div>
-          )
-        ) : (
-          variant === "bar" ? (
-            <div className="frames-bar-row" role="list">
-              {state.images.map((img, idx) => (
-                <div
-                  key={img.id}
-                  className={[
-                    "reel-frame frames-bar-slot",
-                    !seenImageIdsRef.current.has(img.id) ? "studio-enter" : ""
-                  ]
-                    .filter(Boolean)
-                    .join(" ")}
-                >
-                  <span className="frame-num">#{String(idx + 1).padStart(2, "0")}</span>
-                  <span className="frame-status">
-                    {img.status === "generating"
-                      ? "генерация"
-                      : img.status === "waiting"
-                        ? "очередь"
-                        : img.status === "done"
-                          ? "готово"
-                          : "ошибка"}
-                  </span>
-                  <ImageSlideCard
-                    variant="thumb"
-                    index={idx}
-                    image={img}
-                    onPreview={
-                      img.status === "done" && img.imageBase64
-                        ? () =>
-                            setLightbox({
-                              dataUrl: `data:${img.mimeType ?? "image/png"};base64,${img.imageBase64}`,
-                              title: `Кадр ${String(idx + 1).padStart(2, "0")}`
-                            })
-                        : undefined
-                    }
-                  />
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="reel-row reel-row-stack">
-              {state.images.map((img, idx) => (
-                <div
-                  key={img.id}
-                  className={[
-                    "reel-frame",
-                    !seenImageIdsRef.current.has(img.id) ? "studio-enter" : ""
-                  ]
-                    .filter(Boolean)
-                    .join(" ")}
-                >
-                  <span className="frame-num">#{String(idx + 1).padStart(2, "0")}</span>
-                  <span className="frame-status">
-                    {img.status === "generating"
-                      ? "генерация"
-                      : img.status === "waiting"
-                        ? "очередь"
-                        : img.status === "done"
-                          ? "готово"
-                          : "ошибка"}
-                  </span>
-                  <ImageSlideCard
-                    variant="frame"
-                    index={idx}
-                    image={img}
-                    onPreview={
-                      img.status === "done" && img.imageBase64
-                        ? () =>
-                            setLightbox({
-                              dataUrl: `data:${img.mimeType ?? "image/png"};base64,${img.imageBase64}`,
-                              title: `Кадр ${String(idx + 1).padStart(2, "0")}`
-                            })
-                        : undefined
-                    }
-                  />
-                </div>
-              ))}
-            </div>
-          )
-        )}
-
-        {variant === "bar" ? (
-          <div className="telemetry frames-bar-telemetry">
-            <div className="tele-row">
-              <span className="tele-label">IMAGES</span>
-              <span className="tele-value">
-                {doneCount}/{state.images.length || 0} DONE
-              </span>
-            </div>
-            <div className="progress-bar">
-              <div className="progress-fill" style={{ width: `${telePct}%` }} />
-            </div>
-          </div>
-        ) : (
-          <div className="telemetry">
-            <div className="tele-row">
-              <span className="tele-label">IMAGES</span>
-              <span className="tele-value">
-                {doneCount}/{state.images.length || 0} DONE
-              </span>
-            </div>
-            <div className="tele-row">
-              <span className="tele-label">LANE</span>
-              <span className="tele-value">GPU</span>
-            </div>
-            <div className="progress-bar">
-              <div className="progress-fill" style={{ width: `${telePct}%` }} />
-            </div>
-          </div>
-        )}
-      </div>
+          <div className="frames-body min-h-0">{framesBody}</div>
+        </>
+      )}
 
       {lightbox ? (
         <div

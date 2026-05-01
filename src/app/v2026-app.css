@@ -76,67 +76,56 @@ button.asset-badge {
   grid-template-columns: 320px minmax(0, 1fr) 380px !important;
 }
 
-.center-stack {
-  min-height: 0;
+/* Лента кадров внутри панели сцены — сразу над чатом */
+.stage-frames-rail {
+  flex-shrink: 0;
+  border-bottom: 1px solid var(--border-divider);
+  background: rgba(5, 11, 14, 0.35);
+}
+
+.stage-frames-rail-head {
+  padding: 10px 16px 6px;
+}
+
+.stage-frames-rail-head .strip-row {
+  margin-bottom: 0;
+}
+
+.stage-frames-rail-body {
+  padding: 0 var(--s-4) var(--s-3);
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-2);
   min-width: 0;
-  flex: 1 1 0;
-  display: flex;
-  flex-direction: column;
-  gap: var(--s-3);
-  overflow: hidden;
 }
 
-.frames-bar {
-  flex: 0 0 auto;
-  height: 240px;
-  overflow: hidden;
-}
-
-.frames-bar-body {
-  padding: var(--s-4);
-  flex: 1 1 0;
-  min-height: 0;
+.stage-frames-rail-scroll {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
+  align-items: center;
   gap: var(--s-3);
-  overflow: hidden;
-}
-
-.frames-bar-row {
-  display: flex;
-  gap: var(--s-3);
-  flex: 1 1 0;
-  min-height: 0;
   overflow-x: auto;
   overflow-y: hidden;
-  padding-bottom: 6px;
+  padding: 4px 2px 8px;
   scroll-snap-type: x proximity;
+  min-width: 0;
 }
 
-.frames-bar-empty {
-  display: flex;
-  gap: var(--s-3);
-  flex: 1 1 0;
-  min-height: 0;
-  overflow-x: auto;
-  overflow-y: hidden;
-  padding-bottom: 6px;
-}
-
-.reel-frame.frames-bar-slot {
+/* Та же плитка 9:16, что и в v2026 — только задаём ширину ряда; не трогаем aspect-ratio */
+.reel-frame.stage-frames-slot {
   scroll-snap-align: start;
   flex: 0 0 auto;
-  width: 240px;
-  height: 100%;
-  aspect-ratio: auto;
-  display: flex;
-  flex-direction: column;
-  min-height: 0;
+  width: clamp(148px, 14vw, 200px);
 }
 
-.frames-bar-telemetry {
+.stage-frames-rail-telemetry {
   margin-top: 0;
+  padding: var(--s-3);
   flex-shrink: 0;
+}
+
+.stage-frames-rail-body .busy-ribbon {
+  margin-bottom: 0;
 }
 
 .layout > .panel {
@@ -161,6 +150,7 @@ button.asset-badge {
 }
 
 .panel.stage .panel-strip,
+.panel.stage .stage-frames-rail,
 .panel.stage .prompts,
 .panel.stage .busy-ribbon {
   flex-shrink: 0;
@@ -212,19 +202,6 @@ button.asset-badge {
 /* Плотнее hero — меньше вертикаль на ноутбуке */
 .panel.stage .panel-strip {
   padding: 14px 20px 12px;
-}
-
-.panel.frames.frames-bar .panel-strip {
-  padding: 10px 16px 8px;
-}
-
-.panel.frames.frames-bar .strip-title {
-  font-size: clamp(0.95rem, 1.6vw, 1.15rem);
-  margin: 2px 0 0;
-}
-
-.panel.frames.frames-bar .strip-sub {
-  display: none;
 }
 
 .panel.stage .stage-h1 {
@@ -379,6 +356,12 @@ aside.panel.anim-4 .panel-strip {
 }
 
 .panel.frames.is-images-busy {
+  box-shadow:
+    0 0 0 1px rgba(91, 224, 218, 0.4),
+    inset 0 0 40px rgba(91, 224, 218, 0.1);
+}
+
+.panel.stage.is-images-busy {
   box-shadow:
     0 0 0 1px rgba(91, 224, 218, 0.4),
     inset 0 0 40px rgba(91, 224, 218, 0.1);

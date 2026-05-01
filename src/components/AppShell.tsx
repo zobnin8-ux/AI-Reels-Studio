@@ -3,7 +3,6 @@
 import { ControlPanel } from "@/components/ControlPanel";
 import { DialoguePanel } from "@/components/DialoguePanel";
 import { ImageActivitySync } from "@/components/ImageActivitySync";
-import { ImageStripPanel } from "@/components/ImageStripPanel";
 import { OutputPanel } from "@/components/OutputPanel";
 import { PanelErrorBoundary } from "@/components/PanelErrorBoundary";
 import { StudioTopBar } from "@/components/StudioTopBar";
@@ -21,23 +20,18 @@ function AppGrid() {
         </PanelErrorBoundary>
       </aside>
 
-      <section className="center-stack min-h-0">
-        <section className={["panel frames frames-bar anim-2 min-h-0", imagePipelineBusy ? "is-images-busy" : ""].join(" ")}>
-          <PanelErrorBoundary label="Кадры">
-            <ImageStripPanel variant="bar" />
-          </PanelErrorBoundary>
-        </section>
-
-        <section
-          className={[
-            "panel stage anim-3 flex-col min-h-0",
-            chatBusy ? "is-chat-busy" : ""
-          ].join(" ")}
-        >
-          <PanelErrorBoundary label="Диалог">
-            <DialoguePanel />
-          </PanelErrorBoundary>
-        </section>
+      <section
+        className={[
+          "panel stage anim-2 flex-col min-h-0",
+          chatBusy ? "is-chat-busy" : "",
+          imagePipelineBusy ? "is-images-busy" : ""
+        ]
+          .filter(Boolean)
+          .join(" ")}
+      >
+        <PanelErrorBoundary label="Диалог">
+          <DialoguePanel />
+        </PanelErrorBoundary>
       </section>
 
       <aside className="panel anim-4 min-h-0">
