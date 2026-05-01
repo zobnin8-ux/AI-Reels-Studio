@@ -61,6 +61,10 @@ export function userExplicitMusicIntent(text: string): boolean {
   if (/\b(аудио|инструментал|фонов\w*\s+трек|плейлист)\b/i.test(t)) return true;
   if (/\bмузык\w*\s*(к\s+ролику|для\s+ролика|под\s+видео|в\s+рилс|для\s+рилс)/i.test(t)) return true;
   if (/\b(перегенерир|обнови|друг\w+)\s+.*\bмузык/i.test(t)) return true;
+  if (/\b(suggest|pick|recommend|give)\s+(me\s+)?(some\s+)?(tracks?|songs?|music|playlist)/i.test(t)) {
+    return true;
+  }
+  if (/\b(bgm|background\s+music|soundtrack)\b/i.test(t)) return true;
   return false;
 }
 

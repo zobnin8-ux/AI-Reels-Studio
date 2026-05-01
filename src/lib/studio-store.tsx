@@ -13,7 +13,7 @@ function reducer(state: StudioState, action: Action): StudioState {
     case "set": {
       const patch = action.patch;
       const next: StudioState = { ...state, ...patch };
-      if (patch.prompts !== undefined && patch.images === undefined) {
+      if (patch.prompts !== undefined) {
         next.images = syncImagesWithSlidePrompts(next.images, next.prompts);
       }
       return next;

@@ -11,7 +11,14 @@ export function userWantsPromptImprovement(userText: string): boolean {
       t
     ) ||
     /\b(промпт|кадр).{0,30}(улучш|усиль|доработ|перепиш|сильнее|детальн)/i.test(t) ||
-    /\bулучш/i.test(t) && /\bпромпт/i.test(t)
+    (/\bулучш/i.test(t) && /\bпромпт/i.test(t)) ||
+    /\b(rewrite|re-write|regenerate|refine|improve|update|redo).{0,55}(prompt|slide|frame|shot|image)/i.test(
+      t
+    ) ||
+    /\b(prompt|slide|frame|shot).{0,35}(rewrite|regenerate|refine|improve|update|new|another|different)/i.test(
+      t
+    ) ||
+    /\bnew\s+prompt\b/i.test(t)
   );
 }
 
@@ -38,8 +45,10 @@ export function extractSlideIndexFromUserMessage(userText: string, slidesLen: nu
 
 /** Иногда модель пишет «для кадра 3: …» в ответе. */
 export function extractSlideIndexFromAssistantReply(reply: string): number | null {
-  const m = reply.match(/(?:кадр|слайд|frame)\s*[:#]?\s*(\d{1,2})\b/i);
+  const m = reply.match(/(?:кадр|слайд|frame|slide)\s*[:#]?\s*(\d{1,2})\b/i);
   if (m) return Number(m[1]);
+  const m2 = reply.match(/\b(?:slide|frame)\s+(\d{1,2})\b/i);
+  if (m2) return Number(m2[1]);
   return null;
 }
 

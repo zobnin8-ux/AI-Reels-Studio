@@ -215,10 +215,31 @@ export function mergeStatePatch(state: StudioState, patch: StatePatch | undefine
   if (patch.slides !== undefined) out.slides = patch.slides;
   if (patch.approved !== undefined) out.approved = patch.approved;
   if (patch.prompts !== undefined) {
-    out.prompts = patch.prompts.map((p) => ({
+    const incoming = patch.prompts.map((p) => ({
       slideId: p.slideId,
       prompt: sanitizePromptText(p.prompt)
     }));
+    /**
+     * Модель часто шлёт только изменённый кадр. Раньше мы затирали весь массив — правая колонка и
+     * mergePromptForSlide расходились с плитками; теперь мержим по slideId.
+     */
+    const slidesForPromptMerge = patch.slides ?? state.slides;
+    if (slidesForPromptMerge.length > 0) {
+      out.prompts = slidesForPromptMerge.map((s) => {
+        const inc = incoming.find((p) => p.slideId === s.id);
+        const prev = state.prompts.find((p) => p.slideId === s.id);
+        return {
+          slideId: s.id,
+          prompt: inc !== undefined ? inc.prompt : (prev?.prompt ?? "")
+        };
+      });
+    } else {
+      const byId = new Map(state.prompts.map((p) => [p.slideId, p.prompt]));
+      for (const p of incoming) {
+        byId.set(p.slideId, p.prompt);
+      }
+      out.prompts = Array.from(byId.entries()).map(([slideId, prompt]) => ({ slideId, prompt }));
+    }
   }
   if (patch.caption !== undefined) out.caption = patch.caption;
   if (patch.music !== undefined) out.music = patch.music;

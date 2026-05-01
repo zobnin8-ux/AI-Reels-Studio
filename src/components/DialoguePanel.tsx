@@ -12,8 +12,11 @@ import { ImageStripPanel } from "@/components/ImageStripPanel";
 import {
   extractMusicFromReply,
   isMusicBlockEmpty,
+  looksLikeMusicReply,
   userExplicitMusicIntent,
-  wantsMusicFollowUp
+  wantsMusicFollowUp,
+  wantsMusicKeyword,
+  wantsMusicRefinement
 } from "@/lib/music-reply-sync";
 import {
   extractSlideIndexFromAssistantReply,
@@ -163,8 +166,9 @@ export function DialoguePanel() {
       const assistantMsg: ChatMessage = { id: uid("a"), role: "assistant", content: reply };
       const patch = mergeStatePatch(state, statePatch);
 
-      const allowMusicFill = userExplicitMusicIntent(text) || wantsMusicFollowUp(text);
-      if (patch.music !== undefined && !allowMusicFill) {
+      const allowMusicFill =
+        userExplicitMusicIntent(text) || wantsMusicFollowUp(text) || wantsMusicRefinement(text);
+      if (patch.music !== undefined && !allowMusicFill && isMusicBlockEmpty(patch.music)) {
         delete patch.music;
       }
 
@@ -181,7 +185,7 @@ export function DialoguePanel() {
         if (slideIdx && slideIdx >= 1 && slideIdx <= state.slides.length) {
           const targetSlideId = state.slides[slideIdx - 1]!.id;
           const promptCandidate = normalizeImagePromptFromReply(reply);
-          if (targetSlideId && promptCandidate.length >= 15) {
+          if (targetSlideId && promptCandidate.length >= 10) {
             patch.prompts = mergePromptForSlide(state, targetSlideId, promptCandidate);
           }
         }
@@ -192,9 +196,14 @@ export function DialoguePanel() {
         const c = extractCaptionFromReply(reply);
         if (c) patch.caption = c;
       }
-      if (allowMusicFill && isMusicBlockEmpty(patch.music)) {
-        const m = extractMusicFromReply(reply);
-        if (!isMusicBlockEmpty(m)) patch.music = m;
+      const musicParsed = extractMusicFromReply(reply);
+      if (isMusicBlockEmpty(patch.music) && !isMusicBlockEmpty(musicParsed)) {
+        if (
+          allowMusicFill ||
+          (wantsMusicKeyword(text) && looksLikeMusicReply(reply))
+        ) {
+          patch.music = musicParsed;
+        }
       }
 
       const merged: StudioState = {
