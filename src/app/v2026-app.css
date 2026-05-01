@@ -1,5 +1,17 @@
 /* Next.js shell — extends v2026 mock tokens */
 
+/* Одна высота экрана: страница не скроллится, только колонки внутри. */
+html {
+  height: 100%;
+  overflow: hidden;
+}
+
+body {
+  height: 100%;
+  max-height: 100dvh;
+  overflow: hidden;
+}
+
 .brand-mark,
 .strip-title,
 .stage-h1,
@@ -30,18 +42,91 @@ button.asset-badge {
 
 .v2026-shell {
   position: relative;
-  min-height: 100dvh;
+  height: 100dvh;
+  max-height: 100dvh;
   display: flex;
   flex-direction: column;
   overflow: hidden;
 }
 
-.layout {
-  flex: 1;
+/* Контент поверх фиксированных bg-слоёв — только topbar + grid участвуют во flex. */
+.v2026-front {
+  position: relative;
+  z-index: 6;
+  flex: 1 1 0;
   min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.v2026-front .topbar {
+  flex-shrink: 0;
+}
+
+.layout {
+  flex: 1 1 0;
+  min-height: 0 !important;
+  max-height: 100%;
   min-width: 1480px;
   overflow-x: auto;
   overflow-y: hidden;
+  grid-template-rows: minmax(0, 1fr);
+}
+
+.layout > .panel {
+  min-height: 0;
+  max-height: 100%;
+  overflow: hidden;
+}
+
+/* Центр: один flex-столбец, чат скроллится, композер всегда внизу панели */
+.panel.stage .stage-inner {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 0;
+  min-height: 0;
+  height: 100%;
+  overflow: hidden;
+}
+
+.panel.stage .panel-strip,
+.panel.stage .prompts,
+.panel.stage .busy-ribbon {
+  flex-shrink: 0;
+}
+
+.panel.stage .composer {
+  flex-shrink: 0;
+}
+
+/* Плотнее hero — меньше вертикаль на ноутбуке */
+.panel.stage .panel-strip {
+  padding: 14px 20px 12px;
+}
+
+.panel.stage .stage-h1 {
+  font-size: clamp(1.15rem, 2.2vw, 1.65rem);
+  line-height: 1.12;
+  margin-bottom: 6px;
+}
+
+.panel.stage .stage-lead {
+  font-size: 12px;
+  line-height: 1.45;
+  max-width: none;
+}
+
+.panel.frames .frames-body,
+aside.panel .assets-body {
+  flex: 1 1 0;
+  min-height: 0;
+}
+
+aside.panel.anim-1 .panel-strip,
+section.panel.frames .panel-strip,
+aside.panel.anim-4 .panel-strip {
+  flex-shrink: 0;
 }
 
 .panel.min-h-0 {

@@ -260,7 +260,7 @@ export function DialoguePanel() {
   const clockStr = clock.toLocaleTimeString("ru-RU", { hour12: false });
 
   return (
-    <>
+    <div className="stage-inner">
       <div className="panel-strip">
         <div className="strip-row">
           <span className="strip-tag">Эфир</span>
@@ -437,6 +437,6 @@ export function DialoguePanel() {
           </button>
         </div>
       </div>
-    </>
+    </div>
   );
 }

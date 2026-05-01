@@ -54,13 +54,15 @@ export function AppShell() {
       <div className="bg-glow" aria-hidden />
       <div className="bg-noise" aria-hidden />
       <div className="scan-line" aria-hidden />
-      <StudioProvider>
-        <StudioActivityProvider>
-          <ImageActivitySync />
-          <StudioTopBar />
-          <AppGrid />
-        </StudioActivityProvider>
-      </StudioProvider>
+      <div className="v2026-front">
+        <StudioProvider>
+          <StudioActivityProvider>
+            <ImageActivitySync />
+            <StudioTopBar />
+            <AppGrid />
+          </StudioActivityProvider>
+        </StudioProvider>
+      </div>
     </div>
   );
 }
