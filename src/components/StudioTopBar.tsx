@@ -6,8 +6,7 @@ import { useStudio } from "@/lib/studio-store";
 const projectOptions: { id: string; label: string }[] = [
   { id: "poslenego", label: "После него" },
   { id: "zobnin", label: "Zobnin AI" },
-  { id: "olgatrip", label: "OlgaTrip" },
-  { id: "custom", label: "Custom" }
+  { id: "olgatrip", label: "OlgaTrip" }
 ];
 
 function formatSes(d: Date): string {

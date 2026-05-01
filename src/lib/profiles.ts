@@ -3,7 +3,7 @@ import type { CtaMode, ProjectId, StudioState } from "@/lib/state";
 export type ProjectProfile = {
   id: ProjectId;
   label: string;
-  systemPrompt: (state: Pick<StudioState, "customSystemPrompt" | "project">) => string;
+  systemPrompt: () => string;
 };
 
 function ctaText(state: Pick<StudioState, "ctaMode" | "website" | "triggerWord" | "customCta">) {
@@ -87,7 +87,7 @@ RHYTHM: short line → longer line → short again.
 
 FORBIDDEN WORDS (never in Russian copy): незабываемо, магия, роскошь, лучшее путешествие, эксклюзив; avoid “девочки”, срочно/успей/бронируй; no infotainment tone, travel clichés, motivational poster voice.
 
-VISUAL LANGUAGE (for prompts and references):
+VISUAL LANGUAGE (for your scenario wording and mental references only; final image prompts are built outside this chat from slide text + account + tone + visual style):
 Palette: beige, cashmere, sand, warm light, muted tones. Light: golden hour, soft daylight.
 Shots to prefer: hands with coffee; back in a dress; walk by the ocean; glass in the sun; road through a car window; table, textures, details.
 Avoid: selfies, looking at the camera, posing, loud colors, trendy effects.
@@ -110,25 +110,19 @@ STRUCTURED DELIVERY — When the user asks for a full reel/post package, structu
 1) IDEA
 2) HOOK
 3) SCRIPT — label beats (0–3 / 3–10 / 10–25 / 25–35 sec) for Reels
-4) VISUAL PROMPTS — **English** for image generation
-5) CAPTION
-6) MUSIC MOOD
+4) CAPTION
+5) MUSIC MOOD
+
+Do NOT output per-slide image generation prompts: backgrounds are generated later in the app from slide text + selectors (account, tone, visual style).
 
 QUALITY GATE — Reject (rewrite) copy that: sounds like generic travel; is pushy ads; lacks concrete detail; could be pasted on any travel account.
 
-Language: Russian for dialogue and main copy unless the user switches to English; VISUAL PROMPTS stay in English.`,
-  },
-  custom: {
-    id: "custom",
-    label: "Custom",
-    systemPrompt: (state) =>
-      state.customSystemPrompt?.trim() ||
-      "You are a senior creative partner for short-form social video."
+Language: Russian for dialogue and main copy unless the user switches to English.`,
   }
 };
 
-export function getSystemPrompt(state: Pick<StudioState, "project" | "customSystemPrompt">) {
-  return PROFILES[state.project].systemPrompt(state);
+export function getSystemPrompt(state: Pick<StudioState, "project">) {
+  return PROFILES[state.project].systemPrompt();
 }
 
 export function getCtaHint(state: Pick<StudioState, "ctaMode" | "website" | "triggerWord" | "customCta">) {

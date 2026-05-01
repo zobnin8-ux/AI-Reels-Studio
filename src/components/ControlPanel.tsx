@@ -8,8 +8,7 @@ import type { ProjectId, StudioState } from "@/lib/state";
 const projectOptions: { id: ProjectId; label: string }[] = [
   { id: "poslenego", label: "После него" },
   { id: "zobnin", label: "Zobnin AI" },
-  { id: "olgatrip", label: "OlgaTrip" },
-  { id: "custom", label: "Custom" }
+  { id: "olgatrip", label: "OlgaTrip" }
 ];
 
 const emptyMusic = () => ({ queries: [] as string[], recommendations: [] as string[], avoid: [] as string[] });
@@ -40,7 +39,6 @@ function defaultsForProject(project: ProjectId): Partial<StudioState> {
 export function ControlPanel() {
   const { state, dispatch } = useStudio();
   const prevProject = useRef<ProjectId>(state.project);
-  const showCustom = state.project === "custom";
   /** true = класс `showcase` на body (сетка, шум, скан); false = спокойный фон для записи экрана */
   const [richStudioBackground, setRichStudioBackground] = useState(true);
 
@@ -102,7 +100,7 @@ export function ControlPanel() {
     resetContentAfterProjectSwitch(nextProject);
   }
 
-  const stripMeta = state.mockMode ? "mock · offline" : "live · api";
+  const stripMeta = "live · api";
 
   return (
     <>
@@ -115,11 +113,6 @@ export function ControlPanel() {
           Сессия <b>контур</b>
         </h2>
         <p className="strip-sub">Контур съёмки: проект, формат, тон и провайдер модели.</p>
-        {state.mockMode ? (
-          <div style={{ marginTop: 10 }}>
-            <span className="mock-pill">MOCK</span>
-          </div>
-        ) : null}
       </div>
 
       <div className="panel-body min-h-0">
@@ -140,18 +133,6 @@ export function ControlPanel() {
               ))}
             </select>
           </div>
-          {showCustom ? (
-            <div className="field">
-              <span className="label mono">Custom system</span>
-              <textarea
-                className="textarea"
-                value={state.customSystemPrompt}
-                onChange={(e) => dispatch({ type: "set", patch: { customSystemPrompt: e.target.value } })}
-                placeholder="Системный промпт для Custom — подставляется в каждый запрос вместо профиля."
-                rows={5}
-              />
-            </div>
-          ) : null}
         </div>
 
         <div className="group">
@@ -195,7 +176,7 @@ export function ControlPanel() {
 
         <div className="group">
           <div className="group-title">Тон и стиль</div>
-          <p className="group-hint">Настроение текста и визуала для промптов.</p>
+          <p className="group-hint">Настроение для текста в чате и для света/контраста в генерации кадров.</p>
           <div className="field-row">
             <div className="field">
               <span className="label">Тон</span>

@@ -42,11 +42,7 @@ export function OutputPanel() {
   }
 
   async function onGenerateImages() {
-    const hasPrompt =
-      state.slides.length > 0
-        ? state.slides.some((s) => state.prompts.find((p) => p.slideId === s.id)?.prompt?.trim())
-        : state.prompts.some((p) => p.prompt.trim());
-    if (!hasPrompt) return;
+    if (state.slides.length === 0) return;
 
     setGenError(null);
     setBusy("images");
@@ -91,15 +87,7 @@ export function OutputPanel() {
     state.messages.length > 0 ||
     state.images.some((i) => i.status === "done");
 
-  const allSlidesHavePrompts =
-    state.slides.length > 0
-      ? state.slides.every((s) => state.prompts.find((p) => p.slideId === s.id)?.prompt?.trim())
-      : state.prompts.length > 0 && state.prompts.every((p) => p.prompt.trim());
-
-  const canGenerateImages =
-    state.slides.length > 0
-      ? state.slides.some((s) => state.prompts.find((p) => p.slideId === s.id)?.prompt?.trim())
-      : state.prompts.some((p) => p.prompt.trim());
+  const canGenerateImages = state.slides.length > 0;
 
   const pipelineBusy = showBatchProgress || busy === "images";
 
@@ -113,7 +101,9 @@ export function OutputPanel() {
         <h2 className="strip-title">
           Экспорт <b>·</b> ZIP
         </h2>
-        <p className="strip-sub">Сценарий, промпты, подпись, музыка и сборка архива.</p>
+        <p className="strip-sub">
+          Сценарий, опциональные уточнения к кадрам, подпись, музыка и сборка архива.
+        </p>
       </div>
 
       <div className="assets-body min-h-0">
@@ -170,13 +160,13 @@ export function OutputPanel() {
         <div className={["asset-block", promptsShake ? "studio-shake" : ""].filter(Boolean).join(" ")}>
           <div className="asset-head">
             <div className="asset-h">
-              Промпты <b>по кадрам</b>
+              Уточнения <b>по кадрам</b>
             </div>
-            <span className="asset-badge">lines</span>
+            <span className="asset-badge">opt</span>
           </div>
           <p className="asset-desc">
-            Одна строка — один кадр. Совпадает с Generate images. Blur поля промпта в карточке кадра сохраняет
-            state.
+            Опционально: короткие правки к автособранному промпту (одна строка — один кадр). Картинки строятся из
+            текста слайда + селекторов; это поле можно оставить пустым.
           </p>
           <textarea
             className="textarea"
@@ -184,8 +174,8 @@ export function OutputPanel() {
             onChange={(e) => applyPromptTextarea(e.target.value)}
             placeholder={
               state.slides.length
-                ? "Промпты по строкам — как слайды слева направо."
-                : "Сначала слайды из диалога, или введи строки вручную."
+                ? "Уточнения по строкам — порядок как у слайдов (можно пусто)."
+                : "Сначала слайды из диалога."
             }
             rows={10}
           />
@@ -211,11 +201,7 @@ export function OutputPanel() {
           ) : null}
           {!canGenerateImages ? (
             <p style={{ marginTop: 8, fontSize: 11, color: "var(--text-muted)" }}>
-              Нужен хотя бы один непустой промпт.
-            </p>
-          ) : state.slides.length > 0 && !allSlidesHavePrompts ? (
-            <p style={{ marginTop: 8, fontSize: 11, color: "var(--warn)" }}>
-              Для всех {state.slides.length} слайдов нужна строка промпта.
+              Нужны слайды из диалога — затем Generate images.
             </p>
           ) : null}
         </div>
@@ -308,7 +294,8 @@ export function OutputPanel() {
         <div className="export-dock">
           <div className="export-dock-title">Финальный пакет</div>
           <div className="export-list">
-            В архив попадут: <span>сценарий</span>, <span>промпты</span>, <span>кадры</span>,{" "}
+            В архив попадут: <span>сценарий</span>, <span>промпты OpenAI</span>,{" "}
+            <span>уточнения</span>, <span>кадры</span>,{" "}
             <span>caption</span> и <span>музыка</span> (если заполнены).
           </div>
           <button

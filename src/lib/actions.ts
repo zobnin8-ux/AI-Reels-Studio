@@ -1,5 +1,6 @@
 "use client";
 
+import { buildImagePrompt, slideBodyForImagePrompt } from "@/lib/build-image-prompt";
 import type { ChatMessage, GeneratedImage, SlidePrompt, StudioState } from "@/lib/state";
 import type { StatePatch } from "@/lib/chat-response";
 import { formatTypographyNotesForZip } from "@/lib/typography-export";
@@ -12,111 +13,19 @@ function aspectFromContentType(contentType: StudioState["contentType"]) {
   return contentType === "reels" ? ("9:16" as const) : ("4:5" as const);
 }
 
-/** Есть ли кириллица — усиливаем инструкции для текста на изображении. */
-function textHasCyrillic(s: string) {
-  return /[\u0400-\u04FF]/.test(s);
-}
-
-function enrichPromptForGeneration(state: StudioState, slideText: string, basePrompt: string) {
-  const cleaned = sanitizePromptText(basePrompt);
-  const needsText = state.outputMode === "textInImages" || state.outputMode === "both";
-
-  function styleBlock(style: StudioState["visualStyle"]) {
-    switch (style) {
-      case "darkBrutal":
-        return `Dark brutalist Instagram visual. Black or near-black background, aggressive contrast, minimal elements, bold dominant layout.`;
-
-      case "tech":
-        return `Futuristic tech aesthetic. Clean grid, precise alignment, subtle glow accents, sharp details.`;
-
-      case "editorial":
-        return `High-end editorial design. Minimal layout, strong typography, lots of whitespace, premium feel.`;
-
-      case "lightMinimal":
-        return `Ultra minimal light composition. Soft tones, lots of air, clean hierarchy.`;
-
-      case "brightPositive":
-        return `Bright, energetic, positive visual. Clean layout, vibrant accents, high readability.`;
-
-      default:
-        return `Clean modern Instagram visual. Balanced composition, minimal noise.`;
-    }
-  }
-
-  let textBlock = "No text on image.";
-
-  if (needsText) {
-    const lines = slideText
-      .split("\n")
-      .map((l) => l.trim())
-      .filter(Boolean)
-      .slice(0, 5);
-
-    const joined = lines.join(" / ");
-    const cyrillic = textHasCyrillic(joined) || textHasCyrillic(cleaned);
-
-    textBlock = `
-On-image text (exact):
-"${joined}"
-
-Rules:
-- MUST be perfectly readable
-- Large bold font
-- No distortion or perspective warp
-- No overlapping with background elements
-`;
-
-    if (cyrillic) {
-      textBlock += `
-CRITICAL:
-Use correct Russian Cyrillic letters only.
-No Latin substitutions.
-Use clean sans-serif (Inter / Manrope style).
-`;
-    }
-  }
-
-  const sceneHint =
-    state.contentType === "reels"
-      ? "Instagram Reel slide, vertical 9:16 (1080×1920 px)."
-      : "Instagram feed post slide, portrait 4:5 (1080×1350 px).";
-
-  const finalPrompt = `
-${cleaned}
-
-Scene:
-${sceneHint}
-
-Style:
-${styleBlock(state.visualStyle)}
-
-Composition:
-Clear visual hierarchy.
-Centered or strong dominant layout.
-Safe margins.
-No clutter.
-
-Lighting:
-High contrast, sharp, cinematic.
-
-Typography:
-Large bold sans-serif.
-High readability.
-Clean baseline.
-
-${textBlock}
-
-Constraints:
-No logos.
-No watermarks.
-No artifacts.
-No broken faces or hands.
-Clean professional layout.
-`;
-
-  return finalPrompt
-    .replace(/\n\s*\n/g, "\n\n")
-    .trim();
+/** Сборка единственной строки для OpenAI Image API по ТЗ (аккаунт, тон, стиль, текст слайда + опц. косметика). */
+function composeImagePrompt(
+  state: StudioState,
+  slide: { id: string; title: string; text: string },
+  cosmeticHint: string
+) {
+  return buildImagePrompt({
+    account: state.project,
+    tone: state.mood,
+    visualStyle: state.visualStyle,
+    slideText: slideBodyForImagePrompt(slide),
+    cosmeticHint: cosmeticHint.trim() || undefined
+  });
 }
 
 function sanitizePromptText(raw: string): string {
@@ -167,7 +76,6 @@ export function buildSelectorsPayload(
 ): Pick<
   StudioState,
   | "project"
-  | "customSystemPrompt"
   | "contentType"
   | "slideCount"
   | "mood"
@@ -180,7 +88,6 @@ export function buildSelectorsPayload(
 > {
   return {
     project: state.project,
-    customSystemPrompt: state.customSystemPrompt,
     contentType: state.contentType,
     slideCount: state.slideCount,
     mood: state.mood,
@@ -301,92 +208,54 @@ export async function generateImagesFromState(
 ): Promise<GeneratedImage[]> {
   const onProgress = options?.onProgress;
 
-  if (state.slides.length > 0) {
-    type SlideJob =
-      | { ok: false; id: string; slideId: string; error: string }
-      | { ok: true; id: string; slideId: string; finalPrompt: string; rawPrompt: string };
-
-    const jobs: SlideJob[] = state.slides.map((slide) => {
-      const row = state.prompts.find((p) => p.slideId === slide.id);
-      const rawPrompt = row?.prompt?.trim() ?? "";
-      const id = `img_${slide.id}`;
-      if (!rawPrompt) {
-        return {
-          ok: false as const,
-          id,
-          slideId: slide.id,
-          error: "Нет промпта для этого слайда — запроси промпты в диалоге или вставь вручную справа."
-        };
-      }
-      const finalPrompt = enrichPromptForGeneration(state, `${slide.title}\n${slide.text}`, rawPrompt);
-      return { ok: true as const, id, slideId: slide.id, finalPrompt, rawPrompt };
-    });
-
-    const out: GeneratedImage[] = jobs.map((j) =>
-      j.ok
-        ? { id: j.id, slideId: j.slideId, prompt: j.finalPrompt, status: "waiting" as const }
-        : {
-            id: j.id,
-            slideId: j.slideId,
-            prompt: "",
-            status: "error" as const,
-            error: j.error
-          }
-    );
-    onProgress?.({ images: [...out] });
-
-    for (let i = 0; i < jobs.length; i++) {
-      const j = jobs[i]!;
-      if (!j.ok) continue;
-
-      out[i] = { id: j.id, slideId: j.slideId, prompt: j.finalPrompt, status: "generating" };
-      onProgress?.({ images: [...out] });
-
-      try {
-        const img = await fetchOneImage(state, j.id, j.slideId, j.finalPrompt);
-        out[i] = img;
-      } catch (e: unknown) {
-        const msg = e instanceof Error ? e.message : "Image error";
-        out[i] = {
-          id: j.id,
-          slideId: j.slideId,
-          prompt: j.finalPrompt,
-          status: "error",
-          error: msg
-        };
-      }
-      onProgress?.({ images: [...out] });
-    }
-    return out;
+  if (state.slides.length === 0) {
+    return [];
   }
 
-  const promptJobs: { idx: number; row: SlidePrompt; prompt: string; id: string }[] = [];
-  for (let i = 0; i < state.prompts.length; i++) {
-    const row = state.prompts[i]!;
-    if (!row.prompt.trim()) continue;
-    const prompt = enrichPromptForGeneration(state, row.prompt, row.prompt);
-    promptJobs.push({ idx: i, row, prompt, id: `img_${i}` });
-  }
+  type SlideJob = {
+    id: string;
+    slideId: string;
+    cosmeticHint: string;
+    finalPrompt: string;
+  };
 
-  const out: GeneratedImage[] = promptJobs.map(({ row, prompt, id }) => ({
-    id,
-    slideId: row.slideId,
-    prompt,
+  const jobs: SlideJob[] = state.slides.map((slide) => {
+    const row = state.prompts.find((p) => p.slideId === slide.id);
+    const cosmeticHint = row?.prompt?.trim() ?? "";
+    const finalPrompt = composeImagePrompt(state, slide, cosmeticHint);
+    return {
+      id: `img_${slide.id}`,
+      slideId: slide.id,
+      cosmeticHint,
+      finalPrompt
+    };
+  });
+
+  const out: GeneratedImage[] = jobs.map((j) => ({
+    id: j.id,
+    slideId: j.slideId,
+    prompt: j.cosmeticHint,
     status: "waiting" as const
   }));
   onProgress?.({ images: [...out] });
 
-  for (let k = 0; k < promptJobs.length; k++) {
-    const { row, prompt, id } = promptJobs[k]!;
-    out[k] = { id, slideId: row.slideId, prompt, status: "generating" };
+  for (let i = 0; i < jobs.length; i++) {
+    const j = jobs[i]!;
+    out[i] = { id: j.id, slideId: j.slideId, prompt: j.cosmeticHint, status: "generating" };
     onProgress?.({ images: [...out] });
 
     try {
-      const img = await fetchOneImage(state, id, row.slideId, prompt);
-      out[k] = img;
+      const img = await fetchOneImage(state, j.id, j.slideId, j.finalPrompt, j.cosmeticHint);
+      out[i] = img;
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : "Image error";
-      out[k] = { id, slideId: row.slideId, prompt, status: "error", error: msg };
+      out[i] = {
+        id: j.id,
+        slideId: j.slideId,
+        prompt: j.cosmeticHint,
+        status: "error",
+        error: msg
+      };
     }
     onProgress?.({ images: [...out] });
   }
@@ -398,25 +267,14 @@ async function fetchOneImage(
   state: StudioState,
   id: string,
   slideId: string,
-  prompt: string
+  apiPrompt: string,
+  uiHint: string
 ): Promise<GeneratedImage> {
-  if (state.mockMode) {
-    return {
-      id,
-      slideId,
-      prompt,
-      status: "done",
-      mimeType: "image/png",
-      imageBase64:
-        "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8DwHwAFhQJ/lb0u9QAAAABJRU5ErkJggg=="
-    };
-  }
-
   const res = await fetch("/api/image", {
     method: "POST",
     headers: { "content-type": "application/json" },
     body: JSON.stringify({
-      prompt,
+      prompt: apiPrompt,
       aspect: aspectFromContentType(state.contentType),
       stylePreset: state.visualStyle
     })
@@ -427,21 +285,35 @@ async function fetchOneImage(
     throw new Error(detail ?? `Image failed (${res.status})`);
   }
   const json = (await res.json()) as { imageBase64: string; mimeType: string };
-  return { id, slideId, prompt, status: "done", imageBase64: json.imageBase64, mimeType: json.mimeType };
+  return {
+    id,
+    slideId,
+    prompt: uiHint,
+    status: "done",
+    imageBase64: json.imageBase64,
+    mimeType: json.mimeType
+  };
 }
 
 export async function regenerateOneImage(
   state: StudioState,
   imageId: string,
   slideId: string | undefined,
-  prompt: string
+  cosmeticHint: string
 ): Promise<GeneratedImage> {
   const slide = slideId ? state.slides.find((s) => s.id === slideId) : undefined;
-  const slideText = slide ? `${slide.title}\n${slide.text}` : prompt;
-  const finalPrompt = enrichPromptForGeneration(state, slideText, prompt);
-  const img = await fetchOneImage(state, imageId, slideId ?? "", finalPrompt);
-  /** В UI и в `prompts[]` держим «сырой» промпт пользователя; в API ушёл обогащённый. */
-  return { ...img, prompt };
+  const hint = cosmeticHint.trim();
+  const finalPrompt = slide
+    ? composeImagePrompt(state, slide, hint)
+    : buildImagePrompt({
+        account: state.project,
+        tone: state.mood,
+        visualStyle: state.visualStyle,
+        slideText: hint || "(no slide)",
+        cosmeticHint: undefined
+      });
+  const img = await fetchOneImage(state, imageId, slideId ?? "", finalPrompt, hint);
+  return { ...img, prompt: hint };
 }
 
 function formatMusicNotesForZip(music: StudioState["music"]): string {
@@ -487,13 +359,21 @@ export async function downloadZip(state: StudioState) {
     .join("\n\n---\n\n");
   zip.file("scenario.txt", scenarioText || "");
 
-  const promptLines = state.slides.length
+  const cosmeticLines = state.slides.length
     ? state.slides.map((s, i) => {
         const p = state.prompts.find((x) => x.slideId === s.id)?.prompt ?? "";
-        return `${String(i + 1).padStart(2, "0")}. ${p}`;
+        const label = p.trim() ? p : "(нет)";
+        return `${String(i + 1).padStart(2, "0")}. ${label}`;
       })
-    : state.prompts.map((x, i) => `${String(i + 1).padStart(2, "0")}. ${x.prompt}`);
-  zip.file("prompts.txt", promptLines.join("\n\n"));
+    : state.prompts.map((x, i) => `${String(i + 1).padStart(2, "0")}. ${x.prompt || "(нет)"}`);
+  zip.file("cosmetic_hints.txt", cosmeticLines.join("\n\n"));
+
+  const openAiBlocks = state.slides.map((s, i) => {
+    const hint = state.prompts.find((x) => x.slideId === s.id)?.prompt?.trim() ?? "";
+    const block = composeImagePrompt(state, s, hint);
+    return `--- ${String(i + 1).padStart(2, "0")}. ${s.title || s.id} ---\n${block}`;
+  });
+  zip.file("image_prompts_openai.txt", openAiBlocks.join("\n\n"));
 
   zip.file("caption.txt", state.caption || "");
 

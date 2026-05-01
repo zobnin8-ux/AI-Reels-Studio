@@ -12,11 +12,6 @@ export function userWantsImageGeneration(userText: string): boolean {
 
 export function canRunImageGeneration(state: {
   slides: { id: string }[];
-  prompts: { slideId: string; prompt: string }[];
 }): boolean {
-  if (state.slides.length === 0) return false;
-  return state.slides.every((s) => {
-    const p = state.prompts.find((x) => x.slideId === s.id)?.prompt?.trim() ?? "";
-    return p.length > 0;
-  });
+  return state.slides.length > 0;
 }

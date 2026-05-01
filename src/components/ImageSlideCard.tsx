@@ -158,7 +158,9 @@ export function ImageSlideCard({
           )}
         </div>
         <div className={["min-w-0 overflow-hidden", isThumb ? "min-h-0 flex-1 space-y-2" : "space-y-2"].join(" ")}>
-          {!isFrame && !isThumb ? <div className="text-xs font-medium text-muted">Промпт</div> : null}
+          {!isFrame && !isThumb ? (
+            <div className="text-xs font-medium text-muted">Уточнение (опция)</div>
+          ) : null}
           <textarea
             value={localPrompt}
             onChange={(e) => setLocalPrompt(e.target.value)}
@@ -175,7 +177,7 @@ export function ImageSlideCard({
             <button
               type="button"
               onClick={() => void onRegenerate()}
-              disabled={!localPrompt.trim() || busy}
+              disabled={busy}
               className={
                 isThumb
                   ? "gen-btn mt-0 py-1.5 text-[10px]"

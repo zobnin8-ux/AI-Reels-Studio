@@ -74,8 +74,9 @@ const SHORTCUTS: { label: string; message: string }[] = [
     message: "Проверь логику сценария, особенно финальные слайды."
   },
   {
-    label: "Дай промпты",
-    message: "Создай промпты по каждому слайду с учётом выбранного стиля и формата."
+    label: "Уточни кадры",
+    message:
+      "Дай короткие опциональные уточнения для перегенерации кадров (свет, настроение), если нужно — по одному на слайд."
   },
   {
     label: "Caption",
@@ -185,7 +186,7 @@ export function DialoguePanel() {
         if (slideIdx && slideIdx >= 1 && slideIdx <= state.slides.length) {
           const targetSlideId = state.slides[slideIdx - 1]!.id;
           const promptCandidate = normalizeImagePromptFromReply(reply);
-          if (targetSlideId && promptCandidate.length >= 10) {
+          if (targetSlideId && promptCandidate.length >= 3) {
             patch.prompts = mergePromptForSlide(state, targetSlideId, promptCandidate);
           }
         }
@@ -284,7 +285,8 @@ export function DialoguePanel() {
         </h1>
         <p className="stage-lead">
           Опиши идею — тему, цифру, диалог или настроение. Студия разложит её на{" "}
-          <span>{state.slideCount} кадров</span>, подберёт промпты, caption и музыку по запросу.
+          <span>{state.slideCount} кадров</span>; картинки собираются отдельно из текста слайдов и селекторов.
+          Caption и музыку — по запросу.
         </p>
       </div>
 

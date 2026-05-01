@@ -18,18 +18,11 @@ Open `http://localhost:3000`.
 
 Keep secrets in **`.env.local`** only (gitignored). Use **`.env.example`** as a template. Do not commit API keys to GitHub.
 
-**Mock (no API keys):**
+**Chat mock (optional local test without keys):** set `AI_MOCK_MODE=1` in `.env.local` — `/api/chat` returns a stub JSON.
+
+**Production:**
 
 ```env
-AI_MOCK_MODE=1
-NEXT_PUBLIC_AI_MOCK_MODE=1
-```
-
-**Real APIs:**
-
-```env
-AI_MOCK_MODE=0
-NEXT_PUBLIC_AI_MOCK_MODE=0
 OPENAI_API_KEY=...
 ANTHROPIC_API_KEY=...
 ```
@@ -41,16 +34,16 @@ Optional:
 - `OPENAI_IMAGE_QUALITY` — для семейства `gpt-image-*`: `low` | `medium` | **`high`** (по умолчанию `high`). Если API вернёт ошибку по параметру `quality`, задайте `skip` — запрос уйдёт без `quality`.
 - `ANTHROPIC_MODEL` — default per SDK
 
-**Кириллица на слайдах:** у всех генераторов изображений слабое место — буквы в кадре. Мы усиливаем промпт для русского текста и перешли на более новую модель изображений по умолчанию. Если буквы всё равно «плывут», попробуйте короче фразы на кадр или режим «текст отдельно от картинки», а финальный текст набрать в монтаже.
+**Текст на кадре:** фоны собираются без букв в кадре (шаблон OpenAI Image). Надписи для монтажа — через режим текста и типографику в ZIP.
 
 Uncomment and set variables in `.env.local`; lines starting with `#` are ignored.
 
 ## Behavior
 
-- **Left:** Project (После него / Zobnin AI / Custom system prompt), format (Reels 9:16 / Post 1:1), slide count, mood, visual style, CTA mode, output mode — **every block is serialized and sent on each dialogue request** together with the profile system prompt.
-- **Center:** Stateful chat. The model returns JSON `{ reply, statePatch? }`; the UI shows only `reply`, merges `statePatch` into session state (topic, angles, slides, prompts, caption, music, approval).
-- **Shortcut buttons** insert canned **user** messages (they do not bypass the dialogue engine).
-- **Right:** Scenario preview (when slides exist), editable per-frame prompts, **Generate images** (calls `/api/image` only here), caption and structured music fields, **Download ZIP**.
+- **Left:** Проект (**После него / Zobnin AI / OlgaTrip**), формат (Reels 9:16 или Post 4:5), число кадров, тон, визуальный стиль, CTA, режим текста — всё уходит в каждый запрос чата вместе с профильным system prompt.
+- **Center:** Диалог с **Anthropic или OpenAI** (переключатель только для чата). Ответ `{ reply, statePatch? }`; в сессию попадают слайды, caption, музыка, опциональные **короткие уточнения** на кадр (`prompts[]`).
+- **Картинки:** только **OpenAI** `/api/image`. Финальная строка промпта собирается в приложении из **аккаунта + тона + стиля + текста слайда** (`src/lib/build-image-prompt.ts`), без отдельных «визуальных промптов» от Anthropic.
+- **Right:** Сценарий, опциональные уточнения по строкам, **Generate images**, caption, музыка, **Download ZIP**.
 
 ## API routes
 
@@ -59,13 +52,14 @@ Uncomment and set variables in `.env.local`; lines starting with `#` are ignored
 
 ## ZIP export
 
-- `scenario.txt` — slide titles and bodies  
-- `prompts.txt` — one block per slide  
+- `scenario.txt` — заголовки и тексты слайдов  
+- `image_prompts_openai.txt` — полный prompt на кадр, как ушёл в Image API (детерминированно из состояния)  
+- `cosmetic_hints.txt` — опциональные пользовательские уточнения по кадрам  
 - `caption.txt`  
 - `music_notes.txt` — queries / recommendations / avoid  
-- `fonts_recommendations.txt` — типографика под Canva по селекторам (в UI не показывается)  
-- `images/01.png`, … — generated frames  
-- Имя скачиваемого `.zip`: **тема** (поле Topic) + `_reels` или `_post` по формату. Если тема пуста — `export_reels.zip` / `export_post.zip`.  
+- `fonts_recommendations.txt` — типографика под Canva по селекторам  
+- `images/01.png`, … — кадры  
+- Имя `.zip`: тема (Topic) + `_reels` / `_post`.  
 
 ## Project structure (main files)
 
@@ -76,6 +70,7 @@ Uncomment and set variables in `.env.local`; lines starting with `#` are ignored
 | `src/lib/dialogue-context.ts` | Full system prompt + selector injection + JSON contract |
 | `src/lib/chat-response.ts` | Zod schemas for API JSON |
 | `src/lib/actions.ts` | `sendDialogueTurn`, `mergeStatePatch`, `generateImagesFromState`, `downloadZip` |
+| `src/lib/build-image-prompt.ts` | Сборка строки для OpenAI Image (ТЗ: MASTER + maps + slide) |
 | `src/lib/typography-export.ts` | Текст `fonts_recommendations.txt` для ZIP |
 | `src/app/api/chat/route.ts` | Chat proxy + mock mode |
 | `src/app/api/image/route.ts` | Image generation |

@@ -17,10 +17,6 @@ function jsonError(message: string, status = 400) {
   return NextResponse.json({ error: message }, { status });
 }
 
-function mockEnabled() {
-  return process.env.AI_MOCK_MODE === "1";
-}
-
 async function resizeCoverToPng(
   imageBase64: string,
   w: number,
@@ -105,16 +101,6 @@ export async function POST(request: Request) {
   }
 
   try {
-    if (mockEnabled()) {
-      const tiny =
-        "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8DwHwAFhQJ/lb0u9QAAAABJRU5ErkJggg==";
-      const out =
-        body.aspect === "4:5"
-          ? await resizeCoverToPng(tiny, INSTAGRAM_POST_PX.w, INSTAGRAM_POST_PX.h)
-          : await resizeCoverToPng(tiny, INSTAGRAM_REELS_PX.w, INSTAGRAM_REELS_PX.h);
-      return NextResponse.json(out);
-    }
-
     const raw = await generateWithOpenAI(body.prompt, body.aspect);
     if (body.aspect === "4:5") {
       return NextResponse.json(

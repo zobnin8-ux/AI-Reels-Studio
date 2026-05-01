@@ -15,10 +15,8 @@ function iconClass(s: ItemStatus): string {
 export function ReadinessChecklist({ state }: { state: StudioState }) {
   const items = useMemo(() => {
     const hasSlides = state.slides.length > 0;
-    const allPrompts =
-      state.slides.length > 0
-        ? state.slides.every((s) => state.prompts.find((p) => p.slideId === s.id)?.prompt?.trim())
-        : state.prompts.length > 0 && state.prompts.every((p) => p.prompt.trim());
+    const anyCosmetic =
+      state.prompts.some((p) => p.prompt.trim().length > 0) && state.slides.length > 0;
 
     const imgBusy =
       state.images.length > 0 &&
@@ -34,12 +32,10 @@ export function ReadinessChecklist({ state }: { state: StudioState }) {
       state.music.avoid.length > 0;
 
     const scenario: ItemStatus = hasSlides ? "done" : state.messages.length > 0 ? "progress" : "empty";
-    const prompts: ItemStatus = hasSlides
-      ? allPrompts
+    const refinements: ItemStatus = hasSlides
+      ? anyCosmetic
         ? "done"
-        : state.prompts.some((p) => p.prompt.trim())
-          ? "progress"
-          : "empty"
+        : "skip"
       : state.prompts.some((p) => p.prompt.trim())
         ? "done"
         : "empty";
@@ -58,7 +54,12 @@ export function ReadinessChecklist({ state }: { state: StudioState }) {
 
     return [
       { key: "scenario", label: "Сценарий", stateLabel: hasSlides ? "готово" : "ждём", status: scenario },
-      { key: "prompts", label: "Промпты", stateLabel: allPrompts ? "полный набор" : "частично", status: prompts },
+      {
+        key: "refinements",
+        label: "Уточнения кадров",
+        stateLabel: anyCosmetic ? "есть" : "не нужны",
+        status: refinements
+      },
       { key: "frames", label: "Кадры", stateLabel: imgBusy ? "генерация" : imgDone ? "синхрон" : "—", status: frames },
       { key: "caption", label: "Caption", stateLabel: state.caption.trim() ? "есть" : "—", status: caption },
       { key: "music", label: "Музыка", stateLabel: musicTouched ? "заполнено" : "по запросу", status: music },

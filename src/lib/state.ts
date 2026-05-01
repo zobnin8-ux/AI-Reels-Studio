@@ -1,4 +1,4 @@
-export type ProjectId = "poslenego" | "zobnin" | "olgatrip" | "custom";
+export type ProjectId = "poslenego" | "zobnin" | "olgatrip";
 
 export type ContentType = "reels" | "post";
 
@@ -37,6 +37,7 @@ export type Slide = {
   text: string;
 };
 
+/** Опциональные краткие уточнения к автособранному image prompt (поле `prompt` в JSON/API для совместимости). */
 export type SlidePrompt = {
   slideId: string;
   prompt: string;
@@ -53,6 +54,7 @@ export type ImageStatus = "waiting" | "generating" | "done" | "error";
 export type GeneratedImage = {
   id: string;
   slideId?: string;
+  /** Косметическое уточнение для кадра (для UI), не полный prompt в API. */
   prompt: string;
   status: ImageStatus;
   imageBase64?: string;
@@ -61,11 +63,9 @@ export type GeneratedImage = {
 };
 
 export type StudioState = {
-  mockMode: boolean;
   provider: "openai" | "anthropic";
 
   project: ProjectId;
-  customSystemPrompt: string;
 
   contentType: ContentType;
   slideCount: 5 | 7 | 9 | 10 | 12;
@@ -95,11 +95,9 @@ export type StudioState = {
 
 export function createInitialState(): StudioState {
   return {
-    mockMode: process.env.NEXT_PUBLIC_AI_MOCK_MODE === "1",
     provider: "openai",
 
     project: "poslenego",
-    customSystemPrompt: "",
 
     contentType: "reels",
     slideCount: 5,
