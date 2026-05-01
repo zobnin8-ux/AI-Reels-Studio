@@ -146,14 +146,6 @@ export function ControlPanel() {
               />
             </div>
           ) : null}
-          {hasCreativeContent ? (
-            <div className="warn-strip">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M12 9V13M12 17H12.01M3.34 17L10.07 4.5C10.92 2.94 13.08 2.94 13.93 4.5L20.66 17C21.46 18.5 20.4 20.4 18.73 20.4H5.27C3.6 20.4 2.54 18.5 3.34 17Z" />
-              </svg>
-              <span>Смена проекта потребует подтверждения — черновик уже заполнен.</span>
-            </div>
-          ) : null}
         </div>
 
         <div className="group">
