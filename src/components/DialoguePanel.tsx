@@ -299,7 +299,7 @@ export function DialoguePanel() {
         </div>
       ) : null}
 
-      <div className="relative min-h-0 flex-1">
+      <div className="dialog-middle">
         <div
           ref={scrollRef}
           onScroll={onScrollArea}
@@ -377,7 +377,7 @@ export function DialoguePanel() {
         ) : null}
       </div>
 
-      <div className="composer">
+      <div className="composer stage-composer">
         <div className="composer-prefix">
           <span>▸ ввод направления</span>
           <span style={{ display: "inline-flex", alignItems: "center" }}>

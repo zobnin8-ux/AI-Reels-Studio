@@ -96,8 +96,47 @@ button.asset-badge {
   flex-shrink: 0;
 }
 
-.panel.stage .composer {
+/* Средняя колонка: только лента в скролле; композер фиксирован снизу панели */
+.dialog-middle {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 0;
+  min-height: 0;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.dialog-middle .dialog-scroll {
+  flex: 1 1 0;
+  min-height: 0;
+  min-width: 0;
+}
+
+.panel.stage .stage-composer {
+  position: relative;
+  z-index: 2;
   flex-shrink: 0;
+  border-top: 1px solid var(--border-divider);
+  margin-top: 0;
+  box-shadow:
+    0 -10px 28px -10px rgba(0, 0, 0, 0.5),
+    var(--shadow-float);
+}
+
+/* Два столбца в группах: без лишнего margin-top у второго поля */
+.panel-body .field-row {
+  gap: var(--s-4);
+  align-items: start;
+}
+
+.panel-body .field-row > .field {
+  margin-top: 0;
+  min-width: 0;
+}
+
+.panel-body .field-row > .field > .label {
+  margin-bottom: 8px;
 }
 
 /* Плотнее hero — меньше вертикаль на ноутбуке */

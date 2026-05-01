@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useStudio } from "@/lib/studio-store";
 import { ReadinessChecklist } from "@/components/ReadinessChecklist";
 import type { ProjectId, StudioState } from "@/lib/state";
@@ -41,6 +41,12 @@ export function ControlPanel() {
   const { state, dispatch } = useStudio();
   const prevProject = useRef<ProjectId>(state.project);
   const showCustom = state.project === "custom";
+  /** true = класс `showcase` на body (сетка, шум, скан); false = спокойный фон для записи экрана */
+  const [richStudioBackground, setRichStudioBackground] = useState(true);
+
+  useEffect(() => {
+    document.body.classList.toggle("showcase", richStudioBackground);
+  }, [richStudioBackground]);
 
   const hasCreativeContent = useMemo(() => {
     return (
@@ -318,6 +324,32 @@ export function ControlPanel() {
         </div>
 
         <ReadinessChecklist state={state} />
+
+        <div className="group">
+          <div className="group-title">Фон студии</div>
+          <p className="group-hint">
+            Спокойный — меньше сетки и декора (удобнее при записи экрана). Насыщенный — полный визуал интерфейса.
+          </p>
+          <div className="field">
+            <span className="label mono">Режим оформления</span>
+            <div className="mode-pill" role="group" aria-label="Режим оформления фона">
+              <button
+                type="button"
+                className={!richStudioBackground ? "active" : ""}
+                onClick={() => setRichStudioBackground(false)}
+              >
+                Спокойный
+              </button>
+              <button
+                type="button"
+                className={richStudioBackground ? "active" : ""}
+                onClick={() => setRichStudioBackground(true)}
+              >
+                Насыщенный
+              </button>
+            </div>
+          </div>
+        </div>
 
         <div className="group">
           <div className="group-title">Провайдер</div>

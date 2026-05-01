@@ -18,7 +18,6 @@ function formatSes(d: Date): string {
 
 export function StudioTopBar() {
   const { state } = useStudio();
-  const [showcase, setShowcase] = useState(true);
   const [now, setNow] = useState(() => new Date());
 
   const projectLabel = useMemo(
@@ -30,10 +29,6 @@ export function StudioTopBar() {
     const id = window.setInterval(() => setNow(new Date()), 60_000);
     return () => window.clearInterval(id);
   }, []);
-
-  useEffect(() => {
-    document.body.classList.toggle("showcase", showcase);
-  }, [showcase]);
 
   return (
     <header className="topbar shrink-0">
@@ -58,35 +53,6 @@ export function StudioTopBar() {
             Reels <b>Studio</b>
           </span>
           <span className="brand-sub">v 2 0 2 6 · neural studio</span>
-        </div>
-      </div>
-
-      <div className="mode-switch">
-        <span
-          style={{
-            fontSize: "11px",
-            color: "var(--text-muted)",
-            fontFamily: '"JetBrains Mono", monospace',
-            letterSpacing: "0.12em"
-          }}
-        >
-          режим
-        </span>
-        <div className="mode-pill" role="group" aria-label="Режим интерфейса">
-          <button
-            type="button"
-            className={!showcase ? "active" : ""}
-            onClick={() => setShowcase(false)}
-          >
-            Daily
-          </button>
-          <button
-            type="button"
-            className={showcase ? "active" : ""}
-            onClick={() => setShowcase(true)}
-          >
-            Showcase
-          </button>
         </div>
       </div>
 
