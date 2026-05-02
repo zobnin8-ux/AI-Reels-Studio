@@ -37,51 +37,49 @@ export const poslenegoSceneMetaSchema = z.object({
   visual_focus: z.enum(["phone", "hands", "face", "body", "object", "empty_space"])
 });
 
-/** Zobnin AI — системные якоря для визуализации без текста на кадре. */
+/** Zobnin AI — человеко-центричные кинематографические якоря (не диаграммы / не UI mockups). */
 export const zobninSceneMetaSchema = z.object({
   slideId: z.string(),
-  visual_type: z.enum([
-    "system_diagram",
-    "ui_interface",
-    "workflow_pipeline",
-    "automation_flow",
-    "before_after_contrast",
-    "data_process",
-    "abstract_structure",
-    "human_operator"
+  human_moment: z.enum([
+    "confusion",
+    "realization",
+    "tension",
+    "focus_work",
+    "overload",
+    "relief",
+    "doubt",
+    "breakthrough"
   ]),
-  system_layer: z.enum([
-    "input",
-    "process",
-    "output",
-    "bottleneck",
-    "failure_point",
-    "decision_point",
-    "result",
-    "full_system"
-  ]),
-  environment: z.enum([
-    "digital_workspace",
-    "dashboard",
-    "node_graph",
-    "code_editor",
-    "automation_canvas",
-    "abstract_grid",
-    "studio_desk",
+  ai_interaction: z.enum([
+    "typing",
+    "reading_screen",
+    "reacting",
+    "thinking",
+    "discussing_with_colleague",
+    "paused_observing",
     "undefined"
   ]),
-  visual_focus: z.enum([
-    "nodes",
-    "arrows",
-    "dashboard_cards",
-    "prompt_box",
-    "data_stream",
-    "split_screen",
-    "error_point",
-    "clean_output",
-    "human_hand",
-    "laptop_screen"
-  ])
+  framing: z.enum([
+    "close_up",
+    "face_screen_light",
+    "hands_keyboard",
+    "over_shoulder",
+    "silhouette",
+    "medium_office",
+    "wide_desk",
+    "undefined"
+  ]),
+  environment: z.enum([
+    "dark_room",
+    "office",
+    "night_interior",
+    "home_office",
+    "desk",
+    "meeting_room",
+    "corridor",
+    "undefined"
+  ]),
+  visual_focus: z.enum(["face", "hands", "eyes", "screen_glow", "posture", "workspace", "undefined"])
 });
 
 /** OlgaTrip — travel / lived moment якоря (отличается от poslenego полями social_context и light_type). */
@@ -115,7 +113,7 @@ export const olgatripSceneMetaSchema = z.object({
   light_type: z.enum(["daylight", "golden_hour", "indoor_soft", "shadow", "mixed_light"])
 });
 
-/** Порядок: zobnin (visual_type) → olgatrip (social_context+light_type) → poslenego. */
+/** Порядок: zobnin (human_moment+ai_interaction) → olgatrip (social_context+light_type) → poslenego. */
 export const sceneMetaEntrySchema = z.union([
   zobninSceneMetaSchema,
   olgatripSceneMetaSchema,

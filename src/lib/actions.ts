@@ -415,8 +415,8 @@ export async function downloadZip(state: StudioState) {
       const slideIdx = state.slides.findIndex((s) => s.id === m.slideId);
       const n = slideIdx >= 0 ? slideIdx + 1 : "?";
       const head = `${String(n).padStart(2, "0")}. slideId=${m.slideId}`;
-      if ("visual_type" in m) {
-        return `${head}\nvisual_type=${m.visual_type}\nsystem_layer=${m.system_layer}\nenvironment=${m.environment}\nvisual_focus=${m.visual_focus}`;
+      if ("human_moment" in m && "ai_interaction" in m) {
+        return `${head}\nhuman_moment=${m.human_moment}\nai_interaction=${m.ai_interaction}\nframing=${m.framing}\nenvironment=${m.environment}\nvisual_focus=${m.visual_focus}`;
       }
       if ("social_context" in m && "light_type" in m) {
         return `${head}\nscene_type=${m.scene_type}\nenvironment=${m.environment}\nsocial_context=${m.social_context}\nvisual_focus=${m.visual_focus}\nlight_type=${m.light_type}`;

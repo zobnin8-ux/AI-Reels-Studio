@@ -98,7 +98,7 @@ RESPONSE FORMAT (mandatory — valid JSON only, single object):
     "slides": [{"id","title","text"}, ...]?,
     "approved": boolean?,
     "prompts": [{"slideId","prompt"}, ...]?,
-    "sceneMeta": poslenego → [{"slideId","scene_type","environment","visual_focus"}, ...] OR zobnin → [{"slideId","visual_type","system_layer","environment","visual_focus"}, ...] OR olgatrip → [{"slideId","scene_type","environment","social_context","visual_focus","light_type"}, ...]?,
+    "sceneMeta": poslenego → [{"slideId","scene_type","environment","visual_focus"}, ...] OR zobnin → [{"slideId","human_moment","ai_interaction","framing","environment","visual_focus"}, ...] OR olgatrip → [{"slideId","scene_type","environment","social_context","visual_focus","light_type"}, ...]?,
     "caption": string?,
     "music": {"queries":[],"recommendations":[],"avoid":[]}?
   }

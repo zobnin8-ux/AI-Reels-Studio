@@ -51,47 +51,52 @@ export type PoslenegoSceneMeta = {
   visual_focus: "phone" | "hands" | "face" | "body" | "object" | "empty_space";
 };
 
-/** Системные якоря для OpenAI Image — Zobnin AI; задаётся моделью в statePatch (не показывать в reply). */
+/** Якоря для OpenAI Image — Zobnin AI (человеко-центричные кадры); задаётся моделью в statePatch (не показывать в reply). */
 export type ZobninSceneMeta = {
   slideId: string;
-  visual_type:
-    | "system_diagram"
-    | "ui_interface"
-    | "workflow_pipeline"
-    | "automation_flow"
-    | "before_after_contrast"
-    | "data_process"
-    | "abstract_structure"
-    | "human_operator";
-  system_layer:
-    | "input"
-    | "process"
-    | "output"
-    | "bottleneck"
-    | "failure_point"
-    | "decision_point"
-    | "result"
-    | "full_system";
+  human_moment:
+    | "confusion"
+    | "realization"
+    | "tension"
+    | "focus_work"
+    | "overload"
+    | "relief"
+    | "doubt"
+    | "breakthrough";
+  ai_interaction:
+    | "typing"
+    | "reading_screen"
+    | "reacting"
+    | "thinking"
+    | "discussing_with_colleague"
+    | "paused_observing"
+    | "undefined";
+  framing:
+    | "close_up"
+    | "face_screen_light"
+    | "hands_keyboard"
+    | "over_shoulder"
+    | "silhouette"
+    | "medium_office"
+    | "wide_desk"
+    | "undefined";
   environment:
-    | "digital_workspace"
-    | "dashboard"
-    | "node_graph"
-    | "code_editor"
-    | "automation_canvas"
-    | "abstract_grid"
-    | "studio_desk"
+    | "dark_room"
+    | "office"
+    | "night_interior"
+    | "home_office"
+    | "desk"
+    | "meeting_room"
+    | "corridor"
     | "undefined";
   visual_focus:
-    | "nodes"
-    | "arrows"
-    | "dashboard_cards"
-    | "prompt_box"
-    | "data_stream"
-    | "split_screen"
-    | "error_point"
-    | "clean_output"
-    | "human_hand"
-    | "laptop_screen";
+    | "face"
+    | "hands"
+    | "eyes"
+    | "screen_glow"
+    | "posture"
+    | "workspace"
+    | "undefined";
 };
 
 /** Travel / atmosphere якоря — OlgaTrip; задаётся моделью в statePatch (не показывать в reply). */
@@ -173,7 +178,7 @@ export type StudioState = {
 
 /** Проверка, что запись sceneMeta соответствует текущему проекту (формы JSON различаются). */
 export function sceneMetaMatchesProject(project: ProjectId, m: SceneMetaEntry): boolean {
-  if ("visual_type" in m) return project === "zobnin";
+  if ("human_moment" in m && "ai_interaction" in m) return project === "zobnin";
   if ("social_context" in m && "light_type" in m) return project === "olgatrip";
   if ("scene_type" in m) return project === "poslenego";
   return false;

@@ -35,12 +35,14 @@ function formatPoslenegoSceneAnchors(m: PoslenegoSceneMeta): string {
 
 function formatZobninSceneAnchors(m: ZobninSceneMeta): string {
   return [
-    `Visual type: ${m.visual_type} — reveal an actual system structure (blocks, flow, layers), not a tech mood board.`,
-    `System layer: ${m.system_layer} — composition must imply input → process → output where it fits the frame.`,
-    `Environment: ${m.environment} — keep layout spatially coherent; no random hero laptop stock composition.`,
-    `Visual focus: ${m.visual_focus} — emphasize this layer using abstract shapes and structure only.`,
-    "Avoid generic robot, AI brain, glowing head, futuristic clichés; avoid abstract blue tech voids without nodes, blocks, or flow.",
-    "Prefer visible systems: modules, connections, dashboards as geometric forms — NO readable text, letters, UI labels, logos, or captions."
+    `Human moment: ${m.human_moment} — emotional beat (confusion, realization, tension); cinematic documentary, not explanatory.`,
+    `AI interaction: ${m.ai_interaction} — person interacting with AI work (typing, reading, reacting); always a real human in frame.`,
+    `Framing: ${m.framing} — prefer close-ups, screen light on face, hands on keyboard, over-shoulder, silhouette in dark room / office / night.`,
+    `Environment: ${m.environment} — physically coherent real space (office, night interior, desk).`,
+    `Visual focus: ${m.visual_focus} — where the eye lands (face, hands, screen glow, posture).`,
+    "FORBIDDEN: UI mockups, wireframes, dashboards as graphics, diagrams, flowcharts, abstract blocks, node graphs, generic glowing tech backgrounds.",
+    "FORBIDDEN: stock «tech aesthetic» without a human; illustrations that explain the system instead of a lived moment.",
+    "NO readable text, UI labels, logos, letters, or captions on screen — human-centered photographic realism only."
   ].join(" ");
 }
 
@@ -58,7 +60,7 @@ function formatOlgatripSceneAnchors(m: OlgatripSceneMeta): string {
 
 /** Текстовый блок для image API из SceneMetaEntry (косвенно; без буквального текста на кадре). */
 export function formatSceneAnchorsFromMeta(m: SceneMetaEntry): string {
-  if ("visual_type" in m) return formatZobninSceneAnchors(m);
+  if ("human_moment" in m && "ai_interaction" in m) return formatZobninSceneAnchors(m);
   if ("social_context" in m && "light_type" in m) return formatOlgatripSceneAnchors(m);
   return formatPoslenegoSceneAnchors(m as PoslenegoSceneMeta);
 }
@@ -107,7 +109,7 @@ const ACCOUNT_WORLD: Record<ProjectId, string> = {
   olgatrip:
     "authentic travel scenes, small groups, cities, streets, cafes, water, natural light, sense of movement and presence, no mass tourism, no crowds, no bus tours",
   zobnin:
-    "systems, interfaces, digital environments, structured processes, minimal UI-like scenes, abstract workflows, no lifestyle scenes, no emotional chaos"
+    "human-centered documentary scenes: real people using AI at work — typing, reading outputs, reacting; moments of confusion, realization, tension; cinematic framing — close-ups, face lit by screen, dark room, office, night, desk; photorealistic; never diagrams or UI chrome as the subject"
 };
 
 /** БЛОК 3 — дословно по ТЗ. */
@@ -131,11 +133,12 @@ const TONE_MAP: Record<ProjectId, Record<Mood, string>> = {
     neutral: "travel realism, city details, observational tone"
   },
   zobnin: {
-    positive: "clean light, clarity, sense of system working, structured environment, control",
-    soft: "calm structure, minimal contrast, clarity, understandable visual logic",
-    provocative: "visual contradiction, broken patterns, unexpected composition",
-    aggressive: "hard contrast, sharp lines, strict geometry, visual tension",
-    neutral: "process-oriented scene, diagram-like composition, neutral lighting"
+    positive:
+      "quiet clarity, subtle relief on the face, controlled light, sense of breakthrough without spectacle",
+    soft: "soft screen spill on skin, shallow depth, intimate workspace, calm concentration",
+    provocative: "uncomfortable truth in posture or stare, asymmetric crop, tension between face and glow",
+    aggressive: "harsh screen-to-shadow contrast, tight crop, fatigue or friction readable in the body",
+    neutral: "documentary office/night realism, neutral grading, observational distance, no staged grin"
   }
 };
 
