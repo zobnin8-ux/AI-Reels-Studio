@@ -1,7 +1,13 @@
 "use client";
 
 import { buildImagePrompt, formatSceneAnchorsFromMeta, slideBodyForImagePrompt } from "@/lib/build-image-prompt";
-import type { ChatMessage, GeneratedImage, SceneMetaEntry, StudioState } from "@/lib/state";
+import {
+  sceneMetaMatchesProject,
+  type ChatMessage,
+  type GeneratedImage,
+  type SceneMetaEntry,
+  type StudioState
+} from "@/lib/state";
 import type { StatePatch } from "@/lib/chat-response";
 import { formatTypographyNotesForZip } from "@/lib/typography-export";
 
@@ -19,17 +25,15 @@ function composeImagePrompt(
   slide: { id: string; title: string; text: string },
   cosmeticHint: string
 ) {
-  const meta =
-    state.project === "poslenego"
-      ? state.sceneMeta.find((m) => m.slideId === slide.id)
-      : undefined;
+  const meta = state.sceneMeta.find((m) => m.slideId === slide.id);
+  const useAnchors = meta && sceneMetaMatchesProject(state.project, meta);
   return buildImagePrompt({
     account: state.project,
     tone: state.mood,
     visualStyle: state.visualStyle,
     slideText: slideBodyForImagePrompt(slide),
     cosmeticHint: cosmeticHint.trim() || undefined,
-    sceneAnchors: meta ? formatSceneAnchorsFromMeta(meta) : undefined
+    sceneAnchors: useAnchors ? formatSceneAnchorsFromMeta(meta) : undefined
   });
 }
 
@@ -409,7 +413,14 @@ export async function downloadZip(state: StudioState) {
     const sceneLines = state.sceneMeta.map((m) => {
       const slideIdx = state.slides.findIndex((s) => s.id === m.slideId);
       const n = slideIdx >= 0 ? slideIdx + 1 : "?";
-      return `${String(n).padStart(2, "0")}. slideId=${m.slideId}\nscene_type=${m.scene_type}\nenvironment=${m.environment}\nvisual_focus=${m.visual_focus}`;
+      const head = `${String(n).padStart(2, "0")}. slideId=${m.slideId}`;
+      if ("visual_type" in m) {
+        return `${head}\nvisual_type=${m.visual_type}\nsystem_layer=${m.system_layer}\nenvironment=${m.environment}\nvisual_focus=${m.visual_focus}`;
+      }
+      if ("social_context" in m && "light_type" in m) {
+        return `${head}\nscene_type=${m.scene_type}\nenvironment=${m.environment}\nsocial_context=${m.social_context}\nvisual_focus=${m.visual_focus}\nlight_type=${m.light_type}`;
+      }
+      return `${head}\nscene_type=${m.scene_type}\nenvironment=${m.environment}\nvisual_focus=${m.visual_focus}`;
     });
     zip.file("scene_meta.txt", sceneLines.join("\n\n"));
   }

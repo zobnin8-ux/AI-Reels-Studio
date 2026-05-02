@@ -1,4 +1,12 @@
-import type { Mood, ProjectId, SceneMetaEntry, VisualStyle } from "@/lib/state";
+import type {
+  Mood,
+  OlgatripSceneMeta,
+  PoslenegoSceneMeta,
+  ProjectId,
+  SceneMetaEntry,
+  VisualStyle,
+  ZobninSceneMeta
+} from "@/lib/state";
 
 /**
  * Сборка финального image prompt для OpenAI Image API по ТЗ:
@@ -12,18 +20,47 @@ export type BuildImagePromptInput = {
   visualStyle: VisualStyle;
   slideText: string;
   cosmeticHint?: string;
-  /** Краткие визуальные якоря (poslenego / sceneMeta), не дублировать буквальный смысл slideText. */
+  /** Краткие якоря из sceneMeta (форма зависит от account), не дублировать буквальный смысл slideText. */
   sceneAnchors?: string;
 };
 
-/** Текстовый блок для image API из SceneMetaEntry (косвенно, без буквального иллюстрирования текста). */
-export function formatSceneAnchorsFromMeta(m: SceneMetaEntry): string {
+function formatPoslenegoSceneAnchors(m: PoslenegoSceneMeta): string {
   return [
     `Scene type: ${m.scene_type} (mood/moment, not literal text illustration).`,
     `Environment: ${m.environment} — keep minimal, realistic, physically coherent.`,
     `Visual focus: ${m.visual_focus} — frame accordingly; no staging or posing.`,
     "Avoid cars, roads, and driving unless the slide text absolutely requires it."
   ].join(" ");
+}
+
+function formatZobninSceneAnchors(m: ZobninSceneMeta): string {
+  return [
+    `Visual type: ${m.visual_type} — reveal an actual system structure (blocks, flow, layers), not a tech mood board.`,
+    `System layer: ${m.system_layer} — composition must imply input → process → output where it fits the frame.`,
+    `Environment: ${m.environment} — keep layout spatially coherent; no random hero laptop stock composition.`,
+    `Visual focus: ${m.visual_focus} — emphasize this layer using abstract shapes and structure only.`,
+    "Avoid generic robot, AI brain, glowing head, futuristic clichés; avoid abstract blue tech voids without nodes, blocks, or flow.",
+    "Prefer visible systems: modules, connections, dashboards as geometric forms — NO readable text, letters, UI labels, logos, or captions."
+  ].join(" ");
+}
+
+function formatOlgatripSceneAnchors(m: OlgatripSceneMeta): string {
+  return [
+    `Scene type: ${m.scene_type} — specific lived moment, documentary candid feel.`,
+    `Environment: ${m.environment} — physically coherent space; do not default to car, road, or driving.`,
+    `Social context: ${m.social_context} — relationship to others in frame without posing.`,
+    `Visual focus: ${m.visual_focus} — no camera-facing subjects, no influencer staging.`,
+    `Light: ${m.light_type} — vary palette across slides; not always beige or golden hour.`,
+    "Avoid repeating the same environment or the coffee-table-conversation cliché across slides.",
+    "No text, logos, captions, or readable elements — realistic travel atmosphere only."
+  ].join(" ");
+}
+
+/** Текстовый блок для image API из SceneMetaEntry (косвенно; без буквального текста на кадре). */
+export function formatSceneAnchorsFromMeta(m: SceneMetaEntry): string {
+  if ("visual_type" in m) return formatZobninSceneAnchors(m);
+  if ("social_context" in m && "light_type" in m) return formatOlgatripSceneAnchors(m);
+  return formatPoslenegoSceneAnchors(m as PoslenegoSceneMeta);
 }
 
 /** БЛОК 1 — подстановка {{account}}, {{tone}}, {{visualStyle}}, {{slideText}} в INPUT. */

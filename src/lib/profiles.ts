@@ -315,7 +315,7 @@ APP INTEGRATION (same request receives SESSION CONTEXT SELECTORS + CURRENT SESSI
 - CTA MODE: follow injected rules (beznego.com / poslenego.com when website mode aligns with profile).
 - statePatch.prompts: optional short cosmetic hints per slide only when user asks for regeneration tweaks — never English image prompts.
 - statePatch.sceneMeta: when slides change, include per-slide visual anchors (see SCENE METADATA above); never surface in "reply".
-- Background images are composed in-app from slide text + account + tone + visual style + sceneMeta (poslenego).`,
+- Background images are composed in-app from slide text + account + tone + visual style + sceneMeta (poslenego schema when PROJECT is poslenego).`,
   },
   zobnin: {
     id: "zobnin",
@@ -563,6 +563,25 @@ CTA mode
 
 They MUST affect output.
 
+SYSTEM / SCENE METADATA (OpenAI Image — ONLY in JSON statePatch, NEVER in "reply"):
+
+Whenever statePatch includes slides (full or partial rebuild), include statePatch.sceneMeta: exactly **one entry per slide**, same length as slides; each entry MUST include slideId matching that slide's id.
+
+Fields:
+- visual_type: system_diagram | ui_interface | workflow_pipeline | automation_flow | before_after_contrast | data_process | abstract_structure | human_operator
+- system_layer: input | process | output | bottleneck | failure_point | decision_point | result | full_system
+- environment: digital_workspace | dashboard | node_graph | code_editor | automation_canvas | abstract_grid | studio_desk | undefined
+- visual_focus: nodes | arrows | dashboard_cards | prompt_box | data_stream | split_screen | error_point | clean_output | human_hand | laptop_screen
+
+Rules:
+- Do not describe sceneMeta in natural-language reply.
+- Avoid generic "robot", AI brain, glowing head, futuristic cliché motifs.
+- Avoid random laptop hero stock compositions and abstract blue tech backgrounds without structure.
+- Prefer visible systems: blocks, nodes, flows, dashboards, inputs, outputs — physically and structurally coherent.
+- Every frame must feel like a system being revealed, not "technology mood".
+- Image generation must obey global NO TEXT rule: no letters, UI labels, logos, captions, readable interface text — structural visuals only.
+- Visual logic supports input → process → output.
+
 OUTPUT ENVELOPE:
 Your reply MUST match the mandatory RESPONSE FORMAT defined later in this same system message (single JSON object with "reply" and optional "statePatch"). Never wrap JSON in markdown fences unless the user-facing instructions below say otherwise.
 
@@ -593,7 +612,8 @@ APP INTEGRATION (same request receives SESSION CONTEXT SELECTORS + CURRENT SESSI
 - OUTPUT MODE: obey global rules for on-slide vs separate vs both copy.
 - CTA MODE: follow injected CTA rules in SESSION CONTEXT SELECTORS ("write System" remains allowed where selectors permit).
 - statePatch.prompts: optional short cosmetic hints per slide only when user asks for regeneration tweaks — never English image prompts.
-- Background images are built in-app from slide text + account + tone + visual style.`,
+- statePatch.sceneMeta: when slides change, include per-slide system/visual anchors (see SYSTEM / SCENE METADATA above); same array length as slides; never surface in "reply".
+- Background images are built in-app from slide text + account + tone + visual style + sceneMeta (zobnin schema when PROJECT is zobnin).`,
   },
   olgatrip: {
     id: "olgatrip",
@@ -897,6 +917,27 @@ FINAL PRINCIPLE:
 Each reel must feel like a DIFFERENT lived moment.
 Not a variation of the same template.
 
+SCENE METADATA (OpenAI Image — ONLY in JSON statePatch, NEVER in "reply"):
+
+Whenever statePatch includes slides (full or partial rebuild), include statePatch.sceneMeta: one entry per slide with matching slideId (same length as slides).
+
+Fields:
+- scene_type: movement | stillness | interaction | observation | micro_detail | transition | contrast
+- environment: street | cafe | nature | interior | transit | undefined
+- social_context: alone | with_group | among_strangers | brief_interaction | shared_silence
+- visual_focus: hands | back_view | body_fragment | object | environment | movement_trace
+- light_type: daylight | golden_hour | indoor_soft | shadow | mixed_light
+
+Rules:
+- Do not mention sceneMeta in "reply" or explain these fields.
+- Do NOT default to car, road, or driving; transit/car only if the slide text clearly implies it.
+- Vary environment across slides in one reel; avoid repeating the same environment + social + light combo.
+- Avoid defaulting to "coffee + table + conversation" as a pattern across slides.
+- Allow variation in color and light (not always beige / warm / golden hour).
+- Prefer real, specific, lived-in moments; physically coherent scenes.
+- No posing, no camera-facing subjects, no influencer-style shots.
+- No text, logos, captions, or readable elements in generated visuals.
+
 ---
 APP INTEGRATION (same request also receives SESSION CONTEXT SELECTORS + CURRENT SESSION STATE below):
 - SLIDE COUNT TARGET: when generating or rebuilding a full scenario, match exactly that many slides; preserve slide ids when the user edits partially.
@@ -906,7 +947,8 @@ APP INTEGRATION (same request also receives SESSION CONTEXT SELECTORS + CURRENT 
 - OUTPUT MODE: follow global rules for on-slide vs separate vs both text.
 - CTA MODE: obey the CTA lines injected in SESSION CONTEXT SELECTORS while keeping OlgaTrip softness unless selectors demand otherwise.
 - statePatch.prompts: only optional short per-slide cosmetic hints when the user asks for regeneration tweaks — never full English image prompts.
-- Background images are always composed in the app from slide text + account + tone + visual style; never author VISUAL PROMPTS for the image API in this chat.`,
+- statePatch.sceneMeta: when slides change, include OlgaTrip scene anchors per slide (see SCENE METADATA above); never surface in "reply".
+- Background images are composed in-app from slide text + account + tone + visual style + sceneMeta (OlgaTrip schema when PROJECT is olgatrip); never author raw VISUAL PROMPTS for the image API in this chat.`,
   }
 };
 

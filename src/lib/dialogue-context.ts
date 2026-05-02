@@ -47,6 +47,7 @@ OLGATRIP — booster (profile above is canonical):
 - SELECTORS + SESSION STATE win on conflicts; SCENE DIVERSITY ENGINE + anti-repetition always apply.
 - Full-package "reply": IDEA → HOOK → SCRIPT (0–3 / 3–10 / 10–25 / 25–35) → CAPTION → MUSIC MOOD; never image prompts for backgrounds.
 - statePatch.prompts: short cosmetic hints only on explicit user ask for regeneration tweaks.
+- When slides are generated or rebuilt, include statePatch.sceneMeta (OlgaTrip schema, one entry per slide with slideId); never describe sceneMeta in "reply".
 `;
 }
 
@@ -96,7 +97,7 @@ RESPONSE FORMAT (mandatory — valid JSON only, single object):
     "slides": [{"id","title","text"}, ...]?,
     "approved": boolean?,
     "prompts": [{"slideId","prompt"}, ...]?,
-    "sceneMeta": [{"slideId","scene_type","environment","visual_focus"}, ...]?,
+    "sceneMeta": poslenego → [{"slideId","scene_type","environment","visual_focus"}, ...] OR zobnin → [{"slideId","visual_type","system_layer","environment","visual_focus"}, ...] OR olgatrip → [{"slideId","scene_type","environment","social_context","visual_focus","light_type"}, ...]?,
     "caption": string?,
     "music": {"queries":[],"recommendations":[],"avoid":[]}?
   }
@@ -125,7 +126,9 @@ RULES:
 - If nothing structural changes, omit statePatch or use {}.
 - When the user asks for cosmetic tweaks for a slide frame ("теплее", "меньше людей", "улучши промпт кадра N" as refinement hints), put a SHORT line in statePatch.prompts for that slideId (slideId must match). These are optional notes for regeneration, not full image prompts.
 - When the user asks to refine a slide tweak from chat, update statePatch.prompts for that slideId with the short new refinement text.
-- PROJECT poslenego only: when generating or rebuilding slides, include statePatch.sceneMeta — one entry per slide with matching slideId (visual anchors for OpenAI Image; never describe sceneMeta in "reply"). See profile «После него» for allowed enums.
+- PROJECT poslenego: when generating or rebuilding slides, include statePatch.sceneMeta — one entry per slide with matching slideId (poslenego schema; visual anchors for OpenAI Image; never describe sceneMeta in "reply"). See profile «После него».
+- PROJECT zobnin: same — statePatch.sceneMeta with zobnin schema fields; count must equal slides.length when slides are included in statePatch; never mention sceneMeta in "reply". See profile Zobnin AI.
+- PROJECT olgatrip: same — statePatch.sceneMeta with OlgaTrip fields (slideId + scene_type, environment, social_context, visual_focus, light_type); vary combinations within a reel; never mention sceneMeta in "reply". See profile OlgaTrip.
 
 `;
 

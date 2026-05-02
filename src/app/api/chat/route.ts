@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { buildDialogueSystemPrompt } from "@/lib/dialogue-context";
-import { chatApiResponseSchema } from "@/lib/chat-response";
+import { chatApiResponseSchema, sceneMetaEntrySchema } from "@/lib/chat-response";
 
 const selectorsSchema = z.object({
   project: z.enum(["poslenego", "zobnin", "olgatrip"]),
@@ -30,21 +30,7 @@ const sessionSchema = z.object({
   slides: z.array(z.object({ id: z.string(), title: z.string(), text: z.string() })),
   approved: z.boolean(),
   prompts: z.array(z.object({ slideId: z.string(), prompt: z.string() })),
-  sceneMeta: z.array(
-    z.object({
-      slideId: z.string(),
-      scene_type: z.enum([
-        "micro_action",
-        "internal",
-        "trigger",
-        "observation",
-        "contrast",
-        "silence"
-      ]),
-      environment: z.enum(["interior", "public", "transitional", "undefined"]),
-      visual_focus: z.enum(["phone", "hands", "face", "body", "object", "empty_space"])
-    })
-  ),
+  sceneMeta: z.array(sceneMetaEntrySchema),
   caption: z.string(),
   music: z.object({
     queries: z.array(z.string()),
