@@ -21,6 +21,7 @@ export function ImageSlideCard({
 }) {
   const { state, dispatch } = useStudio();
   const [localPrompt, setLocalPrompt] = useState(image.prompt);
+  const [localFinal, setLocalFinal] = useState(image.finalPrompt ?? "");
   const [busy, setBusy] = useState(false);
   const [errorShake, setErrorShake] = useState(false);
   const prevErrorRef = useRef<string | undefined>(undefined);
@@ -28,6 +29,10 @@ export function ImageSlideCard({
   useEffect(() => {
     setLocalPrompt(image.prompt);
   }, [image.prompt]);
+
+  useEffect(() => {
+    setLocalFinal(image.finalPrompt ?? "");
+  }, [image.finalPrompt]);
 
   useEffect(() => {
     if (image.error && image.error !== prevErrorRef.current) {
@@ -43,20 +48,43 @@ export function ImageSlideCard({
     dispatch({ type: "set", patch: { prompts } });
   }
 
+  function commitFinalPromptToStore() {
+    dispatch({
+      type: "set",
+      patch: {
+        images: state.images.map((img) =>
+          img.id === image.id ? { ...img, finalPrompt: localFinal } : img
+        )
+      }
+    });
+  }
+
   async function onRegenerate() {
     if (!image.slideId?.trim()) return;
     const prompts = mergePromptForSlide(state, image.slideId, localPrompt);
-    const mergedState = { ...state, prompts };
-    dispatch({ type: "set", patch: { prompts } });
+    const imagesWithFinal = state.images.map((img) =>
+      img.id === image.id ? { ...img, finalPrompt: localFinal } : img
+    );
+    const mergedState = { ...state, prompts, images: imagesWithFinal };
+    dispatch({ type: "set", patch: { prompts, images: imagesWithFinal } });
     setBusy(true);
     try {
-      const nextImage = await regenerateOneImage(mergedState, image.id, image.slideId, localPrompt);
-      const next = state.images.map((x) => (x.id === image.id ? nextImage : x));
+      const override = localFinal.trim() || undefined;
+      const nextImage = await regenerateOneImage(
+        mergedState,
+        image.id,
+        image.slideId,
+        localPrompt,
+        override
+      );
+      const next = mergedState.images.map((x) => (x.id === image.id ? nextImage : x));
       dispatch({ type: "set", patch: { images: next } });
     } finally {
       setBusy(false);
     }
   }
+
+  const lockPromptEdit = busy || image.status === "generating";
 
   const status = image.status;
   const statusLabel =
@@ -158,26 +186,49 @@ export function ImageSlideCard({
           )}
         </div>
         <div className={["min-w-0 overflow-hidden", isThumb ? "min-h-0 flex-1 space-y-2" : "space-y-2"].join(" ")}>
-          {!isFrame && !isThumb ? (
-            <div className="text-xs font-medium text-muted">Уточнение (опция)</div>
-          ) : null}
+          {isFrame || isThumb ? (
+            <div className="text-[10px] font-medium uppercase tracking-wide text-muted/90">OpenAI · полный промпт</div>
+          ) : (
+            <div className="text-xs font-medium text-muted">Промпт OpenAI (полный)</div>
+          )}
+          <textarea
+            value={localFinal}
+            onChange={(e) => setLocalFinal(e.target.value)}
+            onBlur={() => commitFinalPromptToStore()}
+            readOnly={lockPromptEdit}
+            title="Текст, отправленный в OpenAI Image для этого кадра; можно править и перегенерировать."
+            placeholder="После генерации здесь появится полный промпт…"
+            className={
+              isThumb
+                ? "textarea min-h-[72px] flex-1 resize-none font-mono text-[10px] leading-snug"
+                : isFrame
+                  ? "textarea min-h-[100px] font-mono text-[11px] leading-snug"
+                  : "min-h-32 w-full min-w-0 max-w-full resize-y rounded-xl border border-border bg-black/30 px-3 py-2 font-mono text-[11px] outline-none focus:ring-2 focus:ring-accent/30"
+            }
+          />
+          {isFrame || isThumb ? (
+            <div className="text-[10px] text-muted/80">Уточнение к сборке (опция)</div>
+          ) : (
+            <div className="text-xs font-medium text-muted">Краткое уточнение к сборке (опция)</div>
+          )}
           <textarea
             value={localPrompt}
             onChange={(e) => setLocalPrompt(e.target.value)}
             onBlur={() => commitPromptToStore()}
+            readOnly={lockPromptEdit}
             className={
               isThumb
-                ? "textarea min-h-[56px] flex-1 resize-none font-mono text-[10px] leading-snug"
+                ? "textarea min-h-[44px] flex-1 resize-none font-mono text-[10px] leading-snug"
                 : isFrame
-                  ? "textarea min-h-[72px] font-mono text-[11px]"
-                  : "min-h-20 w-full min-w-0 max-w-full resize-y rounded-xl border border-border bg-black/30 px-3 py-2 font-mono text-xs outline-none focus:ring-2 focus:ring-accent/30"
+                  ? "textarea min-h-[56px] font-mono text-[10px] leading-snug"
+                  : "min-h-16 w-full min-w-0 max-w-full resize-y rounded-xl border border-border bg-black/25 px-3 py-2 font-mono text-[10px] outline-none focus:ring-2 focus:ring-accent/25"
             }
           />
           <div className="flex justify-end">
             <button
               type="button"
               onClick={() => void onRegenerate()}
-              disabled={busy}
+              disabled={busy || lockPromptEdit}
               className={
                 isThumb
                   ? "gen-btn mt-0 py-1.5 text-[10px]"

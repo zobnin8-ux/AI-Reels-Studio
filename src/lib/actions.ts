@@ -295,13 +295,20 @@ export async function generateImagesFromState(
     id: j.id,
     slideId: j.slideId,
     prompt: j.cosmeticHint,
+    finalPrompt: j.finalPrompt,
     status: "waiting" as const
   }));
   onProgress?.({ images: [...out] });
 
   for (let i = 0; i < jobs.length; i++) {
     const j = jobs[i]!;
-    out[i] = { id: j.id, slideId: j.slideId, prompt: j.cosmeticHint, status: "generating" };
+    out[i] = {
+      id: j.id,
+      slideId: j.slideId,
+      prompt: j.cosmeticHint,
+      finalPrompt: j.finalPrompt,
+      status: "generating"
+    };
     onProgress?.({ images: [...out] });
 
     try {
@@ -313,6 +320,7 @@ export async function generateImagesFromState(
         id: j.id,
         slideId: j.slideId,
         prompt: j.cosmeticHint,
+        finalPrompt: j.finalPrompt,
         status: "error",
         error: msg
       };
@@ -349,31 +357,38 @@ async function fetchOneImage(
     id,
     slideId,
     prompt: uiHint,
+    finalPrompt: apiPrompt,
     status: "done",
     imageBase64: json.imageBase64,
     mimeType: json.mimeType
   };
 }
 
+/**
+ * @param apiPromptOverride если задан — уходит в /api/image как есть (после правки полного промпта в UI).
+ */
 export async function regenerateOneImage(
   state: StudioState,
   imageId: string,
   slideId: string | undefined,
-  cosmeticHint: string
+  cosmeticHint: string,
+  apiPromptOverride?: string
 ): Promise<GeneratedImage> {
   const slide = slideId ? state.slides.find((s) => s.id === slideId) : undefined;
   const hint = cosmeticHint.trim();
-  const finalPrompt = slide
-    ? composeImagePrompt(state, slide, hint)
-    : buildImagePrompt({
-        account: state.project,
-        tone: state.mood,
-        visualStyle: state.visualStyle,
-        slideText: hint || "(no slide)",
-        cosmeticHint: undefined
-      });
-  const img = await fetchOneImage(state, imageId, slideId ?? "", finalPrompt, hint);
-  return { ...img, prompt: hint };
+  const override = apiPromptOverride?.trim();
+  const finalPrompt = override
+    ? override
+    : slide
+      ? composeImagePrompt(state, slide, hint)
+      : buildImagePrompt({
+          account: state.project,
+          tone: state.mood,
+          visualStyle: state.visualStyle,
+          slideText: hint || "(no slide)",
+          cosmeticHint: undefined
+        });
+  return fetchOneImage(state, imageId, slideId ?? "", finalPrompt, hint);
 }
 
 function formatMusicNotesForZip(music: StudioState["music"]): string {
@@ -446,7 +461,10 @@ export async function downloadZip(state: StudioState) {
 
   const openAiBlocks = state.slides.map((s, i) => {
     const hint = state.prompts.find((x) => x.slideId === s.id)?.prompt?.trim() ?? "";
-    const block = composeImagePrompt(state, s, hint);
+    const imgRow = state.images.find((x) => x.slideId === s.id);
+    const block =
+      imgRow?.finalPrompt?.trim() ||
+      composeImagePrompt(state, s, hint);
     return `--- ${String(i + 1).padStart(2, "0")}. ${s.title || s.id} ---\n${block}`;
   });
   zip.file("image_prompts_openai.txt", openAiBlocks.join("\n\n"));

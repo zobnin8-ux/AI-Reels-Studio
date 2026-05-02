@@ -137,6 +137,8 @@ export type GeneratedImage = {
   slideId?: string;
   /** Косметическое уточнение для кадра (для UI), не полный prompt в API. */
   prompt: string;
+  /** Полная строка, отправленная в OpenAI Image API для этого кадра (можно править и перегенерировать). */
+  finalPrompt?: string;
   status: ImageStatus;
   imageBase64?: string;
   mimeType?: string;
