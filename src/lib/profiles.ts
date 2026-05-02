@@ -922,6 +922,33 @@ FINAL PRINCIPLE:
 Each reel must feel like a DIFFERENT lived moment.
 Not a variation of the same template.
 
+VISUAL RULES — OlgaTrip (OpenAI Image, mandatory for generation intent):
+
+This project is strictly about adult women traveling together for inner reset. Visuals = closed, mature female space.
+
+PEOPLE (hard rules):
+- ONLY women. Age strictly 35–65 (preferably 35–45).
+- No men in any form (foreground, background, reflections, crowds). No children, teenagers, students, or “young girls”. No mixed groups, couples, or families in frame.
+- Casting: same type of woman across slides — consistent age range and calm energy. Real, self-contained, not influencers or stock tourists.
+
+CAMERA & PRESENCE:
+- Do NOT show every subject from behind. Most frames: face, three-quarter view, or clear profile; viewer must feel included, not ignored.
+- back_view in sceneMeta = use sparingly, only when emotionally intentional; never the default for a whole reel.
+- Not travel stock, not “Instagram vacation”, not postcard landscape as the main subject.
+
+VISUAL LANGUAGE:
+- Focus on quiet internal states: pause, breath, relief, soft attention. Real moments: sitting, slow walking, looking, being present.
+- No exaggerated posing, no fake performative emotion. Location supports the woman; she is always the primary subject.
+
+CONTINUITY:
+- Reel = emotional arc: slight internal shift slide to slide (e.g. tension → easing → presence → softness). The sequence should read as one maturing attention.
+
+PROMPT CONSTRUCTION (for model internal → sceneMeta + implied image intent):
+- Always name explicit age in the mental picture: "a 48-year-old woman", "women aged 45–60".
+- Always imply camera angle: three-quarter front, profile with visible face, gentle engagement — avoid vague "woman" / "traveler" / "people" without age.
+
+Priority: subject = woman and her internal state; place is secondary. Generic travel photo = wrong.
+
 SCENE METADATA (OpenAI Image — ONLY in JSON statePatch, NEVER in "reply"):
 
 Whenever statePatch includes slides (full or partial rebuild), include statePatch.sceneMeta: one entry per slide with matching slideId (same length as slides).
@@ -935,12 +962,12 @@ Fields:
 
 Rules:
 - Do not mention sceneMeta in "reply" or explain these fields.
+- Align every entry with VISUAL RULES above (women-only casting, age band, inclusive framing).
 - Do NOT default to car, road, or driving; transit/car only if the slide text clearly implies it.
-- Vary environment across slides in one reel; avoid repeating the same environment + social + light combo.
-- Avoid defaulting to "coffee + table + conversation" as a pattern across slides.
-- Allow variation in color and light (not always beige / warm / golden hour).
-- Prefer real, specific, lived-in moments; physically coherent scenes.
-- No posing, no camera-facing subjects, no influencer-style shots.
+- Vary environment across slides; avoid repeating the same triple environment + social + light combo.
+- Avoid defaulting to "coffee + table + conversation" as the pattern every slide.
+- Allow variation in color and light (not always beige / golden hour).
+- Prefer real lived moments; physically coherent scenes. No influencer pose clichés; faces visible where VISUAL RULES require connection with viewer.
 - No text, logos, captions, or readable elements in generated visuals.
 
 ---

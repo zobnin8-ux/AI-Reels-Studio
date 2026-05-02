@@ -48,13 +48,16 @@ function formatZobninSceneAnchors(m: ZobninSceneMeta): string {
 
 function formatOlgatripSceneAnchors(m: OlgatripSceneMeta): string {
   return [
-    `Scene type: ${m.scene_type} — specific lived moment, documentary candid feel.`,
-    `Environment: ${m.environment} — physically coherent space; do not default to car, road, or driving.`,
-    `Social context: ${m.social_context} — relationship to others in frame without posing.`,
-    `Visual focus: ${m.visual_focus} — no camera-facing subjects, no influencer staging.`,
-    `Light: ${m.light_type} — vary palette across slides; not always beige or golden hour.`,
-    "Avoid repeating the same environment or the coffee-table-conversation cliché across slides.",
-    "No text, logos, captions, or readable elements — realistic travel atmosphere only."
+    "OlgaTrip — closed mature female space ONLY: adult women together for inner reset; never generic travel stock or postcard landscape as hero.",
+    "People casting (mandatory in prompt wording): ONLY women, age strictly 35–65 (prefer 35–45); NO men in frame or reflections/crowds; NO children, teenagers, students, young girls; NO mixed groups, couples, or families; same woman typology and calm energy across slides.",
+    `Scene beat: ${m.scene_type} — internal shift along reel arc (tension → easing → presence → softness); quiet inner states: pause, breath, relief, soft attention.`,
+    `Environment: ${m.environment} — place supports the woman, never replaces her as subject.`,
+    `Social context: ${m.social_context} — real calm presence; not influencers, not staged tourists.`,
+    `Visual focus / framing: ${m.visual_focus}, ${m.light_type}. Prefer face visible — three-quarter front, profile with readable face, or gentle engagement with lens; back view only occasionally and deliberately when anchor calls for it.`,
+    "Camera & viewer: most frames must NOT be anonymous backs-only; viewer stays emotionally included. Specify angle explicitly in generation intent (e.g. three-quarter front view, profile with visible cheekbone).",
+    "Forbidden: travel brochure vistas as main subject, Instagram vacation gloss, exaggerated posing, fake performative emotion.",
+    "In describing subjects NEVER use vague nouns alone ('woman', 'traveler', 'people'); always tie explicit age: 'a 48-year-old woman', 'women aged 45–60 walking slowly'.",
+    "No text, logos, captions, or readable elements on frame."
   ].join(" ");
 }
 
@@ -107,7 +110,7 @@ const ACCOUNT_WORLD: Record<ProjectId, string> = {
   poslenego:
     "intimate personal environments, apartments, windows, quiet streets, solitude, transitional emotional states, morning/evening light, no glamour, no crowds, no tourism scenes",
   olgatrip:
-    "authentic travel scenes, small groups, cities, streets, cafes, water, natural light, sense of movement and presence, no mass tourism, no crowds, no bus tours",
+    "OlgaTrip — mature adult women only (35–65, prefer 35–45), traveling together as a quiet closed female circle for inner reset; warm documentary realism, feminine calm, emotionally inclusive framing (faces and 3/4 views prioritized); never postcard landscapes as sole hero; locations secondary to emotional interior state",
   zobnin:
     "human-centered documentary scenes: real people using AI at work — typing, reading outputs, reacting; moments of confusion, realization, tension; cinematic framing — close-ups, face lit by screen, dark room, office, night, desk; photorealistic; never diagrams or UI chrome as the subject"
 };
@@ -125,12 +128,14 @@ const TONE_MAP: Record<ProjectId, Record<Mood, string>> = {
   },
   olgatrip: {
     positive:
-      "bright natural light, open spaces, movement, freshness, sense of freedom and decision",
-    soft: "warm tones, golden hour, soft shadows, cozy details, feminine calm",
+      "gentle daylight relief on faces, subtle openness in posture, quiet optimism without spectacle",
+    soft: "breathable air in frame, soft shadows on skin, intimate pause, warmth without gloss",
     provocative:
-      "contrast between freedom and привычка, slight tension in framing, sense of decision point",
-    aggressive: "anti-tourism contrast, sharp clarity, no crowd, decisive framing",
-    neutral: "travel realism, city details, observational tone"
+      "quiet friction held in the face or hands, restrained tension turning toward ease, never melodrama",
+    aggressive:
+      "clear sober light, emotional honesty without harsh spectacle; woman still clearly readable as subject",
+    neutral:
+      "documentary female journey realism; observational but connected — viewer shares presence, not scenery brochure"
   },
   zobnin: {
     positive:
