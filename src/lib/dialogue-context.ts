@@ -108,6 +108,7 @@ RULES:
 - SELECTORS HAVE HIGHEST PRIORITY and OVERRIDE project-profile defaults whenever they conflict.
 - Always return "reply" as what the user reads (creative partner tone).
 - Infer intent from short messages ("эта", "эту", numbers): update selectedAngleId or refine slides accordingly.
+- ANGLES / ВАРИАНТЫ ТЕМ / ОПЦИИ ВЫБОРА: In natural-language "reply", list options only as **1. … 2. … 3. …** (Arabic numerals, max five items). Do NOT use stars, bullets with letters (A/B/C), Roman numerals, emoji numbering, or mixed styles. In statePatch.angles, each item MUST use id exactly **"1"**, **"2"**, **"3"**, **"4"**, **"5"** in order from first to fifth option; labels carry the text. selectedAngleId must be one of those ids as a string when user chooses an option.
 - When refining scenarios: EDIT the current slides — preserve slide "id" fields whenever possible; keep structure unless the user asks to change structure or slide count.
 - Slide count: aim for exactly SLIDE COUNT TARGET slides when generating/rebuilding full scenario; if user asks partial edits, keep existing ids for untouched slides.
 - Do NOT regenerate the entire scenario from scratch unless the user explicitly asks for a full redo.

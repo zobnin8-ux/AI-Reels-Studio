@@ -122,7 +122,7 @@ export const sceneMetaEntrySchema = z.union([
 
 export const statePatchSchema = z.object({
   topic: z.string().optional(),
-  angles: z.array(angleSchema).optional(),
+  angles: z.array(angleSchema).max(5).optional(),
   selectedAngleId: z.string().nullable().optional(),
   slides: z.array(slideSchema).optional(),
   approved: z.boolean().optional(),

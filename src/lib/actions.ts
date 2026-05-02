@@ -10,6 +10,12 @@ import {
 } from "@/lib/state";
 import type { StatePatch } from "@/lib/chat-response";
 import { unwrapCaptionValue } from "@/lib/chat-reply-format";
+import {
+  coerceSelectedAngleId,
+  MAX_ANGLES,
+  normalizeAnglesList,
+  remapSelectedAngleIdAfterNormalize
+} from "@/lib/angle-normalize";
 import { formatTypographyNotesForZip } from "@/lib/typography-export";
 
 function uid(prefix: string) {
@@ -141,8 +147,20 @@ export function mergeStatePatch(state: StudioState, patch: StatePatch | undefine
   if (!patch) return {};
   const out: Partial<StudioState> = {};
   if (patch.topic !== undefined) out.topic = patch.topic;
-  if (patch.angles !== undefined) out.angles = patch.angles;
-  if (patch.selectedAngleId !== undefined) out.selectedAngleId = patch.selectedAngleId;
+  if (patch.angles !== undefined) {
+    const raw = patch.angles.slice(0, MAX_ANGLES);
+    const normalized = normalizeAnglesList(raw);
+    out.angles = normalized;
+    if (patch.selectedAngleId !== undefined) {
+      out.selectedAngleId = remapSelectedAngleIdAfterNormalize(
+        raw,
+        normalized,
+        patch.selectedAngleId
+      );
+    }
+  } else if (patch.selectedAngleId !== undefined) {
+    out.selectedAngleId = coerceSelectedAngleId(patch.selectedAngleId, state.angles);
+  }
   if (patch.slides !== undefined) out.slides = patch.slides;
   if (patch.approved !== undefined) out.approved = patch.approved;
   if (patch.prompts !== undefined) {
