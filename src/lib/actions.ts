@@ -1,7 +1,7 @@
 "use client";
 
-import { buildImagePrompt, slideBodyForImagePrompt } from "@/lib/build-image-prompt";
-import type { ChatMessage, GeneratedImage, SlidePrompt, StudioState } from "@/lib/state";
+import { buildImagePrompt, formatSceneAnchorsFromMeta, slideBodyForImagePrompt } from "@/lib/build-image-prompt";
+import type { ChatMessage, GeneratedImage, SceneMetaEntry, StudioState } from "@/lib/state";
 import type { StatePatch } from "@/lib/chat-response";
 import { formatTypographyNotesForZip } from "@/lib/typography-export";
 
@@ -19,12 +19,17 @@ function composeImagePrompt(
   slide: { id: string; title: string; text: string },
   cosmeticHint: string
 ) {
+  const meta =
+    state.project === "poslenego"
+      ? state.sceneMeta.find((m) => m.slideId === slide.id)
+      : undefined;
   return buildImagePrompt({
     account: state.project,
     tone: state.mood,
     visualStyle: state.visualStyle,
     slideText: slideBodyForImagePrompt(slide),
-    cosmeticHint: cosmeticHint.trim() || undefined
+    cosmeticHint: cosmeticHint.trim() || undefined,
+    sceneAnchors: meta ? formatSceneAnchorsFromMeta(meta) : undefined
   });
 }
 
@@ -104,7 +109,15 @@ export function buildSessionPayload(
   state: StudioState
 ): Pick<
   StudioState,
-  "topic" | "selectedAngleId" | "angles" | "slides" | "approved" | "prompts" | "caption" | "music"
+  | "topic"
+  | "selectedAngleId"
+  | "angles"
+  | "slides"
+  | "approved"
+  | "prompts"
+  | "sceneMeta"
+  | "caption"
+  | "music"
 > {
   return {
     topic: state.topic,
@@ -113,6 +126,7 @@ export function buildSessionPayload(
     slides: state.slides,
     approved: state.approved,
     prompts: state.prompts,
+    sceneMeta: state.sceneMeta,
     caption: state.caption,
     music: state.music
   };
@@ -153,6 +167,26 @@ export function mergeStatePatch(state: StudioState, patch: StatePatch | undefine
       out.prompts = Array.from(byId.entries()).map(([slideId, prompt]) => ({ slideId, prompt }));
     }
   }
+  if (patch.sceneMeta !== undefined) {
+    const incoming = patch.sceneMeta;
+    const slidesForMerge = patch.slides ?? state.slides;
+    if (slidesForMerge.length > 0) {
+      const merged: SceneMetaEntry[] = [];
+      for (const s of slidesForMerge) {
+        const inc = incoming.find((m) => m.slideId === s.id);
+        const prev = state.sceneMeta.find((m) => m.slideId === s.id);
+        const row = inc ?? prev;
+        if (row) merged.push({ ...row, slideId: s.id });
+      }
+      out.sceneMeta = merged;
+    } else {
+      const byId = new Map(state.sceneMeta.map((m) => [m.slideId, m]));
+      for (const m of incoming) {
+        byId.set(m.slideId, m);
+      }
+      out.sceneMeta = Array.from(byId.values());
+    }
+  }
   if (patch.caption !== undefined) out.caption = patch.caption;
   if (patch.music !== undefined) out.music = patch.music;
 
@@ -161,6 +195,9 @@ export function mergeStatePatch(state: StudioState, patch: StatePatch | undefine
   if (patch.slides !== undefined && patch.prompts === undefined) {
     out.prompts = [];
     out.images = [];
+  }
+  if (patch.slides !== undefined && patch.sceneMeta === undefined) {
+    out.sceneMeta = [];
   }
   return out;
 }
@@ -367,6 +404,15 @@ export async function downloadZip(state: StudioState) {
       })
     : state.prompts.map((x, i) => `${String(i + 1).padStart(2, "0")}. ${x.prompt || "(нет)"}`);
   zip.file("cosmetic_hints.txt", cosmeticLines.join("\n\n"));
+
+  if (state.sceneMeta.length > 0) {
+    const sceneLines = state.sceneMeta.map((m) => {
+      const slideIdx = state.slides.findIndex((s) => s.id === m.slideId);
+      const n = slideIdx >= 0 ? slideIdx + 1 : "?";
+      return `${String(n).padStart(2, "0")}. slideId=${m.slideId}\nscene_type=${m.scene_type}\nenvironment=${m.environment}\nvisual_focus=${m.visual_focus}`;
+    });
+    zip.file("scene_meta.txt", sceneLines.join("\n\n"));
+  }
 
   const openAiBlocks = state.slides.map((s, i) => {
     const hint = state.prompts.find((x) => x.slideId === s.id)?.prompt?.trim() ?? "";

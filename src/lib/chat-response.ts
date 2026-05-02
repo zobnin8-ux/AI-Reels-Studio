@@ -22,6 +22,20 @@ export const musicOutputSchema = z.object({
   avoid: z.array(z.string())
 });
 
+export const sceneMetaEntrySchema = z.object({
+  slideId: z.string(),
+  scene_type: z.enum([
+    "micro_action",
+    "internal",
+    "trigger",
+    "observation",
+    "contrast",
+    "silence"
+  ]),
+  environment: z.enum(["interior", "public", "transitional", "undefined"]),
+  visual_focus: z.enum(["phone", "hands", "face", "body", "object", "empty_space"])
+});
+
 export const statePatchSchema = z.object({
   topic: z.string().optional(),
   angles: z.array(angleSchema).optional(),
@@ -29,6 +43,7 @@ export const statePatchSchema = z.object({
   slides: z.array(slideSchema).optional(),
   approved: z.boolean().optional(),
   prompts: z.array(slidePromptSchema).optional(),
+  sceneMeta: z.array(sceneMetaEntrySchema).optional(),
   caption: z.string().optional(),
   music: musicOutputSchema.optional()
 });

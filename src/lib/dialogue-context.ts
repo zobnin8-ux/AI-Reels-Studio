@@ -9,6 +9,7 @@ export type SessionSnapshotForApi = Pick<
   | "slides"
   | "approved"
   | "prompts"
+  | "sceneMeta"
   | "caption"
   | "music"
 >;
@@ -64,6 +65,7 @@ export function buildDialogueSystemPrompt(
       slides: session.slides,
       approved: session.approved,
       prompts: session.prompts,
+      sceneMeta: session.sceneMeta,
       caption: session.caption,
       music: session.music
     },
@@ -94,6 +96,7 @@ RESPONSE FORMAT (mandatory — valid JSON only, single object):
     "slides": [{"id","title","text"}, ...]?,
     "approved": boolean?,
     "prompts": [{"slideId","prompt"}, ...]?,
+    "sceneMeta": [{"slideId","scene_type","environment","visual_focus"}, ...]?,
     "caption": string?,
     "music": {"queries":[],"recommendations":[],"avoid":[]}?
   }
@@ -122,6 +125,7 @@ RULES:
 - If nothing structural changes, omit statePatch or use {}.
 - When the user asks for cosmetic tweaks for a slide frame ("теплее", "меньше людей", "улучши промпт кадра N" as refinement hints), put a SHORT line in statePatch.prompts for that slideId (slideId must match). These are optional notes for regeneration, not full image prompts.
 - When the user asks to refine a slide tweak from chat, update statePatch.prompts for that slideId with the short new refinement text.
+- PROJECT poslenego only: when generating or rebuilding slides, include statePatch.sceneMeta — one entry per slide with matching slideId (visual anchors for OpenAI Image; never describe sceneMeta in "reply"). See profile «После него» for allowed enums.
 
 `;
 

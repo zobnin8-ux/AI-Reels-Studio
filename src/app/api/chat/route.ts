@@ -30,6 +30,21 @@ const sessionSchema = z.object({
   slides: z.array(z.object({ id: z.string(), title: z.string(), text: z.string() })),
   approved: z.boolean(),
   prompts: z.array(z.object({ slideId: z.string(), prompt: z.string() })),
+  sceneMeta: z.array(
+    z.object({
+      slideId: z.string(),
+      scene_type: z.enum([
+        "micro_action",
+        "internal",
+        "trigger",
+        "observation",
+        "contrast",
+        "silence"
+      ]),
+      environment: z.enum(["interior", "public", "transitional", "undefined"]),
+      visual_focus: z.enum(["phone", "hands", "face", "body", "object", "empty_space"])
+    })
+  ),
   caption: z.string(),
   music: z.object({
     queries: z.array(z.string()),

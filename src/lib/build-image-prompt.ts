@@ -1,4 +1,4 @@
-import type { Mood, ProjectId, VisualStyle } from "@/lib/state";
+import type { Mood, ProjectId, SceneMetaEntry, VisualStyle } from "@/lib/state";
 
 /**
  * Сборка финального image prompt для OpenAI Image API по ТЗ:
@@ -12,7 +12,19 @@ export type BuildImagePromptInput = {
   visualStyle: VisualStyle;
   slideText: string;
   cosmeticHint?: string;
+  /** Краткие визуальные якоря (poslenego / sceneMeta), не дублировать буквальный смысл slideText. */
+  sceneAnchors?: string;
 };
+
+/** Текстовый блок для image API из SceneMetaEntry (косвенно, без буквального иллюстрирования текста). */
+export function formatSceneAnchorsFromMeta(m: SceneMetaEntry): string {
+  return [
+    `Scene type: ${m.scene_type} (mood/moment, not literal text illustration).`,
+    `Environment: ${m.environment} — keep minimal, realistic, physically coherent.`,
+    `Visual focus: ${m.visual_focus} — frame accordingly; no staging or posing.`,
+    "Avoid cars, roads, and driving unless the slide text absolutely requires it."
+  ].join(" ");
+}
 
 /** БЛОК 1 — подстановка {{account}}, {{tone}}, {{visualStyle}}, {{slideText}} в INPUT. */
 const MASTER_PROMPT_TEMPLATE = `You are a senior art director creating high-end Instagram Reel slide backgrounds.
@@ -138,7 +150,7 @@ function interpolateMaster(
  * БЛОК 8 — сборка как в ТЗ; опционально одна добавка для ручных косметических правок в UI.
  */
 export function buildImagePrompt(input: BuildImagePromptInput): string {
-  const { account, tone, visualStyle, slideText, cosmeticHint } = input;
+  const { account, tone, visualStyle, slideText, cosmeticHint, sceneAnchors } = input;
 
   const core = [
     interpolateMaster(account, tone, visualStyle, slideText),
@@ -151,6 +163,11 @@ export function buildImagePrompt(input: BuildImagePromptInput): string {
   ].join("\n\n");
 
   let out = core.replace(/\n{3,}/g, "\n\n").trim();
+
+  const anchors = sceneAnchors?.trim();
+  if (anchors) {
+    out += `\n\nVISUAL ANCHORS (internal — guide composition and focus; do not illustrate on-slide text literally):\n${anchors}`;
+  }
 
   const hint = cosmeticHint?.trim();
   if (hint) {

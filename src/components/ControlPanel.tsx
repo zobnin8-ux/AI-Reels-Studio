@@ -55,7 +55,8 @@ export function ControlPanel() {
       state.caption.trim().length > 0 ||
       state.music.queries.length > 0 ||
       state.music.recommendations.length > 0 ||
-      state.images.length > 0
+      state.images.length > 0 ||
+      state.sceneMeta.length > 0
     );
   }, [
     state.messages.length,
@@ -64,7 +65,8 @@ export function ControlPanel() {
     state.prompts,
     state.caption,
     state.music,
-    state.images.length
+    state.images.length,
+    state.sceneMeta.length
   ]);
 
   function resetContentAfterProjectSwitch(nextProject: ProjectId) {
@@ -79,6 +81,7 @@ export function ControlPanel() {
         slides: [],
         approved: false,
         prompts: [],
+        sceneMeta: [],
         images: [],
         caption: "",
         music: emptyMusic(),

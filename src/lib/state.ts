@@ -43,6 +43,14 @@ export type SlidePrompt = {
   prompt: string;
 };
 
+/** Якоря для OpenAI Image — только «После него», задаётся Anthropic в statePatch (не показывать в reply). */
+export type SceneMetaEntry = {
+  slideId: string;
+  scene_type: "micro_action" | "internal" | "trigger" | "observation" | "contrast" | "silence";
+  environment: "interior" | "public" | "transitional" | "undefined";
+  visual_focus: "phone" | "hands" | "face" | "body" | "object" | "empty_space";
+};
+
 export type MusicOutput = {
   queries: string[];
   recommendations: string[];
@@ -85,6 +93,8 @@ export type StudioState = {
   /** Явное утверждение сценария (из диалога / statePatch) */
   approved: boolean;
   prompts: SlidePrompt[];
+  /** Визуальные якоря слайдов (poslenego); синхрон с OpenAI Image. */
+  sceneMeta: SceneMetaEntry[];
   images: GeneratedImage[];
 
   caption: string;
@@ -116,6 +126,7 @@ export function createInitialState(): StudioState {
     slides: [],
     approved: false,
     prompts: [],
+    sceneMeta: [],
     images: [],
 
     caption: "",
