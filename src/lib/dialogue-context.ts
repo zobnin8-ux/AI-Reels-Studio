@@ -42,11 +42,10 @@ CTA MODE & RULES: ${getCtaHint(sel)}`;
 function olgatripRules(project: SelectorSnapshotForApi["project"]) {
   if (project !== "olgatrip") return "";
   return `
-OLGATRIP / CASHMERE COAST (always respect with this project):
-- Scenario beats for Reels: align slide flow with 0–3s hook → 3–10 visual → 10–25 micro-story → 25–35 soft close (total ~20–35s); slide titles may note seconds.
-- Full-package answers in "reply": use sections IDEA → HOOK → SCRIPT (with second ranges) → CAPTION → MUSIC MOOD. Do NOT fill image-generation prompts; backgrounds are produced separately from slide text + selectors.
-- Optional statePatch.prompts: short cosmetic refinements per slide only if the user asks for tweaks for regeneration (not full English image prompts).
-- Copy quality: if it sounds like generic travel or hard sell, rewrite; use concrete moments, not adjectives from the forbidden list in the profile.
+OLGATRIP — booster (profile above is canonical):
+- SELECTORS + SESSION STATE win on conflicts; SCENE DIVERSITY ENGINE + anti-repetition always apply.
+- Full-package "reply": IDEA → HOOK → SCRIPT (0–3 / 3–10 / 10–25 / 25–35) → CAPTION → MUSIC MOOD; never image prompts for backgrounds.
+- statePatch.prompts: short cosmetic hints only on explicit user ask for regeneration tweaks.
 `;
 }
 
