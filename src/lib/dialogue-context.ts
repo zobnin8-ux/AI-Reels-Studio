@@ -48,6 +48,7 @@ OLGATRIP — booster (profile above is canonical):
 - Full-package "reply": IDEA → HOOK → SCRIPT (0–3 / 3–10 / 10–25 / 25–35) → CAPTION → MUSIC MOOD; never image prompts for backgrounds.
 - statePatch.prompts: short cosmetic hints only on explicit user ask for regeneration tweaks.
 - When slides are generated or rebuilt, include statePatch.sceneMeta (OlgaTrip schema, one entry per slide with slideId); never describe sceneMeta in "reply".
+- Never put statePatch.caption or statePatch.music on script-only turns — only when the user explicitly asks for caption or music (same as global RULES).
 `;
 }
 
@@ -121,8 +122,8 @@ RULES:
   - direct: CTA must use the selected trigger word.
   - custom: CTA must use customCta.
 - Image backgrounds are NOT authored here: OpenAI Image API uses slide text + PROJECT + MOOD/TONE + VISUAL STYLE in a fixed app-side template. Do not invent full English image prompts unless the user explicitly asks for short cosmetic refinement lines for regeneration.
-- Caption: fill statePatch.caption when the user asks for a caption / подпись.
-- Music: put statePatch.music ONLY when the user explicitly asks for music / soundtrack / треки / подбор музыки. Never fill "music" from scenario slides, numbered slide titles, or creative script content. If the user did not ask for music this turn, omit "music" entirely from statePatch.
+- Caption: put statePatch.caption ONLY when the user explicitly asks for a caption / подпись / текст поста in this turn (shortcut «Caption» counts). If the user only asked for a script or scenario, omit "caption" from statePatch entirely — do not auto-fill a weak caption.
+- Music: put statePatch.music ONLY when the user explicitly asks for music / soundtrack / треки / подбор музыки in this turn (shortcut «Музыка» counts). Never fill "music" from scenario slides, IDEA/HOOK blocks, or creative script content. If the user did not ask for music this turn, omit "music" entirely from statePatch.
 - If nothing structural changes, omit statePatch or use {}.
 - When the user asks for cosmetic tweaks for a slide frame ("теплее", "меньше людей", "улучши промпт кадра N" as refinement hints), put a SHORT line in statePatch.prompts for that slideId (slideId must match). These are optional notes for regeneration, not full image prompts.
 - When the user asks to refine a slide tweak from chat, update statePatch.prompts for that slideId with the short new refinement text.

@@ -24,6 +24,11 @@ import {
   normalizeImagePromptFromReply,
   userWantsPromptImprovement
 } from "@/lib/prompt-reply-sync";
+import {
+  extractCaptionFromJsonBlob,
+  sanitizeModelReplyForDisplay,
+  unwrapCaptionValue
+} from "@/lib/chat-reply-format";
 
 function uid(p: string) {
   return `${p}_${Math.random().toString(16).slice(2)}`;
@@ -54,16 +59,23 @@ function cleanTextValue(raw: string): string {
 }
 
 function wantsCaption(text: string): boolean {
-  return /\b(caption|капшн|подпись)\b/i.test(text);
+  return /\b(caption|капшн|подпись|подпись\s+к\s+посту|текст\s+поста|описание\s+поста)\b/i.test(
+    text
+  );
 }
 
 function extractCaptionFromReply(reply: string): string {
+  const fromBlob = extractCaptionFromJsonBlob(reply);
+  if (fromBlob?.trim()) return unwrapCaptionValue(fromBlob);
   const json = tryExtractJson(reply);
   const c = json?.caption;
-  if (typeof c === "string" && c.trim()) return cleanTextValue(c);
+  if (typeof c === "string" && c.trim()) return unwrapCaptionValue(cleanTextValue(c));
+  const sp = json?.statePatch as Record<string, unknown> | undefined;
+  const nested = sp?.caption;
+  if (typeof nested === "string" && nested.trim()) return unwrapCaptionValue(cleanTextValue(nested));
   const m = reply.match(/(?:caption|подпись)\s*[:\-]\s*([\s\S]*)/i);
-  if (m?.[1]) return cleanTextValue(m[1]);
-  return cleanTextValue(reply);
+  if (m?.[1]) return unwrapCaptionValue(cleanTextValue(m[1]));
+  return unwrapCaptionValue(cleanTextValue(reply));
 }
 
 const SHORTCUTS: { label: string; message: string }[] = [
@@ -164,13 +176,25 @@ export function DialoguePanel() {
       const { reply, statePatch } = await sendDialogueTurn(state, text, history);
 
       const userMsg: ChatMessage = { id: uid("u"), role: "user", content: text };
-      const assistantMsg: ChatMessage = { id: uid("a"), role: "assistant", content: reply };
+      const assistantMsg: ChatMessage = {
+        id: uid("a"),
+        role: "assistant",
+        content: sanitizeModelReplyForDisplay(reply)
+      };
       const patch = mergeStatePatch(state, statePatch);
 
       const allowMusicFill =
         userExplicitMusicIntent(text) || wantsMusicFollowUp(text) || wantsMusicRefinement(text);
-      if (patch.music !== undefined && !allowMusicFill && isMusicBlockEmpty(patch.music)) {
+      if (patch.music !== undefined && !allowMusicFill) {
         delete patch.music;
+      }
+
+      const allowCaptionFill = wantsCaption(text);
+      if (patch.caption !== undefined && !allowCaptionFill) {
+        delete patch.caption;
+      }
+      if (patch.caption !== undefined) {
+        patch.caption = unwrapCaptionValue(patch.caption);
       }
 
       // Если модель не положила промпт в statePatch — пробуем вытащить из reply:

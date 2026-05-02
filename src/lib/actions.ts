@@ -9,6 +9,7 @@ import {
   type StudioState
 } from "@/lib/state";
 import type { StatePatch } from "@/lib/chat-response";
+import { unwrapCaptionValue } from "@/lib/chat-reply-format";
 import { formatTypographyNotesForZip } from "@/lib/typography-export";
 
 function uid(prefix: string) {
@@ -191,7 +192,7 @@ export function mergeStatePatch(state: StudioState, patch: StatePatch | undefine
       out.sceneMeta = Array.from(byId.values());
     }
   }
-  if (patch.caption !== undefined) out.caption = patch.caption;
+  if (patch.caption !== undefined) out.caption = unwrapCaptionValue(patch.caption);
   if (patch.music !== undefined) out.music = patch.music;
 
   // Если сценарий изменился, а промпты не обновлялись в этом же ходе —

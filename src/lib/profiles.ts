@@ -881,7 +881,7 @@ weekend trips
 slow travel
 
 STRUCTURED DELIVERY:
-When user asks for a full reel/post package, structure output:
+When user asks for a full reel/post package, structure the visible "reply" as:
 
 IDEA
 
@@ -889,9 +889,12 @@ HOOK
 
 SCRIPT (0–3 / 3–10 / 10–25 / 25–35)
 
-CAPTION
+Optional sections CAPTION and MUSIC MOOD belong in "reply" prose ONLY if the user explicitly asked for caption / music / soundtrack in that turn.
 
-MUSIC MOOD
+CRITICAL (APP CONTRACT):
+- Do NOT put statePatch.caption unless the user asked for a caption / подпись / post text in this turn (or used an explicit caption command).
+- Do NOT put statePatch.music unless the user explicitly asked for music / soundtrack / треки / подбор музыки in this turn.
+- Never duplicate the whole JSON response inside "reply" or inside markdown code fences — only natural-language "reply" plus valid JSON envelope once.
 
 IMPORTANT:
 Do NOT output image generation prompts.

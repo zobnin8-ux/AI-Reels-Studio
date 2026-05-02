@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { buildDialogueSystemPrompt } from "@/lib/dialogue-context";
+import { sanitizeModelReplyForDisplay } from "@/lib/chat-reply-format";
 import { chatApiResponseSchema, sceneMetaEntrySchema } from "@/lib/chat-response";
 
 const selectorsSchema = z.object({
@@ -206,12 +207,18 @@ export async function POST(request: Request) {
 
     try {
       const out = parseChatResponse(raw);
-      return NextResponse.json(out);
+      return NextResponse.json({
+        ...out,
+        reply: sanitizeModelReplyForDisplay(out.reply)
+      });
     } catch {
       // Fallback: если модель нарушила JSON-контракт, не роняем диалог.
       // Пытаемся достать чистый reply из JSON-подобного текста.
+      const fallbackReply =
+        sanitizeModelReplyForDisplay(extractReplyText(raw)) ||
+        "Не удалось распарсить ответ модели. Повтори запрос чуть иначе.";
       return NextResponse.json({
-        reply: extractReplyText(raw) || "Не удалось распарсить ответ модели. Повтори запрос чуть иначе.",
+        reply: fallbackReply,
         statePatch: {}
       });
     }
