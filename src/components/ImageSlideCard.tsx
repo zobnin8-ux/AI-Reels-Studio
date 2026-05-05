@@ -5,6 +5,7 @@ import { useStudio } from "@/lib/studio-store";
 import { regenerateOneImage } from "@/lib/actions";
 import { mergePromptForSlide } from "@/lib/prompt-sync";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 
 export function ImageSlideCard({
   index,
@@ -16,7 +17,7 @@ export function ImageSlideCard({
   image: GeneratedImage;
   /** Клик по готовому превью — полноэкранный просмотр (если передан). */
   onPreview?: () => void;
-  /** В колонке v2026 — компактный вид внутри `.reel-frame`. `frameRail` — лента над чатом: крупное превью, промпты в `<details>`. */
+  /** В колонке v2026 — компактный вид внутри `.reel-frame`. `frameRail` — лента над чатом: крупное превью, промпты в боковой панели. */
   variant?: "card" | "frame" | "thumb" | "frameRail";
 }) {
   const { state, dispatch } = useStudio();
@@ -25,7 +26,7 @@ export function ImageSlideCard({
   const [busy, setBusy] = useState(false);
   const [errorShake, setErrorShake] = useState(false);
   const prevErrorRef = useRef<string | undefined>(undefined);
-  const detailsRef = useRef<HTMLDetailsElement | null>(null);
+  const [railSheetOpen, setRailSheetOpen] = useState(false);
   const [copied, setCopied] = useState(false);
 
   useEffect(() => {
@@ -107,6 +108,24 @@ export function ImageSlideCard({
     return !!image.slideId?.trim() && !busy && !lockPromptEdit;
   }, [busy, image.slideId, lockPromptEdit]);
 
+  useEffect(() => {
+    if (!railSheetOpen) return;
+    function onKey(e: KeyboardEvent) {
+      if (e.key === "Escape") setRailSheetOpen(false);
+    }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [railSheetOpen]);
+
+  useEffect(() => {
+    if (!railSheetOpen) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = prev;
+    };
+  }, [railSheetOpen]);
+
   async function copyFinalPrompt() {
     const text = (localFinal ?? "").trim();
     if (!text) return;
@@ -124,9 +143,11 @@ export function ImageSlideCard({
       className={[
         isThumb
           ? "reel-frame-inner min-h-0 overflow-hidden p-2"
-          : isFrameLike
-            ? "reel-frame-inner overflow-y-auto p-2"
-            : "studio-card-frame min-w-0 overflow-hidden rounded-xl border border-border bg-panel/40 p-3",
+          : isFrameRail
+            ? "reel-frame-inner overflow-hidden p-2"
+            : isFrameLike
+              ? "reel-frame-inner overflow-y-auto p-2"
+              : "studio-card-frame min-w-0 overflow-hidden rounded-xl border border-border bg-panel/40 p-3",
         errorShake ? "studio-shake border-red-400/35" : ""
       ].join(" ")}
     >
@@ -176,12 +197,9 @@ export function ImageSlideCard({
               <button
                 type="button"
                 className="asset-badge"
-                onClick={() => {
-                  if (detailsRef.current) detailsRef.current.open = true;
-                  detailsRef.current?.scrollIntoView({ block: "nearest" });
-                }}
-                title="Показать промпты и настройки"
-                aria-label={`Кадр ${index + 1}: открыть блок промпта и перегенерации`}
+                onClick={() => setRailSheetOpen(true)}
+                title="Промпт и перегенерация в боковой панели"
+                aria-label={`Кадр ${index + 1}: открыть панель промпта и перегенерации`}
               >
                 Details
               </button>
@@ -247,48 +265,85 @@ export function ImageSlideCard({
             </div>
           )}
         </div>
-        {isFrameRail ? (
-          <details ref={detailsRef} className="min-w-0 overflow-hidden">
-            <summary className="cursor-pointer select-none list-none border-t border-[var(--border-subtle)]/60 pt-2 text-[10px] font-medium uppercase tracking-wide text-muted/90 hover:text-muted [&::-webkit-details-marker]:hidden">
-              Промпт и перегенерация
-            </summary>
-            <div className="mt-2 space-y-2">
-              <div className="text-[10px] font-medium uppercase tracking-wide text-muted/90">OpenAI · полный промпт</div>
-              <textarea
-                value={localFinal}
-                onChange={(e) => setLocalFinal(e.target.value)}
-                onBlur={() => commitFinalPromptToStore()}
-                readOnly={lockPromptEdit}
-                title="Текст, отправленный в OpenAI Image для этого кадра; можно править и перегенерировать."
-                placeholder="После генерации здесь появится полный промпт…"
-                className="textarea min-h-[100px] font-mono text-[11px] leading-snug"
-              />
-              <div className="text-[10px] text-muted/80">Уточнение к сборке (опция)</div>
-              <textarea
-                value={localPrompt}
-                onChange={(e) => setLocalPrompt(e.target.value)}
-                onBlur={() => commitPromptToStore()}
-                readOnly={lockPromptEdit}
-                className="textarea min-h-[56px] font-mono text-[10px] leading-snug"
-              />
-              <div className="flex justify-end">
+        {isFrameRail && typeof document !== "undefined" && railSheetOpen
+          ? createPortal(
+              <div className="frame-rail-sheet-root" role="presentation">
                 <button
                   type="button"
-                  onClick={() => void onRegenerate()}
-                  disabled={busy || lockPromptEdit}
-                  className="gen-btn mt-1 py-2 text-[11px]"
+                  className="frame-rail-sheet-backdrop"
+                  aria-label="Закрыть панель промпта"
+                  onClick={() => setRailSheetOpen(false)}
+                />
+                <div
+                  className="frame-rail-sheet"
+                  role="dialog"
+                  aria-modal="true"
+                  aria-labelledby={`frame-rail-sheet-title-${image.id}`}
                 >
-                  {busy ? "…" : "Перегенерировать"}
-                </button>
-              </div>
-              {image.error ? (
-                <div className="max-w-full whitespace-pre-wrap break-all text-xs text-red-300">
-                  {image.error}
+                  <div className="frame-rail-sheet-head">
+                    <h2 id={`frame-rail-sheet-title-${image.id}`} className="frame-rail-sheet-title">
+                      Кадр {String(index + 1).padStart(2, "0")} · промпт
+                    </h2>
+                    <button
+                      type="button"
+                      className="frame-rail-sheet-close"
+                      onClick={() => setRailSheetOpen(false)}
+                      aria-label="Закрыть"
+                    >
+                      ×
+                    </button>
+                  </div>
+                  <div className="frame-rail-sheet-body">
+                    <div className="text-[10px] font-medium uppercase tracking-wide text-muted/90">
+                      OpenAI · полный промпт
+                    </div>
+                    <textarea
+                      value={localFinal}
+                      onChange={(e) => setLocalFinal(e.target.value)}
+                      onBlur={() => commitFinalPromptToStore()}
+                      readOnly={lockPromptEdit}
+                      title="Текст, отправленный в OpenAI Image для этого кадра; можно править и перегенерировать."
+                      placeholder="После генерации здесь появится полный промпт…"
+                      className="textarea min-h-[140px] w-full font-mono text-[11px] leading-snug"
+                    />
+                    <div className="text-[10px] text-muted/80">Уточнение к сборке (опция)</div>
+                    <textarea
+                      value={localPrompt}
+                      onChange={(e) => setLocalPrompt(e.target.value)}
+                      onBlur={() => commitPromptToStore()}
+                      readOnly={lockPromptEdit}
+                      className="textarea min-h-[72px] w-full font-mono text-[10px] leading-snug"
+                    />
+                    <div className="flex flex-wrap justify-end gap-2 pt-2">
+                      <button
+                        type="button"
+                        className="asset-badge"
+                        disabled={!localFinal.trim()}
+                        onClick={() => void copyFinalPrompt()}
+                      >
+                        {copied ? "Copied" : "Copy prompt"}
+                      </button>
+                      <button
+                        type="button"
+                        className="gen-btn py-2 text-[11px]"
+                        onClick={() => void onRegenerate()}
+                        disabled={busy || lockPromptEdit}
+                      >
+                        {busy ? "…" : "Перегенерировать"}
+                      </button>
+                    </div>
+                    {image.error ? (
+                      <div className="max-w-full whitespace-pre-wrap break-all text-xs text-red-300">
+                        {image.error}
+                      </div>
+                    ) : null}
+                  </div>
                 </div>
-              ) : null}
-            </div>
-          </details>
-        ) : (
+              </div>,
+              document.body
+            )
+          : null}
+        {!isFrameRail ? (
           <div className={["min-w-0 overflow-hidden", isThumb ? "min-h-0 flex-1 space-y-2" : "space-y-2"].join(" ")}>
             {isFrameLike || isThumb ? (
               <div className="text-[10px] font-medium uppercase tracking-wide text-muted/90">OpenAI · полный промпт</div>
@@ -350,7 +405,7 @@ export function ImageSlideCard({
               </div>
             ) : null}
           </div>
-        )}
+        ) : null}
       </div>
     </div>
   );
