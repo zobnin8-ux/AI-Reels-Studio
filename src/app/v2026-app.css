@@ -111,11 +111,11 @@ button.asset-badge {
   min-width: 0;
 }
 
-/* Та же плитка 9:16, что и в v2026 — только задаём ширину ряда; не трогаем aspect-ratio */
+/* Плитка 9:16 в ленте — шире, чтобы превью кадра было удобно рассматривать (горизонтальный скролл) */
 .reel-frame.stage-frames-slot {
   scroll-snap-align: start;
   flex: 0 0 auto;
-  width: clamp(148px, 14vw, 200px);
+  width: clamp(280px, 42vw, 520px);
 }
 
 .stage-frames-rail-telemetry {

@@ -16,8 +16,8 @@ export function ImageSlideCard({
   image: GeneratedImage;
   /** Клик по готовому превью — полноэкранный просмотр (если передан). */
   onPreview?: () => void;
-  /** В колонке v2026 — компактный вид внутри `.reel-frame`. */
-  variant?: "card" | "frame" | "thumb";
+  /** В колонке v2026 — компактный вид внутри `.reel-frame`. `frameRail` — лента над чатом: крупное превью, промпты в `<details>`. */
+  variant?: "card" | "frame" | "thumb" | "frameRail";
 }) {
   const { state, dispatch } = useStudio();
   const [localPrompt, setLocalPrompt] = useState(image.prompt);
@@ -97,6 +97,8 @@ export function ImageSlideCard({
           : "ошибка";
 
   const isFrame = variant === "frame";
+  const isFrameRail = variant === "frameRail";
+  const isFrameLike = isFrame || isFrameRail;
   const isThumb = variant === "thumb";
 
   return (
@@ -104,13 +106,13 @@ export function ImageSlideCard({
       className={[
         isThumb
           ? "reel-frame-inner min-h-0 overflow-hidden p-2"
-          : isFrame
+          : isFrameLike
             ? "reel-frame-inner overflow-y-auto p-2"
             : "studio-card-frame min-w-0 overflow-hidden rounded-xl border border-border bg-panel/40 p-3",
         errorShake ? "studio-shake border-red-400/35" : ""
       ].join(" ")}
     >
-      {!isFrame && !isThumb ? (
+      {!isFrameLike && !isThumb ? (
         <div className="flex min-w-0 items-start justify-between gap-3">
           <div className="text-sm font-semibold">
             {String(index + 1).padStart(2, "0")}. Кадр
@@ -124,14 +126,14 @@ export function ImageSlideCard({
       <div
         className={[
           "min-w-0 min-h-0 gap-2",
-          isThumb ? "mt-0 flex min-h-0 flex-1 flex-col" : isFrame ? "mt-0 flex flex-1 flex-col" : "mt-3 grid grid-cols-1 gap-3"
+          isThumb ? "mt-0 flex min-h-0 flex-1 flex-col" : isFrameLike ? "mt-0 flex flex-1 flex-col" : "mt-3 grid grid-cols-1 gap-3"
         ].join(" ")}
       >
         <div
           className={[
             isThumb
               ? "mx-auto flex w-full min-w-0 flex-[1.35] items-center justify-center overflow-hidden rounded-md border border-[var(--border-subtle)] bg-[var(--bg-elev-3)]"
-              : isFrame
+              : isFrameLike
                 ? "mx-auto flex w-full min-w-0 flex-1 items-center justify-center overflow-hidden rounded-md border border-[var(--border-subtle)] bg-[var(--bg-elev-3)]"
                 : "mx-auto flex w-full max-w-[min(100%,320px)] min-w-0 items-center justify-center overflow-hidden rounded-lg border border-border bg-black/40",
             !isThumb && state.contentType === "reels" ? "aspect-[9/16]" : "",
@@ -185,67 +187,110 @@ export function ImageSlideCard({
             </div>
           )}
         </div>
-        <div className={["min-w-0 overflow-hidden", isThumb ? "min-h-0 flex-1 space-y-2" : "space-y-2"].join(" ")}>
-          {isFrame || isThumb ? (
-            <div className="text-[10px] font-medium uppercase tracking-wide text-muted/90">OpenAI · полный промпт</div>
-          ) : (
-            <div className="text-xs font-medium text-muted">Промпт OpenAI (полный)</div>
-          )}
-          <textarea
-            value={localFinal}
-            onChange={(e) => setLocalFinal(e.target.value)}
-            onBlur={() => commitFinalPromptToStore()}
-            readOnly={lockPromptEdit}
-            title="Текст, отправленный в OpenAI Image для этого кадра; можно править и перегенерировать."
-            placeholder="После генерации здесь появится полный промпт…"
-            className={
-              isThumb
-                ? "textarea min-h-[72px] flex-1 resize-none font-mono text-[10px] leading-snug"
-                : isFrame
-                  ? "textarea min-h-[100px] font-mono text-[11px] leading-snug"
-                  : "min-h-32 w-full min-w-0 max-w-full resize-y rounded-xl border border-border bg-black/30 px-3 py-2 font-mono text-[11px] outline-none focus:ring-2 focus:ring-accent/30"
-            }
-          />
-          {isFrame || isThumb ? (
-            <div className="text-[10px] text-muted/80">Уточнение к сборке (опция)</div>
-          ) : (
-            <div className="text-xs font-medium text-muted">Краткое уточнение к сборке (опция)</div>
-          )}
-          <textarea
-            value={localPrompt}
-            onChange={(e) => setLocalPrompt(e.target.value)}
-            onBlur={() => commitPromptToStore()}
-            readOnly={lockPromptEdit}
-            className={
-              isThumb
-                ? "textarea min-h-[44px] flex-1 resize-none font-mono text-[10px] leading-snug"
-                : isFrame
-                  ? "textarea min-h-[56px] font-mono text-[10px] leading-snug"
-                  : "min-h-16 w-full min-w-0 max-w-full resize-y rounded-xl border border-border bg-black/25 px-3 py-2 font-mono text-[10px] outline-none focus:ring-2 focus:ring-accent/25"
-            }
-          />
-          <div className="flex justify-end">
-            <button
-              type="button"
-              onClick={() => void onRegenerate()}
-              disabled={busy || lockPromptEdit}
+        {isFrameRail ? (
+          <details className="min-w-0 overflow-hidden">
+            <summary className="cursor-pointer select-none list-none border-t border-[var(--border-subtle)]/60 pt-2 text-[10px] font-medium uppercase tracking-wide text-muted/90 hover:text-muted [&::-webkit-details-marker]:hidden">
+              Промпт и перегенерация
+            </summary>
+            <div className="mt-2 space-y-2">
+              <div className="text-[10px] font-medium uppercase tracking-wide text-muted/90">OpenAI · полный промпт</div>
+              <textarea
+                value={localFinal}
+                onChange={(e) => setLocalFinal(e.target.value)}
+                onBlur={() => commitFinalPromptToStore()}
+                readOnly={lockPromptEdit}
+                title="Текст, отправленный в OpenAI Image для этого кадра; можно править и перегенерировать."
+                placeholder="После генерации здесь появится полный промпт…"
+                className="textarea min-h-[100px] font-mono text-[11px] leading-snug"
+              />
+              <div className="text-[10px] text-muted/80">Уточнение к сборке (опция)</div>
+              <textarea
+                value={localPrompt}
+                onChange={(e) => setLocalPrompt(e.target.value)}
+                onBlur={() => commitPromptToStore()}
+                readOnly={lockPromptEdit}
+                className="textarea min-h-[56px] font-mono text-[10px] leading-snug"
+              />
+              <div className="flex justify-end">
+                <button
+                  type="button"
+                  onClick={() => void onRegenerate()}
+                  disabled={busy || lockPromptEdit}
+                  className="gen-btn mt-1 py-2 text-[11px]"
+                >
+                  {busy ? "…" : "Перегенерировать"}
+                </button>
+              </div>
+              {image.error ? (
+                <div className="max-w-full whitespace-pre-wrap break-all text-xs text-red-300">
+                  {image.error}
+                </div>
+              ) : null}
+            </div>
+          </details>
+        ) : (
+          <div className={["min-w-0 overflow-hidden", isThumb ? "min-h-0 flex-1 space-y-2" : "space-y-2"].join(" ")}>
+            {isFrameLike || isThumb ? (
+              <div className="text-[10px] font-medium uppercase tracking-wide text-muted/90">OpenAI · полный промпт</div>
+            ) : (
+              <div className="text-xs font-medium text-muted">Промпт OpenAI (полный)</div>
+            )}
+            <textarea
+              value={localFinal}
+              onChange={(e) => setLocalFinal(e.target.value)}
+              onBlur={() => commitFinalPromptToStore()}
+              readOnly={lockPromptEdit}
+              title="Текст, отправленный в OpenAI Image для этого кадра; можно править и перегенерировать."
+              placeholder="После генерации здесь появится полный промпт…"
               className={
                 isThumb
-                  ? "gen-btn mt-0 py-1.5 text-[10px]"
-                  : isFrame
-                    ? "gen-btn mt-1 py-2 text-[11px]"
-                    : "studio-btn-ghost rounded-xl border border-border bg-black/20 px-3 py-2 text-sm text-text hover:bg-black/30 disabled:opacity-50"
+                  ? "textarea min-h-[72px] flex-1 resize-none font-mono text-[10px] leading-snug"
+                  : isFrameLike
+                    ? "textarea min-h-[100px] font-mono text-[11px] leading-snug"
+                    : "min-h-32 w-full min-w-0 max-w-full resize-y rounded-xl border border-border bg-black/30 px-3 py-2 font-mono text-[11px] outline-none focus:ring-2 focus:ring-accent/30"
               }
-            >
-              {busy ? "…" : "Перегенерировать"}
-            </button>
-          </div>
-          {image.error ? (
-            <div className="max-w-full whitespace-pre-wrap break-all text-xs text-red-300">
-              {image.error}
+            />
+            {isFrameLike || isThumb ? (
+              <div className="text-[10px] text-muted/80">Уточнение к сборке (опция)</div>
+            ) : (
+              <div className="text-xs font-medium text-muted">Краткое уточнение к сборке (опция)</div>
+            )}
+            <textarea
+              value={localPrompt}
+              onChange={(e) => setLocalPrompt(e.target.value)}
+              onBlur={() => commitPromptToStore()}
+              readOnly={lockPromptEdit}
+              className={
+                isThumb
+                  ? "textarea min-h-[44px] flex-1 resize-none font-mono text-[10px] leading-snug"
+                  : isFrameLike
+                    ? "textarea min-h-[56px] font-mono text-[10px] leading-snug"
+                    : "min-h-16 w-full min-w-0 max-w-full resize-y rounded-xl border border-border bg-black/25 px-3 py-2 font-mono text-[10px] outline-none focus:ring-2 focus:ring-accent/25"
+              }
+            />
+            <div className="flex justify-end">
+              <button
+                type="button"
+                onClick={() => void onRegenerate()}
+                disabled={busy || lockPromptEdit}
+                className={
+                  isThumb
+                    ? "gen-btn mt-0 py-1.5 text-[10px]"
+                    : isFrameLike
+                      ? "gen-btn mt-1 py-2 text-[11px]"
+                      : "studio-btn-ghost rounded-xl border border-border bg-black/20 px-3 py-2 text-sm text-text hover:bg-black/30 disabled:opacity-50"
+                }
+              >
+                {busy ? "…" : "Перегенерировать"}
+              </button>
             </div>
-          ) : null}
-        </div>
+            {image.error ? (
+              <div className="max-w-full whitespace-pre-wrap break-all text-xs text-red-300">
+                {image.error}
+              </div>
+            ) : null}
+          </div>
+        )}
       </div>
     </div>
   );

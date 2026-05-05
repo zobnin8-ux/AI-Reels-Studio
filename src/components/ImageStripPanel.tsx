@@ -99,7 +99,7 @@ export function ImageStripPanel({ variant = "column" }: { variant?: "column" | "
                       : "ошибка"}
               </span>
               <ImageSlideCard
-                variant="frame"
+                variant="frameRail"
                 index={idx}
                 image={img}
                 onPreview={
