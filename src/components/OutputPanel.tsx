@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useStudio } from "@/lib/studio-store";
 import { ImageGenerationProgress } from "@/components/ImageGenerationProgress";
 import { downloadZip, generateImagesFromState } from "@/lib/actions";
@@ -20,6 +20,7 @@ export function OutputPanel() {
   });
   const [genError, setGenError] = useState<string | null>(null);
   const [promptsShake, setPromptsShake] = useState(false);
+  const genAbortRef = useRef<AbortController | null>(null);
   const showBatchProgress =
     state.images.length > 0 && state.images.some((x) => x.status === "waiting" || x.status === "generating");
 
@@ -54,8 +55,11 @@ export function OutputPanel() {
 
     setGenError(null);
     setBusy("images");
+    genAbortRef.current?.abort();
+    genAbortRef.current = new AbortController();
     try {
       const images = await generateImagesFromState(state, {
+        signal: genAbortRef.current.signal,
         onProgress: ({ images: next }) => {
           dispatch({ type: "set", patch: { images: next } });
         }
@@ -67,6 +71,7 @@ export function OutputPanel() {
       setPromptsShake(true);
       window.setTimeout(() => setPromptsShake(false), 500);
     } finally {
+      genAbortRef.current = null;
       setBusy(null);
     }
   }
@@ -237,17 +242,27 @@ export function OutputPanel() {
             </div>
 
             <div style={{ marginTop: 10 }}>
-              <button
-                type="button"
-                className="gen-btn"
-                onClick={() => void onGenerateImages()}
-                disabled={!!busy || !canGenerateImages}
-              >
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
-                  <path d="M12 3v10M8 7l4-4 4 4M5 21h14" />
-                </svg>
-                {busy === "images" ? <span className="studio-pulse-slow">Генерация…</span> : "Generate images"}
-              </button>
+              <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+                <button
+                  type="button"
+                  className="gen-btn"
+                  onClick={() => void onGenerateImages()}
+                  disabled={!!busy || !canGenerateImages}
+                >
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+                    <path d="M12 3v10M8 7l4-4 4 4M5 21h14" />
+                  </svg>
+                  {busy === "images" ? <span className="studio-pulse-slow">Генерация…</span> : "Generate images"}
+                </button>
+                <button
+                  type="button"
+                  className="studio-btn-ghost rounded-xl border border-border bg-black/20 px-3 py-2 text-sm text-text hover:bg-black/30 disabled:opacity-50"
+                  onClick={() => genAbortRef.current?.abort()}
+                  disabled={!genAbortRef.current || busy !== "images"}
+                >
+                  Cancel
+                </button>
+              </div>
               {showBatchProgress ? <ImageGenerationProgress images={state.images} /> : null}
               {genError ? (
                 <p style={{ marginTop: 10, fontSize: 11, color: "#fca5a5" }}>{genError}</p>

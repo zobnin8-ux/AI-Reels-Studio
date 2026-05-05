@@ -264,9 +264,10 @@ export type GenerateImagesProgressPayload = {
  */
 export async function generateImagesFromState(
   state: StudioState,
-  options?: { onProgress?: (p: GenerateImagesProgressPayload) => void }
+  options?: { onProgress?: (p: GenerateImagesProgressPayload) => void; signal?: AbortSignal }
 ): Promise<GeneratedImage[]> {
   const onProgress = options?.onProgress;
+  const signal = options?.signal;
 
   if (state.slides.length === 0) {
     return [];
@@ -301,6 +302,23 @@ export async function generateImagesFromState(
   onProgress?.({ images: [...out] });
 
   for (let i = 0; i < jobs.length; i++) {
+    if (signal?.aborted) {
+      // помечаем остаток как отменённый, чтобы UI не висел на waiting
+      for (let k = i; k < jobs.length; k++) {
+        const jj = jobs[k]!;
+        out[k] = {
+          id: jj.id,
+          slideId: jj.slideId,
+          prompt: jj.cosmeticHint,
+          finalPrompt: jj.finalPrompt,
+          status: "error",
+          error: "Отменено"
+        };
+      }
+      onProgress?.({ images: [...out] });
+      throw new Error("Генерация отменена");
+    }
+
     const j = jobs[i]!;
     out[i] = {
       id: j.id,
@@ -312,7 +330,7 @@ export async function generateImagesFromState(
     onProgress?.({ images: [...out] });
 
     try {
-      const img = await fetchOneImage(state, j.id, j.slideId, j.finalPrompt, j.cosmeticHint);
+      const img = await fetchOneImage(state, j.id, j.slideId, j.finalPrompt, j.cosmeticHint, signal);
       out[i] = img;
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : "Image error";
@@ -336,11 +354,13 @@ async function fetchOneImage(
   id: string,
   slideId: string,
   apiPrompt: string,
-  uiHint: string
+  uiHint: string,
+  signal?: AbortSignal
 ): Promise<GeneratedImage> {
   const res = await fetch("/api/image", {
     method: "POST",
     headers: { "content-type": "application/json" },
+    signal,
     body: JSON.stringify({
       prompt: apiPrompt,
       aspect: aspectFromContentType(state.contentType),
