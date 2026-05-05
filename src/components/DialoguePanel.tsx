@@ -109,6 +109,14 @@ export function DialoguePanel() {
   const { setChatBusy } = useStudioActivity();
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);
+  const [turnResults, setTurnResults] = useState<
+    | null
+    | {
+        id: string;
+        items: { key: string; label: string }[];
+        undoState: StudioState;
+      }
+  >(null);
   const [showJumpLatest, setShowJumpLatest] = useState(false);
   const [inputShake, setInputShake] = useState(false);
   const [soundOn, setSoundOn] = useState(false);
@@ -171,6 +179,7 @@ export function DialoguePanel() {
     followNextRef.current = true;
     playSendClick();
     setBusy(true);
+    setTurnResults(null);
     const history = state.messages.map((m) => ({ role: m.role, content: m.content }));
     try {
       const { reply, statePatch } = await sendDialogueTurn(state, text, history);
@@ -237,6 +246,23 @@ export function DialoguePanel() {
         messages: [...state.messages, userMsg, assistantMsg]
       };
 
+      const results: { key: string; label: string }[] = [];
+      if (patch.topic !== undefined) results.push({ key: "topic", label: "Тема" });
+      if (patch.angles !== undefined || patch.selectedAngleId !== undefined) results.push({ key: "angles", label: "Углы" });
+      if (patch.slides !== undefined) results.push({ key: "slides", label: "Слайды" });
+      if (patch.prompts !== undefined) results.push({ key: "prompts", label: "Уточнения" });
+      if (patch.sceneMeta !== undefined) results.push({ key: "sceneMeta", label: "Якоря" });
+      if (patch.caption !== undefined) results.push({ key: "caption", label: "Caption" });
+      if (patch.music !== undefined) results.push({ key: "music", label: "Музыка" });
+      if (results.length > 0) {
+        const undoState: StudioState = {
+          ...state,
+          // сохраняем текущий диалог (чтобы undo откатывал артефакты, но не удалял переписку)
+          messages: merged.messages
+        };
+        setTurnResults({ id: uid("r"), items: results, undoState });
+      }
+
       dispatch({
         type: "set",
         patch: {
@@ -254,6 +280,11 @@ export function DialoguePanel() {
             }
           });
           dispatch({ type: "set", patch: { images } });
+          setTurnResults((r) => {
+            if (!r) return r;
+            if (r.items.some((x) => x.key === "images")) return r;
+            return { ...r, items: [...r.items, { key: "images", label: "Кадры" }] };
+          });
         } catch (imgErr: unknown) {
           const m = imgErr instanceof Error ? imgErr.message : "Image gen error";
           const errMsg: ChatMessage = {
@@ -332,6 +363,38 @@ export function DialoguePanel() {
         <div className="busy-ribbon" role="status" aria-live="polite">
           <span className="dot-pulse" aria-hidden />
           Запрос к модели… ответ появится в ленте ниже.
+        </div>
+      ) : null}
+
+      {turnResults ? (
+        <div className="busy-ribbon" role="status" aria-live="polite" style={{ borderColor: "var(--border-soft)" }}>
+          <span className="studio-dot-soft" aria-hidden style={{ width: 8, height: 8, borderRadius: 999, background: "var(--accent)" }} />
+          <span style={{ display: "inline-flex", flexWrap: "wrap", gap: 8, alignItems: "center" }}>
+            <span style={{ color: "var(--text)" }}>Обновлено:</span>
+            {turnResults.items.map((it) => (
+              <span
+                key={it.key}
+                className="asset-badge"
+                style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "4px 10px" }}
+              >
+                {it.label}
+              </span>
+            ))}
+          </span>
+          <span style={{ flex: 1 }} />
+          <button
+            type="button"
+            className="asset-badge"
+            onClick={() => {
+              dispatch({ type: "replace", state: turnResults.undoState });
+              setTurnResults(null);
+            }}
+          >
+            Undo
+          </button>
+          <button type="button" className="asset-badge" onClick={() => setTurnResults(null)}>
+            OK
+          </button>
         </div>
       ) : null}
 

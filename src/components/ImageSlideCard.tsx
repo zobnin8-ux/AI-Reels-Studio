@@ -4,7 +4,7 @@ import type { GeneratedImage } from "@/lib/state";
 import { useStudio } from "@/lib/studio-store";
 import { regenerateOneImage } from "@/lib/actions";
 import { mergePromptForSlide } from "@/lib/prompt-sync";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 export function ImageSlideCard({
   index,
@@ -25,6 +25,8 @@ export function ImageSlideCard({
   const [busy, setBusy] = useState(false);
   const [errorShake, setErrorShake] = useState(false);
   const prevErrorRef = useRef<string | undefined>(undefined);
+  const detailsRef = useRef<HTMLDetailsElement | null>(null);
+  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     setLocalPrompt(image.prompt);
@@ -101,6 +103,22 @@ export function ImageSlideCard({
   const isFrameLike = isFrame || isFrameRail;
   const isThumb = variant === "thumb";
 
+  const canRegenerate = useMemo(() => {
+    return !!image.slideId?.trim() && !busy && !lockPromptEdit;
+  }, [busy, image.slideId, lockPromptEdit]);
+
+  async function copyFinalPrompt() {
+    const text = (localFinal ?? "").trim();
+    if (!text) return;
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 900);
+    } catch {
+      // ignore
+    }
+  }
+
   return (
     <div
       className={[
@@ -129,6 +147,45 @@ export function ImageSlideCard({
           isThumb ? "mt-0 flex min-h-0 flex-1 flex-col" : isFrameLike ? "mt-0 flex flex-1 flex-col" : "mt-3 grid grid-cols-1 gap-3"
         ].join(" ")}
       >
+        {isFrameRail ? (
+          <div className="flex items-center justify-between gap-2 pb-1">
+            <div className="text-[10px] font-medium uppercase tracking-wide text-muted/90">
+              {image.status === "done" ? "Готово" : image.status === "generating" ? "Генерация" : image.status === "waiting" ? "Очередь" : "Ошибка"}
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                className="asset-badge"
+                disabled={!localFinal.trim()}
+                onClick={() => void copyFinalPrompt()}
+                title="Скопировать полный промпт"
+              >
+                {copied ? "Copied" : "Copy prompt"}
+              </button>
+              <button
+                type="button"
+                className="asset-badge"
+                disabled={!canRegenerate}
+                onClick={() => void onRegenerate()}
+                title="Перегенерировать кадр"
+              >
+                ↻
+              </button>
+              <button
+                type="button"
+                className="asset-badge"
+                onClick={() => {
+                  if (detailsRef.current) detailsRef.current.open = true;
+                  detailsRef.current?.scrollIntoView({ block: "nearest" });
+                }}
+                title="Показать промпты и настройки"
+              >
+                Details
+              </button>
+            </div>
+          </div>
+        ) : null}
+
         <div
           className={[
             isThumb
@@ -188,7 +245,7 @@ export function ImageSlideCard({
           )}
         </div>
         {isFrameRail ? (
-          <details className="min-w-0 overflow-hidden">
+          <details ref={detailsRef} className="min-w-0 overflow-hidden">
             <summary className="cursor-pointer select-none list-none border-t border-[var(--border-subtle)]/60 pt-2 text-[10px] font-medium uppercase tracking-wide text-muted/90 hover:text-muted [&::-webkit-details-marker]:hidden">
               Промпт и перегенерация
             </summary>

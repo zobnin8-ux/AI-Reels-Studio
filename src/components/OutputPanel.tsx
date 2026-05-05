@@ -10,6 +10,7 @@ export function OutputPanel() {
   const { state, dispatch } = useStudio();
   const [busy, setBusy] = useState<null | string>(null);
   const [scenarioOpen, setScenarioOpen] = useState(true);
+  const [mode, setMode] = useState<"draft" | "build">("draft");
   const [genError, setGenError] = useState<string | null>(null);
   const [promptsShake, setPromptsShake] = useState(false);
   const showBatchProgress =
@@ -90,6 +91,8 @@ export function OutputPanel() {
   const canGenerateImages = state.slides.length > 0;
 
   const pipelineBusy = showBatchProgress || busy === "images";
+  const doneCount = state.images.filter((x) => x.status === "done").length;
+  const errCount = state.images.filter((x) => x.status === "error").length;
 
   return (
     <>
@@ -104,6 +107,24 @@ export function OutputPanel() {
         <p className="strip-sub">
           Сценарий, опциональные уточнения к кадрам, подпись, музыка и сборка архива.
         </p>
+        <div className="seg mt-3" role="group" aria-label="Режим правой панели">
+          <button
+            type="button"
+            className={mode === "draft" ? "active" : ""}
+            onClick={() => setMode("draft")}
+            disabled={!!busy}
+          >
+            Draft
+          </button>
+          <button
+            type="button"
+            className={mode === "build" ? "active" : ""}
+            onClick={() => setMode("build")}
+            disabled={!!busy}
+          >
+            Build
+          </button>
+        </div>
       </div>
 
       <div className="assets-body min-h-0">
@@ -114,7 +135,7 @@ export function OutputPanel() {
           </div>
         ) : null}
 
-        {state.slides.length > 0 ? (
+        {mode === "draft" && state.slides.length > 0 ? (
           <div className="asset-block">
             <div className="asset-head">
               <div className="asset-h">
@@ -157,56 +178,75 @@ export function OutputPanel() {
           </div>
         ) : null}
 
-        <div className={["asset-block", promptsShake ? "studio-shake" : ""].filter(Boolean).join(" ")}>
-          <div className="asset-head">
-            <div className="asset-h">
-              Уточнения <b>по кадрам</b>
+        {mode === "draft" ? (
+          <div className={["asset-block", promptsShake ? "studio-shake" : ""].filter(Boolean).join(" ")}>
+            <div className="asset-head">
+              <div className="asset-h">
+                Уточнения <b>по кадрам</b>
+              </div>
+              <span className="asset-badge">opt</span>
             </div>
-            <span className="asset-badge">opt</span>
+            <p className="asset-desc">
+              Опционально: короткие правки к автособранному промпту (одна строка — один кадр). Картинки строятся из
+              текста слайда + селекторов; это поле можно оставить пустым.
+            </p>
+            <textarea
+              className="textarea"
+              value={promptLinesText}
+              onChange={(e) => applyPromptTextarea(e.target.value)}
+              placeholder={
+                state.slides.length
+                  ? "Уточнения по строкам — порядок как у слайдов (можно пусто)."
+                  : "Сначала слайды из диалога."
+              }
+              rows={10}
+            />
           </div>
-          <p className="asset-desc">
-            Опционально: короткие правки к автособранному промпту (одна строка — один кадр). Картинки строятся из
-            текста слайда + селекторов; это поле можно оставить пустым.
-          </p>
-          <textarea
-            className="textarea"
-            value={promptLinesText}
-            onChange={(e) => applyPromptTextarea(e.target.value)}
-            placeholder={
-              state.slides.length
-                ? "Уточнения по строкам — порядок как у слайдов (можно пусто)."
-                : "Сначала слайды из диалога."
-            }
-            rows={10}
-          />
-          <button
-            type="button"
-            className="gen-btn"
-            onClick={() => void onGenerateImages()}
-            disabled={!!busy || !canGenerateImages}
-          >
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
-              <path d="M12 3v10M8 7l4-4 4 4M5 21h14" />
-            </svg>
-            {busy === "images" ? <span className="studio-pulse-slow">Генерация…</span> : "Generate images"}
-          </button>
-          {pipelineBusy && busy === "images" ? (
-            <p style={{ marginTop: 10, fontSize: 11, color: "var(--text-muted)" }}>
-              Полоса прогресса по кадрам — ниже.
+        ) : (
+          <div className={["asset-block", promptsShake ? "studio-shake" : ""].filter(Boolean).join(" ")}>
+            <div className="asset-head">
+              <div className="asset-h">
+                Сборка <b>пакета</b>
+              </div>
+              <span className="asset-badge">build</span>
+            </div>
+            <p className="asset-desc">
+              Тут только то, что нужно для финального результата: генерация кадров и скачивание ZIP.
             </p>
-          ) : null}
-          {showBatchProgress ? <ImageGenerationProgress images={state.images} /> : null}
-          {genError ? (
-            <p style={{ marginTop: 10, fontSize: 11, color: "#fca5a5" }}>{genError}</p>
-          ) : null}
-          {!canGenerateImages ? (
-            <p style={{ marginTop: 8, fontSize: 11, color: "var(--text-muted)" }}>
-              Нужны слайды из диалога — затем Generate images.
-            </p>
-          ) : null}
-        </div>
 
-        <div className="asset-block">
+            <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+              <span className="asset-badge">slides: {state.slides.length}</span>
+              <span className="asset-badge">images done: {doneCount}/{state.images.length || 0}</span>
+              {errCount ? <span className="asset-badge">errors: {errCount}</span> : null}
+            </div>
+
+            <div style={{ marginTop: 10 }}>
+              <button
+                type="button"
+                className="gen-btn"
+                onClick={() => void onGenerateImages()}
+                disabled={!!busy || !canGenerateImages}
+              >
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+                  <path d="M12 3v10M8 7l4-4 4 4M5 21h14" />
+                </svg>
+                {busy === "images" ? <span className="studio-pulse-slow">Генерация…</span> : "Generate images"}
+              </button>
+              {showBatchProgress ? <ImageGenerationProgress images={state.images} /> : null}
+              {genError ? (
+                <p style={{ marginTop: 10, fontSize: 11, color: "#fca5a5" }}>{genError}</p>
+              ) : null}
+              {!canGenerateImages ? (
+                <p style={{ marginTop: 8, fontSize: 11, color: "var(--text-muted)" }}>
+                  Нужны слайды из диалога — затем Generate images.
+                </p>
+              ) : null}
+            </div>
+          </div>
+        )}
+
+        {mode === "draft" ? (
+          <div className="asset-block">
           <div className="asset-head">
             <div className="asset-h">
               Caption <b>пост</b>
@@ -221,9 +261,11 @@ export function OutputPanel() {
             placeholder="Подпись…"
             rows={4}
           />
-        </div>
+          </div>
+        ) : null}
 
-        <div className="asset-block">
+        {mode === "draft" ? (
+          <div className="asset-block">
           <div className="asset-head">
             <div className="asset-h">
               Музыка <b>meta</b>
@@ -289,7 +331,8 @@ export function OutputPanel() {
               rows={2}
             />
           </div>
-        </div>
+          </div>
+        ) : null}
 
         <div className="export-dock">
           <div className="export-dock-title">Финальный пакет</div>

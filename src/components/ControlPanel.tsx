@@ -41,6 +41,7 @@ export function ControlPanel() {
   const prevProject = useRef<ProjectId>(state.project);
   /** true = класс `showcase` на body (сетка, шум, скан); false = спокойный фон для записи экрана */
   const [richStudioBackground, setRichStudioBackground] = useState(true);
+  const importRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     document.body.classList.toggle("showcase", richStudioBackground);
@@ -104,6 +105,37 @@ export function ControlPanel() {
   }
 
   const stripMeta = "live · api";
+
+  function exportSessionJson() {
+    try {
+      const payload = JSON.stringify(state, null, 2);
+      const blob = new Blob([payload], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `ai-reels-studio-session-${new Date().toISOString().slice(0, 19).replace(/[:T]/g, "-")}.json`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    } catch {
+      // ignore
+    }
+  }
+
+  async function onImportFile(file: File | null) {
+    if (!file) return;
+    try {
+      const text = await file.text();
+      const next = JSON.parse(text) as unknown;
+      if (!next || typeof next !== "object") throw new Error("Bad JSON");
+      dispatch({ type: "replace", state: next as StudioState });
+    } catch {
+      window.alert("Не получилось импортировать JSON сессии. Проверь файл.");
+    } finally {
+      if (importRef.current) importRef.current.value = "";
+    }
+  }
 
   return (
     <>
@@ -352,6 +384,51 @@ export function ControlPanel() {
               onClick={() => dispatch({ type: "set", patch: { provider: "anthropic" } })}
             >
               Anthropic
+            </button>
+          </div>
+        </div>
+
+        <div className="group">
+          <div className="group-title">Сессия</div>
+          <p className="group-hint">
+            Автосейв включён (в браузере). Здесь можно экспортировать или импортировать сессию вручную.
+          </p>
+          <div className="field-row">
+            <div className="field">
+              <span className="label">Export</span>
+              <button type="button" className="gen-btn" onClick={() => exportSessionJson()}>
+                Export JSON
+              </button>
+            </div>
+            <div className="field">
+              <span className="label">Import</span>
+              <button
+                type="button"
+                className="gen-btn"
+                onClick={() => importRef.current?.click()}
+              >
+                Import JSON
+              </button>
+              <input
+                ref={importRef}
+                type="file"
+                accept="application/json"
+                style={{ display: "none" }}
+                onChange={(e) => void onImportFile(e.target.files?.[0] ?? null)}
+              />
+            </div>
+          </div>
+          <div className="field">
+            <span className="label">Reset</span>
+            <button
+              type="button"
+              className="studio-btn-ghost rounded-xl border border-border bg-black/20 px-3 py-2 text-sm text-text hover:bg-black/30"
+              onClick={() => {
+                const ok = window.confirm("Сбросить всю сессию? Это очистит диалог, сценарий и ассеты.");
+                if (ok) dispatch({ type: "resetAll" });
+              }}
+            >
+              Reset session
             </button>
           </div>
         </div>

@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useStudio } from "@/lib/studio-store";
+import { useStudioActivity } from "@/lib/studio-activity";
 
 const projectOptions: { id: string; label: string }[] = [
   { id: "poslenego", label: "После него" },
@@ -17,6 +18,7 @@ function formatSes(d: Date): string {
 
 export function StudioTopBar() {
   const { state } = useStudio();
+  const { chatBusy, imagePipelineBusy } = useStudioActivity();
   const [now, setNow] = useState(() => new Date());
 
   const projectLabel = useMemo(
@@ -28,6 +30,11 @@ export function StudioTopBar() {
     const id = window.setInterval(() => setNow(new Date()), 60_000);
     return () => window.clearInterval(id);
   }, []);
+
+  const imgDone = useMemo(() => state.images.filter((x) => x.status === "done").length, [state.images]);
+  const imgTotal = state.images.length;
+  const statusLabel = imagePipelineBusy ? "Images" : chatBusy ? "Chat" : "Ready";
+  const statusTone = imagePipelineBusy ? "var(--accent)" : chatBusy ? "rgba(167, 139, 250, 0.95)" : "var(--ok)";
 
   return (
     <header className="topbar shrink-0">
@@ -57,8 +64,18 @@ export function StudioTopBar() {
 
       <div className="top-meta">
         <div className="meta-chip">
-          <span className="dot" />
-          <span>В сети</span>
+          <span className="dot" style={{ background: statusTone }} />
+          <span>{statusLabel}</span>
+        </div>
+        <div className="meta-chip">
+          <span className="key">SLD</span>
+          <span className="val">{state.slides.length}</span>
+        </div>
+        <div className="meta-chip">
+          <span className="key">IMG</span>
+          <span className="val">
+            {imgDone}/{imgTotal || 0}
+          </span>
         </div>
         <div className="meta-chip">
           <span className="key">PRJ</span>
