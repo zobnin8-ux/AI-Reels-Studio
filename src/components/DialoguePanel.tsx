@@ -275,7 +275,7 @@ export function DialoguePanel() {
       });
       setInput("");
 
-      if (userWantsImageGeneration(text) && canRunImageGeneration(merged)) {
+      if (merged.autoGenerateImages && userWantsImageGeneration(text) && canRunImageGeneration(merged)) {
         try {
           const images = await generateImagesFromState(merged, {
             onProgress: ({ images: next }) => {

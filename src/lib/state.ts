@@ -156,6 +156,9 @@ export type StudioState = {
   visualStyle: VisualStyle;
   outputMode: OutputMode;
 
+  /** Разрешить автогенерацию изображений по эвристике в чате. По умолчанию выключено. */
+  autoGenerateImages: boolean;
+
   ctaMode: CtaMode;
   website: string;
   triggerWord: string;
@@ -197,6 +200,7 @@ export function createInitialState(): StudioState {
     mood: "neutral",
     visualStyle: "editorial",
     outputMode: "both",
+    autoGenerateImages: false,
 
     ctaMode: "website",
     website: "poslenego.com",

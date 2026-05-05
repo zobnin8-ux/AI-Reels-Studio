@@ -235,6 +235,35 @@ export function OutputPanel() {
               Тут только то, что нужно для финального результата: генерация кадров и скачивание ZIP.
             </p>
 
+            <div className="field" style={{ marginTop: 10 }}>
+              <span className="label mono">Auto-generate</span>
+              <div
+                className="seg"
+                role="group"
+                aria-label="Автогенерация кадров из чата"
+                style={{ maxWidth: 260 }}
+              >
+                <button
+                  type="button"
+                  className={!state.autoGenerateImages ? "active" : ""}
+                  onClick={() => dispatch({ type: "set", patch: { autoGenerateImages: false } })}
+                  disabled={!!busy}
+                  title="Кадры генерируются только по кнопке Generate images"
+                >
+                  Off
+                </button>
+                <button
+                  type="button"
+                  className={state.autoGenerateImages ? "active" : ""}
+                  onClick={() => dispatch({ type: "set", patch: { autoGenerateImages: true } })}
+                  disabled={!!busy}
+                  title="Если в сообщении явно попросить «сгенерируй кадры», студия запустит генерацию автоматически"
+                >
+                  On
+                </button>
+              </div>
+            </div>
+
             <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
               <span className="asset-badge">slides: {state.slides.length}</span>
               <span className="asset-badge">images done: {doneCount}/{state.images.length || 0}</span>
