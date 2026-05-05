@@ -50,6 +50,7 @@ function loadInitialState(): StudioState {
     if (!isProbablyStudioState(parsed.state)) return base;
     const merged: StudioState = { ...base, ...(parsed.state as StudioState) };
     // Безопасность: любые несоответствия приводим к текущей схеме
+    if (typeof merged.autoGenerateImages !== "boolean") merged.autoGenerateImages = false;
     if (!Array.isArray(merged.messages)) merged.messages = [];
     if (!Array.isArray(merged.slides)) merged.slides = [];
     if (!Array.isArray(merged.angles)) merged.angles = [];

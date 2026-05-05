@@ -6,10 +6,22 @@ import { ImageGenerationProgress } from "@/components/ImageGenerationProgress";
 import { downloadZip, generateImagesFromState } from "@/lib/actions";
 import type { SlidePrompt } from "@/lib/state";
 
+const OUTPUT_SCENARIO_OPEN_KEY = "ai-reels-studio:v2026:scenarioOpen";
+
 export function OutputPanel() {
   const { state, dispatch } = useStudio();
   const [busy, setBusy] = useState<null | string>(null);
-  const [scenarioOpen, setScenarioOpen] = useState(true);
+  const [scenarioOpen, setScenarioOpen] = useState(() => {
+    if (typeof window === "undefined") return true;
+    try {
+      const raw = window.localStorage.getItem(OUTPUT_SCENARIO_OPEN_KEY);
+      if (raw === "0") return false;
+      if (raw === "1") return true;
+      return true;
+    } catch {
+      return true;
+    }
+  });
   const [mode, setMode] = useState<"draft" | "build">(() => {
     if (typeof window === "undefined") return "draft";
     try {
@@ -114,6 +126,14 @@ export function OutputPanel() {
       // ignore
     }
   }, [mode]);
+
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(OUTPUT_SCENARIO_OPEN_KEY, scenarioOpen ? "1" : "0");
+    } catch {
+      // ignore
+    }
+  }, [scenarioOpen]);
 
   return (
     <>

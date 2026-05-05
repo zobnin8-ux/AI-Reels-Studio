@@ -308,6 +308,7 @@ aside.panel.anim-4 .panel-strip {
 .bubble-assistant {
   background: rgba(8, 16, 20, 0.55);
   border-color: var(--border-soft);
+  color: var(--text-secondary);
 }
 
 .busy-ribbon {

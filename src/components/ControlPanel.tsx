@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useStudio } from "@/lib/studio-store";
 import { ReadinessChecklist } from "@/components/ReadinessChecklist";
 import type { ProjectId, StudioState } from "@/lib/state";
+import { parseSessionImport, SESSION_EXPORT_VERSION } from "@/lib/session-import";
 
 const projectOptions: { id: ProjectId; label: string }[] = [
   { id: "poslenego", label: "После него" },
@@ -125,7 +126,12 @@ export function ControlPanel() {
 
   function exportSessionJson() {
     try {
-      const payload = JSON.stringify(state, null, 2);
+      const envelope = {
+        v: SESSION_EXPORT_VERSION,
+        exportedAt: new Date().toISOString(),
+        state
+      };
+      const payload = JSON.stringify(envelope, null, 2);
       const blob = new Blob([payload], { type: "application/json" });
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
@@ -144,9 +150,13 @@ export function ControlPanel() {
     if (!file) return;
     try {
       const text = await file.text();
-      const next = JSON.parse(text) as unknown;
-      if (!next || typeof next !== "object") throw new Error("Bad JSON");
-      dispatch({ type: "replace", state: next as StudioState });
+      const parsed = JSON.parse(text) as unknown;
+      const res = parseSessionImport(parsed);
+      if (!res.ok) {
+        window.alert(`Импорт отклонён: ${res.error}`);
+        return;
+      }
+      dispatch({ type: "replace", state: res.state });
     } catch {
       window.alert("Не получилось импортировать JSON сессии. Проверь файл.");
     } finally {
@@ -168,6 +178,11 @@ export function ControlPanel() {
       </div>
 
       <div className="panel-body min-h-0">
+        <div className="warn-strip">
+          Сессия хранится <b>только в браузере</b>. Перезагрузка/очистка данных может стереть работу — используй{" "}
+          <b>Export JSON</b> ниже как бэкап.
+        </div>
+
         <div className="group">
           <div className="group-title">Проект</div>
           <p className="group-hint">Контекст и системный промпт. Смена очистит черновик.</p>
