@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useStudio } from "@/lib/studio-store";
 import { ImageGenerationProgress } from "@/components/ImageGenerationProgress";
 import { downloadZip, generateImagesFromState } from "@/lib/actions";
@@ -10,7 +10,14 @@ export function OutputPanel() {
   const { state, dispatch } = useStudio();
   const [busy, setBusy] = useState<null | string>(null);
   const [scenarioOpen, setScenarioOpen] = useState(true);
-  const [mode, setMode] = useState<"draft" | "build">("draft");
+  const [mode, setMode] = useState<"draft" | "build">(() => {
+    if (typeof window === "undefined") return "draft";
+    try {
+      return window.localStorage.getItem("ai-reels-studio:v2026:outputsMode") === "build" ? "build" : "draft";
+    } catch {
+      return "draft";
+    }
+  });
   const [genError, setGenError] = useState<string | null>(null);
   const [promptsShake, setPromptsShake] = useState(false);
   const showBatchProgress =
@@ -93,6 +100,15 @@ export function OutputPanel() {
   const pipelineBusy = showBatchProgress || busy === "images";
   const doneCount = state.images.filter((x) => x.status === "done").length;
   const errCount = state.images.filter((x) => x.status === "error").length;
+
+  // Persist mode so the panel feels stable.
+  useEffect(() => {
+    try {
+      window.localStorage.setItem("ai-reels-studio:v2026:outputsMode", mode);
+    } catch {
+      // ignore
+    }
+  }, [mode]);
 
   return (
     <>
