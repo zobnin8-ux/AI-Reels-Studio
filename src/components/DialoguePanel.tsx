@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useStudioActivity } from "@/lib/studio-activity";
 import { useStudio } from "@/lib/studio-store";
 import { getSoundEnabled, playSendClick, setSoundEnabled } from "@/lib/ui-sound";
@@ -32,6 +32,15 @@ import {
 
 function uid(p: string) {
   return `${p}_${Math.random().toString(16).slice(2)}`;
+}
+
+const MAX_SESSION_UNDO = 8;
+
+function cloneSessionState(s: StudioState): StudioState {
+  if (typeof structuredClone === "function") {
+    return structuredClone(s);
+  }
+  return JSON.parse(JSON.stringify(s)) as StudioState;
 }
 
 function tryExtractJson(text: string): Record<string, unknown> | null {
@@ -126,6 +135,9 @@ export function DialoguePanel() {
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const seenMessageIdsRef = useRef<Set<string>>(new Set());
   const followNextRef = useRef(true);
+  /** Полные снимки сессии до каждого успешного хода (откат ⌘/Ctrl+Shift+Z). */
+  const sessionUndoStackRef = useRef<StudioState[]>([]);
+  const [sessionUndoDepth, setSessionUndoDepth] = useState(0);
 
   useEffect(() => {
     setSoundOn(getSoundEnabled());
@@ -172,6 +184,38 @@ export function DialoguePanel() {
     if (d < 80) setShowJumpLatest(false);
   }
 
+  function pushSessionUndoSnapshot(snapshot: StudioState) {
+    sessionUndoStackRef.current = [
+      ...sessionUndoStackRef.current.slice(-(MAX_SESSION_UNDO - 1)),
+      cloneSessionState(snapshot)
+    ];
+    setSessionUndoDepth(sessionUndoStackRef.current.length);
+  }
+
+  const applySessionHistoryUndo = useCallback(() => {
+    if (busy) return;
+    const prev = sessionUndoStackRef.current.pop();
+    if (!prev) return;
+    setSessionUndoDepth(sessionUndoStackRef.current.length);
+    setTurnResults(null);
+    dispatch({ type: "replace", state: prev });
+  }, [busy, dispatch]);
+
+  useEffect(() => {
+    function onKeyDown(e: KeyboardEvent) {
+      const mod = e.ctrlKey || e.metaKey;
+      if (!mod || !e.shiftKey) return;
+      if (e.code !== "KeyZ") return;
+      const t = e.target as HTMLElement | null;
+      if (t?.closest?.("textarea, input, select, [contenteditable='true']")) return;
+      if (sessionUndoStackRef.current.length === 0) return;
+      e.preventDefault();
+      applySessionHistoryUndo();
+    }
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [applySessionHistoryUndo]);
+
   async function runTurn(userText: string) {
     const text = userText.trim();
     if (!text || busy) return;
@@ -183,6 +227,9 @@ export function DialoguePanel() {
     const history = state.messages.map((m) => ({ role: m.role, content: m.content }));
     try {
       const { reply, statePatch } = await sendDialogueTurn(state, text, history);
+
+      // Снимок полной сессии до применения ответа этого хода (включая откат автогенерации кадров в этом ходу).
+      pushSessionUndoSnapshot(state);
 
       const userMsg: ChatMessage = { id: uid("u"), role: "user", content: text };
       const cleanedReply = sanitizeModelReplyForDisplay(reply);
@@ -382,6 +429,19 @@ export function DialoguePanel() {
             Build: кадры и ZIP
           </li>
         </ol>
+        <div className="flow-hint-actions">
+          <button
+            type="button"
+            className="asset-badge"
+            disabled={busy || sessionUndoDepth === 0}
+            onClick={() => applySessionHistoryUndo()}
+            title="Откатить последний успешный ход диалога (сообщения и состояние сессии). Горячие клавиши: Ctrl+Shift+Z или ⌘+Shift+Z"
+            aria-label="Откатить последний ход диалога"
+          >
+            Шаг назад · {sessionUndoDepth}
+          </button>
+          <span className="flow-hint-kbd">Ctrl+Shift+Z</span>
+        </div>
       </nav>
 
       <div className="prompts">
@@ -425,6 +485,8 @@ export function DialoguePanel() {
             type="button"
             className="asset-badge"
             onClick={() => {
+              sessionUndoStackRef.current = [];
+              setSessionUndoDepth(0);
               dispatch({ type: "replace", state: turnResults.undoState });
               setTurnResults(null);
             }}

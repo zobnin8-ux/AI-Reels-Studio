@@ -338,6 +338,22 @@ aside.panel.anim-4 .panel-strip {
   background: var(--ok-tint);
 }
 
+.flow-hint-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid var(--border-divider);
+}
+.flow-hint-kbd {
+  font-family: var(--font-jetbrains), "JetBrains Mono", monospace;
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+}
+
 .bubble .bubble-role {
   font-family: "JetBrains Mono", monospace;
   font-size: 10px;
