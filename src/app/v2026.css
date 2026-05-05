@@ -508,6 +508,23 @@ body{
 .check-item.done .check-state{color:var(--ok)}
 .check-item.progress .check-state{color:var(--accent)}
 
+.readiness--compact{
+  margin-top: 0;
+  padding: var(--s-3);
+}
+.readiness--compact .readiness-head{
+  margin-bottom: var(--s-2);
+}
+.readiness--compact .readiness-title{
+  font-size: 12px;
+}
+.readiness--compact .check-item{
+  padding: 6px 8px;
+}
+.readiness--compact .check-label{
+  font-size: 12px;
+}
+
 /* ============================================
    CENTER — STAGE — airy hero
    ============================================ */

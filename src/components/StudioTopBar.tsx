@@ -18,7 +18,7 @@ function formatSes(d: Date): string {
 
 export function StudioTopBar() {
   const { state } = useStudio();
-  const { chatBusy, imagePipelineBusy } = useStudioActivity();
+  const { chatBusy, imagePipelineBusy, zipBusy } = useStudioActivity();
   const [now, setNow] = useState(() => new Date());
 
   const projectLabel = useMemo(
@@ -33,8 +33,27 @@ export function StudioTopBar() {
 
   const imgDone = useMemo(() => state.images.filter((x) => x.status === "done").length, [state.images]);
   const imgTotal = state.images.length;
-  const statusLabel = imagePipelineBusy ? "Images" : chatBusy ? "Chat" : "Ready";
-  const statusTone = imagePipelineBusy ? "var(--accent)" : chatBusy ? "rgba(167, 139, 250, 0.95)" : "var(--ok)";
+  const genIx = useMemo(() => state.images.findIndex((x) => x.status === "generating"), [state.images]);
+  const statusLabel = zipBusy ? "ZIP" : imagePipelineBusy ? "Images" : chatBusy ? "Chat" : "Ready";
+  const statusTone = zipBusy
+    ? "var(--warn)"
+    : imagePipelineBusy
+      ? "var(--accent)"
+      : chatBusy
+        ? "rgba(167, 139, 250, 0.95)"
+        : "var(--ok)";
+  const statusDetail =
+    zipBusy
+      ? "Сборка архива…"
+      : imagePipelineBusy && genIx >= 0
+        ? `Кадр ${genIx + 1}/${imgTotal || 0}`
+        : imagePipelineBusy && imgTotal > 0
+          ? `Очередь · ${imgDone}/${imgTotal}`
+          : chatBusy
+            ? "Запрос к модели…"
+            : state.slides.length > 0
+              ? `${state.slides.length} слайдов`
+              : "Начни с темы и чата";
 
   return (
     <header className="topbar shrink-0">
@@ -63,9 +82,15 @@ export function StudioTopBar() {
       </div>
 
       <div className="top-meta">
-        <div className="meta-chip">
+        <div className="meta-chip" title={statusDetail}>
           <span className="dot" style={{ background: statusTone }} />
           <span>{statusLabel}</span>
+        </div>
+        <div className="meta-chip" title={statusDetail}>
+          <span className="key">STP</span>
+          <span className="val" style={{ maxWidth: 200, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+            {statusDetail}
+          </span>
         </div>
         <div className="meta-chip">
           <span className="key">SLD</span>

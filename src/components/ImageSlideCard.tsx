@@ -159,6 +159,7 @@ export function ImageSlideCard({
                 disabled={!localFinal.trim()}
                 onClick={() => void copyFinalPrompt()}
                 title="Скопировать полный промпт"
+                aria-label={`Кадр ${index + 1}: скопировать полный промпт в буфер обмена`}
               >
                 {copied ? "Copied" : "Copy prompt"}
               </button>
@@ -168,6 +169,7 @@ export function ImageSlideCard({
                 disabled={!canRegenerate}
                 onClick={() => void onRegenerate()}
                 title="Перегенерировать кадр"
+                aria-label={`Кадр ${index + 1}: перегенерировать изображение`}
               >
                 ↻
               </button>
@@ -179,6 +181,7 @@ export function ImageSlideCard({
                   detailsRef.current?.scrollIntoView({ block: "nearest" });
                 }}
                 title="Показать промпты и настройки"
+                aria-label={`Кадр ${index + 1}: открыть блок промпта и перегенерации`}
               >
                 Details
               </button>

@@ -7,6 +7,8 @@ type StudioActivityValue = {
   setChatBusy: (v: boolean) => void;
   imagePipelineBusy: boolean;
   setImagePipelineBusy: (v: boolean) => void;
+  zipBusy: boolean;
+  setZipBusy: (v: boolean) => void;
 };
 
 const Ctx = createContext<StudioActivityValue | null>(null);
@@ -14,15 +16,18 @@ const Ctx = createContext<StudioActivityValue | null>(null);
 export function StudioActivityProvider({ children }: { children: React.ReactNode }) {
   const [chatBusy, setChatBusy] = useState(false);
   const [imagePipelineBusy, setImagePipelineBusy] = useState(false);
+  const [zipBusy, setZipBusy] = useState(false);
 
   const value = useMemo(
     () => ({
       chatBusy,
       setChatBusy,
       imagePipelineBusy,
-      setImagePipelineBusy
+      setImagePipelineBusy,
+      zipBusy,
+      setZipBusy
     }),
-    [chatBusy, imagePipelineBusy]
+    [chatBusy, imagePipelineBusy, zipBusy]
   );
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;

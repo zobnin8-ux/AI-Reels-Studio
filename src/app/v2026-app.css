@@ -285,17 +285,65 @@ aside.panel.anim-4 .panel-strip {
   border: 1px solid var(--border-subtle);
   padding: 10px 14px;
   font-size: 13px;
-  line-height: 1.55;
+  line-height: 1.65;
   white-space: pre-wrap;
   word-break: break-word;
 }
 
+/* Подсказка первичного флоу — список критики P0 (IA). */
+.flow-hint {
+  flex-shrink: 0;
+  margin: 0 var(--s-4) var(--s-3);
+  padding: 10px 14px;
+  border-radius: var(--r-md);
+  border: 1px solid var(--border-subtle);
+  background: rgba(8, 16, 20, 0.35);
+}
+.flow-hint-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 18px;
+  align-items: center;
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+.flow-hint-step {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.flow-hint-n {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 999px;
+  border: 1px solid var(--border-soft);
+  font-family: var(--font-jetbrains), "JetBrains Mono", monospace;
+  font-size: 10px;
+  color: var(--text-muted);
+}
+.flow-hint-step.active .flow-hint-n {
+  border-color: var(--accent);
+  color: var(--accent-bright);
+  background: var(--accent-tint);
+}
+.flow-hint-step.done .flow-hint-n {
+  border-color: var(--ok);
+  color: var(--ok);
+  background: var(--ok-tint);
+}
+
 .bubble .bubble-role {
   font-family: "JetBrains Mono", monospace;
-  font-size: 9px;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: var(--text-muted);
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  text-transform: none;
+  color: var(--text-dim);
   margin-bottom: 6px;
 }
 

@@ -328,6 +328,13 @@ export function DialoguePanel() {
 
   const clockStr = clock.toLocaleTimeString("ru-RU", { hour12: false });
 
+  const topicOk = state.topic.trim().length > 0;
+  const slidesOk = state.slides.length > 0;
+  const imgTotal = state.images.length;
+  const imgDone = state.images.filter((x) => x.status === "done" || x.status === "error").length;
+  const imagesPackaged =
+    imgTotal > 0 && imgDone === imgTotal && state.images.some((x) => x.status === "done");
+
   return (
     <div className="stage-inner">
       <div className="panel-strip">
@@ -347,6 +354,35 @@ export function DialoguePanel() {
           Caption и музыку — по запросу.
         </p>
       </div>
+
+      <nav className="flow-hint" aria-label="Шаги работы">
+        <ol className="flow-hint-list">
+          <li className={["flow-hint-step", topicOk ? "done" : !topicOk ? "active" : ""].filter(Boolean).join(" ")}>
+            <span className="flow-hint-n" aria-hidden>
+              1
+            </span>
+            Тема слева (Topic)
+          </li>
+          <li
+            className={["flow-hint-step", slidesOk ? "done" : topicOk ? "active" : ""].filter(Boolean).join(" ")}
+          >
+            <span className="flow-hint-n" aria-hidden>
+              2
+            </span>
+            Диалог — сценарий
+          </li>
+          <li
+            className={["flow-hint-step", imagesPackaged ? "done" : slidesOk ? "active" : ""]
+              .filter(Boolean)
+              .join(" ")}
+          >
+            <span className="flow-hint-n" aria-hidden>
+              3
+            </span>
+            Build: кадры и ZIP
+          </li>
+        </ol>
+      </nav>
 
       <div className="prompts">
         {SHORTCUTS.map((s, i) => (
@@ -470,7 +506,11 @@ export function DialoguePanel() {
         </div>
 
         {showJumpLatest && state.messages.length > 0 ? (
-          <button type="button" className="jump-latest" onClick={() => {
+          <button
+            type="button"
+            className="jump-latest"
+            aria-label="Прокрутить к последним сообщениям"
+            onClick={() => {
             followNextRef.current = true;
             endRef.current?.scrollIntoView({ behavior: "smooth" });
             setShowJumpLatest(false);
@@ -493,6 +533,7 @@ export function DialoguePanel() {
           <div className={["composer-input-wrap", inputShake ? "composer-input-shake" : ""].filter(Boolean).join(" ")}>
             <textarea
               ref={inputRef}
+              id="studio-dialogue-input"
               className="composer-input"
               value={input}
               onChange={(e) => setInput(e.target.value)}
@@ -510,13 +551,13 @@ export function DialoguePanel() {
         </div>
         <div className="composer-foot">
           <div className="tools">
-            <button type="button" className="tool" disabled title="Скоро">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6">
+            <button type="button" className="tool" disabled title="Скоро" aria-label="Прикрепить файл (скоро)">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" aria-hidden>
                 <path d="M21 15V19A2 2 0 0119 21H5A2 2 0 013 19V15M7 10L12 15L17 10M12 15V3" />
               </svg>
               Прикрепить
             </button>
-            <label className="tool" style={{ cursor: "pointer" }}>
+            <label className="tool" style={{ cursor: "pointer" }} aria-label={`Звук при отправке: ${soundOn ? "включён" : "выключен"}`}>
               <input
                 type="checkbox"
                 checked={soundOn}
@@ -527,15 +568,21 @@ export function DialoguePanel() {
                 }}
                 className="sr-only"
               />
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" aria-hidden>
                 <path d="M12 2A3 3 0 009 5V12A3 3 0 0015 12V5A3 3 0 0012 2ZM19 10V12A7 7 0 015 12V10M12 19V22" />
               </svg>
               Звук {soundOn ? "вкл" : "выкл"}
             </label>
           </div>
-          <button type="button" className="send" onClick={() => void onSend()} disabled={busy || !input.trim()}>
+          <button
+            type="button"
+            className="send"
+            onClick={() => void onSend()}
+            disabled={busy || !input.trim()}
+            aria-label={busy ? "Отправка сообщения" : "Отправить сообщение"}
+          >
             {busy ? "Отправка…" : "Отправить"}
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" aria-hidden>
               <path d="M5 12H19M13 6L19 12L13 18" />
             </svg>
           </button>

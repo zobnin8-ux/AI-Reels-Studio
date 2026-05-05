@@ -2,7 +2,9 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useStudio } from "@/lib/studio-store";
+import { useStudioActivity } from "@/lib/studio-activity";
 import { ImageGenerationProgress } from "@/components/ImageGenerationProgress";
+import { ReadinessChecklist } from "@/components/ReadinessChecklist";
 import { downloadZip, generateImagesFromState } from "@/lib/actions";
 import type { SlidePrompt } from "@/lib/state";
 
@@ -10,6 +12,7 @@ const OUTPUT_SCENARIO_OPEN_KEY = "ai-reels-studio:v2026:scenarioOpen";
 
 export function OutputPanel() {
   const { state, dispatch } = useStudio();
+  const { setZipBusy } = useStudioActivity();
   const [busy, setBusy] = useState<null | string>(null);
   const [scenarioOpen, setScenarioOpen] = useState(() => {
     if (typeof window === "undefined") return true;
@@ -90,6 +93,7 @@ export function OutputPanel() {
 
   async function onDownload() {
     setBusy("zip");
+    setZipBusy(true);
     try {
       await downloadZip(state);
     } catch (e: unknown) {
@@ -98,6 +102,7 @@ export function OutputPanel() {
       setPromptsShake(true);
       window.setTimeout(() => setPromptsShake(false), 500);
     } finally {
+      setZipBusy(false);
       setBusy(null);
     }
   }
@@ -254,6 +259,8 @@ export function OutputPanel() {
             <p className="asset-desc">
               Тут только то, что нужно для финального результата: генерация кадров и скачивание ZIP.
             </p>
+
+            <ReadinessChecklist state={state} compact />
 
             <div className="field" style={{ marginTop: 10 }}>
               <span className="label mono">Auto-generate</span>

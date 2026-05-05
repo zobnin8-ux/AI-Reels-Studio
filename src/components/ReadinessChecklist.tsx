@@ -12,7 +12,14 @@ function iconClass(s: ItemStatus): string {
   return "check-icon empty";
 }
 
-export function ReadinessChecklist({ state }: { state: StudioState }) {
+export function ReadinessChecklist({
+  state,
+  compact = false
+}: {
+  state: StudioState;
+  /** Компактный вид для встраивания в Build-блок. */
+  compact?: boolean;
+}) {
   const items = useMemo(() => {
     const hasSlides = state.slides.length > 0;
     const anyCosmetic =
@@ -70,9 +77,9 @@ export function ReadinessChecklist({ state }: { state: StudioState }) {
   const doneCount = items.filter((i) => i.status === "done").length;
 
   return (
-    <div className="readiness">
+    <div className={["readiness", compact ? "readiness--compact" : ""].filter(Boolean).join(" ")}>
       <div className="readiness-head">
-        <div className="readiness-title">Готовность пайплайна</div>
+        <div className="readiness-title">{compact ? "Готовность к сборке" : "Готовность пайплайна"}</div>
         <div className="readiness-count">
           <b>{doneCount}</b> / {items.length}
         </div>
