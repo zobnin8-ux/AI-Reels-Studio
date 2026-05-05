@@ -185,10 +185,13 @@ export function DialoguePanel() {
       const { reply, statePatch } = await sendDialogueTurn(state, text, history);
 
       const userMsg: ChatMessage = { id: uid("u"), role: "user", content: text };
+      const cleanedReply = sanitizeModelReplyForDisplay(reply);
+      const assistantContent =
+        cleanedReply.trim().length > 0 ? cleanedReply : "Ответ получен, но текст пустой. Проверь /api/chat и ключи.";
       const assistantMsg: ChatMessage = {
         id: uid("a"),
         role: "assistant",
-        content: sanitizeModelReplyForDisplay(reply)
+        content: assistantContent
       };
       const patch = mergeStatePatch(state, statePatch);
 
@@ -457,7 +460,7 @@ export function DialoguePanel() {
                       .join(" ")}
                   >
                     <div className="bubble-role">{m.role === "user" ? "Вы" : "Ассистент"}</div>
-                    <div>{m.content}</div>
+                    <div>{m.content?.trim?.() ? m.content : "…"}</div>
                   </div>
                 </div>
               ))}

@@ -119,7 +119,9 @@ button.asset-badge {
 .reel-frame.stage-frames-slot {
   scroll-snap-align: start;
   flex: 0 0 auto;
-  width: clamp(280px, 42vw, 520px);
+  /* Критично: в ленте ограничиваемся по высоте, иначе карточки съедают чат. */
+  height: clamp(160px, 22vh, 240px);
+  width: auto;
 }
 
 .stage-frames-rail-telemetry {
