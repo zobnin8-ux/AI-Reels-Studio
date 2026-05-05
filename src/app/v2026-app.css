@@ -68,12 +68,16 @@ button.asset-badge {
   flex: 1 1 0;
   min-height: 0 !important;
   max-height: 100%;
-  min-width: 1480px;
+  /* Не forcing-уем горизонтальный скролл на нормальных экранах. */
+  min-width: 0;
   overflow-x: auto;
   overflow-y: hidden;
   grid-template-rows: minmax(0, 1fr);
   /* v2026 base CSS sets a fixed 4-col grid; override to 3 columns */
-  grid-template-columns: 320px minmax(0, 1fr) 380px !important;
+  grid-template-columns:
+    clamp(280px, 22vw, 320px)
+    minmax(0, 1fr)
+    clamp(320px, 26vw, 380px) !important;
 }
 
 /* Лента кадров внутри панели сцены — сразу над чатом */
