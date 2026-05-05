@@ -12,6 +12,7 @@ const projectOptions: { id: ProjectId; label: string }[] = [
 ];
 
 const emptyMusic = () => ({ queries: [] as string[], recommendations: [] as string[], avoid: [] as string[] });
+const BG_MODE_KEY = "ai-reels-studio:v2026:bgMode";
 
 function defaultsForProject(project: ProjectId): Partial<StudioState> {
   if (project === "olgatrip") {
@@ -40,11 +41,27 @@ export function ControlPanel() {
   const { state, dispatch } = useStudio();
   const prevProject = useRef<ProjectId>(state.project);
   /** true = класс `showcase` на body (сетка, шум, скан); false = спокойный фон для записи экрана */
-  const [richStudioBackground, setRichStudioBackground] = useState(true);
+  const [richStudioBackground, setRichStudioBackground] = useState(() => {
+    if (typeof window === "undefined") return false;
+    try {
+      return window.localStorage.getItem(BG_MODE_KEY) === "rich";
+    } catch {
+      return false;
+    }
+  });
   const importRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     document.body.classList.toggle("showcase", richStudioBackground);
+  }, [richStudioBackground]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      window.localStorage.setItem(BG_MODE_KEY, richStudioBackground ? "rich" : "calm");
+    } catch {
+      // ignore
+    }
   }, [richStudioBackground]);
 
   const hasCreativeContent = useMemo(() => {
