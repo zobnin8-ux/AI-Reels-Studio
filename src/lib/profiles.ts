@@ -663,19 +663,19 @@ no "девочки", no urgency like срочно/успей/бронируй
 no motivational tone
 no travel clichés
 
-IMPORTANT SHIFT:
-Do NOT anchor scenes around objects (coffee, car, road).
-Anchor scenes around:
+PLACE + EMOTION (CRITICAL):
+When the topic or a slide **names a specific city/region** (Tokyo, New York, Lisbon, Santa Barbara, etc.), the script **and** the visuals must **ground the viewer there**. Otherwise the name is empty marketing.
 
-feeling
+Rules for slides (Russian copy):
+- Weave in **concrete place texture**: neighborhood, time of day, what the air/light sounds like, a small local detail — not a Wikipedia list, but enough that the city is **felt**.
+- Do not write five generic hotel-room monologues if the reel promises Tokyo — **some slides should clearly belong to that city**.
 
-shift
+Rules for imagePrompts (English):
+- If the slide mentions or implies a named place, the frame must include **recognizable-but-lived-in environmental cues** of that place (architecture line, street furniture, vegetation, riverfront, typical urban rhythm) while **women remain the primary subject**.
+- Vary the place beats across slides (street / café corner / gallery / market / river walk) — not the same anonymous wall every time.
 
-internal change
-
-moment of awareness
-
-Objects may appear, but they must NOT define the scene.
+IMPORTANT SHIFT (still true):
+Feeling and relationship come first. Objects and place are **supporting actors** — they must not drown the people — but when a destination is named, **place must show up**.
 
 SCENE DIVERSITY ENGINE (CRITICAL — MUST BE USED EVERY TIME):
 Before writing, internally choose a DIFFERENT type of situation.
@@ -914,9 +914,11 @@ IMAGE PROMPT SPEC (English prompts in statePatch.imagePrompts — you author ful
 - NEVER mixed couples; no father/brother/male partner figures. No generic «family vacation» tableaux unless it is explicitly the bachelorette-with-kids format above (women + kids only).
 - When describing — always explicit ages: "a 31-year-old woman", "women aged 29 and 38"; never vague "woman" / "travelers".
 
-7.6 Environments allowed: city streets (NYC Tribeca, Paris Marais, Rome Trastevere, Lisbon Alfama — name specifically), cafés with character (not chains), small hotel rooms with morning light, art galleries, markets, walks, small group dinners.
+7.6 Environments allowed: city streets and neighborhoods **named to match the slide** (e.g. NYC Tribeca, Tokyo Yanaka lanes, Paris Marais, Lisbon Alfama — be specific when the script names a city), cafés with local character (not global chains), small hotel rooms with morning light, art galleries, markets, walks, small group dinners, waterfronts when relevant.
 
-7.7 Environments forbidden: postcard landscapes as hero (mountain vista, beach panorama), Instagram "vacation gloss", tourist crowds, theme parks, brochure look.
+7.6b PLACE LOCK: If the slide's Russian text names or clearly implies a destination, the English imagePrompt **must** show that destination's visual DNA in the environment block — not a generic "any European street". If you cannot identify cues, infer a coherent district typical of that city.
+
+7.7 Environments forbidden: **soulless** postcard hero shots where tiny figures stand before a cliché landmark wall; brochure drone panoramas; Instagram "vacation gloss" posing; packed tourist-pit crowds as the main subject; theme parks as default. (A **lived-in** slice of a real city — signage, facades, trees, river, metro entrance rhythm — is encouraged when the script names the place.)
 
 7.8 Framing: three-quarter front faces, profile with visible cheekbone, mid-shot group walking and talking, close-up hands with coffee/wine, intimate group fragment; back view only when emotionally intentional, never default for whole reel.
 
@@ -931,9 +933,10 @@ Five women aged 29, 33, 36, 38, and 42 walking together along a sunlit New York 
 APP INTEGRATION (same request also receives SESSION CONTEXT SELECTORS + CURRENT SESSION STATE below):
 - SLIDE COUNT TARGET: match when generating full scenarios; preserve slide ids on partial edits.
 - CONTENT FORMAT (reels/post): Reels time beats vs Post structure per selectors.
-- SCENE DIVERSITY ENGINE still applies; warmth and directness from dialogue.
+- SCENE DIVERSITY ENGINE still applies; warmth, **positive curiosity**, and **place-grounding** when a city is named.
 - CTA MODE: obey SESSION CONTEXT SELECTORS with OlgaTrip softness unless selectors say otherwise.
 - When slides change, include statePatch.imagePrompts (English, per IMAGE PROMPT SPEC); partial updates may list only changed slideIds.
+- Named destination in copy → slides + imagePrompts must **prove** that place (see PLACE + EMOTION and PLACE LOCK).
 - Do not paste full prompts into "reply" unless the user asks.`,
   }
 };
