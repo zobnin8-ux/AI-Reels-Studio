@@ -1,4 +1,4 @@
-import type { GeneratedImage, ImagePrompt, StudioState } from "@/lib/state";
+import type { GeneratedImage, ImagePrompt, Slide, StudioState } from "@/lib/state";
 import { resolveImagePrompt } from "@/lib/image-prompt-pipeline";
 
 /** Нормализует текст промпта, если модель обернула JSON/markdown. */
@@ -102,5 +102,40 @@ export function syncImagesWithImagePrompts(
     const next = hint ? shortPreview(hint) : "";
     if (img.prompt === next) return img;
     return { ...img, prompt: next };
+  });
+}
+
+/**
+ * Держит `images` в соответствии со списком слайдов: один кадр на слайд, порядок = порядок слайдов.
+ * Убирает лишние кадры; добавляет недостающие слоты со статусом `waiting`.
+ */
+export function alignImagesToSlides(
+  slides: Slide[],
+  images: GeneratedImage[],
+  imagePrompts: ImagePrompt[]
+): GeneratedImage[] {
+  if (slides.length === 0) return [];
+
+  const bySlideId = new Map<string, GeneratedImage>();
+  for (const img of images) {
+    if (img.slideId) bySlideId.set(img.slideId, img);
+  }
+
+  return slides.map((slide) => {
+    const prev = bySlideId.get(slide.id);
+    const hint = resolveImagePrompt(imagePrompts, slide.id);
+    const preview = hint ? shortPreview(hint) : "";
+
+    if (prev) {
+      if (prev.prompt === preview) return prev;
+      return { ...prev, prompt: preview };
+    }
+
+    return {
+      id: `img_${slide.id}`,
+      slideId: slide.id,
+      prompt: preview,
+      status: "waiting" as const
+    };
   });
 }

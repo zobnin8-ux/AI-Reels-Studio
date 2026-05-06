@@ -26,11 +26,16 @@ export function ReadinessChecklist({
       hasSlides &&
       state.slides.every((s) => Boolean(resolveImagePrompt(state.imagePrompts, s.id)));
 
+    const slideFrameCount = state.slides.length;
+    const framesAligned =
+      slideFrameCount === 0 || state.images.length === slideFrameCount;
     const imgBusy =
-      state.images.length > 0 &&
+      slideFrameCount > 0 &&
+      framesAligned &&
       state.images.some((x) => x.status === "waiting" || x.status === "generating");
     const imgDone =
-      state.images.length > 0 &&
+      slideFrameCount > 0 &&
+      framesAligned &&
       state.images.every((x) => x.status === "done" || x.status === "error") &&
       state.images.some((x) => x.status === "done");
 

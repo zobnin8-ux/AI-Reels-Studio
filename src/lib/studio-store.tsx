@@ -10,7 +10,7 @@ import React, {
   useRef,
   useState
 } from "react";
-import { syncImagesWithImagePrompts } from "@/lib/image-prompt-sync";
+import { alignImagesToSlides } from "@/lib/image-prompt-sync";
 import { createInitialState, type StudioState } from "@/lib/state";
 
 type Action =
@@ -68,6 +68,7 @@ function loadInitialState(): StudioState {
     }
     const sc = merged.slideCount;
     if (sc !== 5 && sc !== 7 && sc !== 9) merged.slideCount = 7;
+    merged.images = alignImagesToSlides(merged.slides, merged.images, merged.imagePrompts);
     return merged;
   } catch {
     return base;
@@ -79,14 +80,12 @@ function reducer(state: StudioState, action: Action): StudioState {
     case "set": {
       const patch = action.patch;
       const next: StudioState = { ...state, ...patch };
-      if (patch.imagePrompts !== undefined) {
-        next.images = syncImagesWithImagePrompts(next.images, next.imagePrompts);
-      }
+      next.images = alignImagesToSlides(next.slides, next.images, next.imagePrompts);
       return next;
     }
     case "replace": {
-      const next = action.state;
-      next.images = syncImagesWithImagePrompts(next.images, next.imagePrompts);
+      const next = { ...action.state };
+      next.images = alignImagesToSlides(next.slides, next.images, next.imagePrompts);
       return next;
     }
     case "resetAll":
