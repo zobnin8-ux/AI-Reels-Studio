@@ -187,7 +187,7 @@ export async function generateImagesFromState(
         `Нет image prompt для слайда «${slide.title}». Попроси Anthropic сгенерировать промпты картинок для всех слайдов.`
       );
     }
-    const finalPrompt = sanitizeForOpenAIImage(raw, state.contentType);
+    const finalPrompt = sanitizeForOpenAIImage(raw, state.contentType, state.project);
     return {
       id: `img_${slide.id}`,
       slideId: slide.id,
@@ -307,7 +307,7 @@ export async function regenerateOneImage(
     if (!raw) {
       throw new Error("Нет промпта для этого слайда. Попроси модель выдать imagePrompts.");
     }
-    finalPrompt = sanitizeForOpenAIImage(raw, state.contentType);
+    finalPrompt = sanitizeForOpenAIImage(raw, state.contentType, state.project);
     uiHint = raw.slice(0, 200);
   } else {
     throw new Error("Нет slideId для перегенерации.");
@@ -362,7 +362,7 @@ export async function downloadZip(state: StudioState) {
     const imgRow = state.images.find((x) => x.slideId === s.id);
     const block =
       imgRow?.finalPrompt?.trim() ||
-      (raw ? sanitizeForOpenAIImage(raw, state.contentType) : "(нет промпта — запроси у модели)");
+      (raw ? sanitizeForOpenAIImage(raw, state.contentType, state.project) : "(нет промпта — запроси у модели)");
     return `--- ${String(i + 1).padStart(2, "0")}. ${s.title || s.id} ---\n${block}`;
   });
   zip.file("image_prompts_openai.txt", openAiBlocks.join("\n\n"));

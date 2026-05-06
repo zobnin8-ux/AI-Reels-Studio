@@ -97,7 +97,7 @@ export function ImageSlideCard({
   const sanitizedPreview = useMemo(() => {
     if (!image.slideId) return "";
     const raw = resolveImagePrompt(state.imagePrompts, image.slideId);
-    return raw ? sanitizeForOpenAIImage(raw, state.contentType) : "";
+    return raw ? sanitizeForOpenAIImage(raw, state.contentType, state.project) : "";
   }, [state.imagePrompts, state.contentType, image.slideId]);
 
   useEffect(() => {
