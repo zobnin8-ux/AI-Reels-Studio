@@ -47,15 +47,15 @@ function isProbablyStudioState(x: unknown): x is StudioState {
   );
 }
 
-function loadInitialState(): StudioState {
+/** Только в браузере после mount — чтобы SSR и первый клиентский рендер совпадали (без ошибок гидрации). */
+function loadSessionFromStorage(): StudioState | null {
   const base = createInitialState();
-  if (typeof window === "undefined") return base;
   try {
     const raw = window.localStorage.getItem(STORAGE_KEY);
-    if (!raw) return base;
+    if (!raw) return null;
     const parsed = JSON.parse(raw) as { v?: number; state?: unknown };
-    if (parsed?.v !== STORAGE_VERSION) return base;
-    if (!isProbablyStudioState(parsed.state)) return base;
+    if (parsed?.v !== STORAGE_VERSION) return null;
+    if (!isProbablyStudioState(parsed.state)) return null;
     const merged: StudioState = { ...base, ...(parsed.state as StudioState) };
     if (typeof merged.autoGenerateImages !== "boolean") merged.autoGenerateImages = false;
     if (!Array.isArray(merged.messages)) merged.messages = [];
@@ -71,7 +71,7 @@ function loadInitialState(): StudioState {
     merged.images = alignImagesToSlides(merged.slides, merged.images, merged.imagePrompts);
     return merged;
   } catch {
-    return base;
+    return null;
   }
 }
 
@@ -104,7 +104,7 @@ type StudioStore = {
 const Ctx = createContext<StudioStore | null>(null);
 
 export function StudioProvider({ children }: { children: React.ReactNode }) {
-  const [state, _dispatch] = useReducer(reducer, undefined, loadInitialState);
+  const [state, _dispatch] = useReducer(reducer, undefined, createInitialState);
   const [sessionUndoResetEpoch, setSessionUndoResetEpoch] = useState(0);
 
   const dispatch = useCallback((action: Action) => {
@@ -123,8 +123,20 @@ export function StudioProvider({ children }: { children: React.ReactNode }) {
   );
 
   const saveTimer = useRef<number | null>(null);
+  /** Первый проход persist не должен затереть localStorage до восстановления сессии из хранилища. */
+  const skipPersistUntilHydrateRef = useRef(true);
+
+  useEffect(() => {
+    const merged = loadSessionFromStorage();
+    if (merged) {
+      _dispatch({ type: "replace", state: merged });
+    }
+    skipPersistUntilHydrateRef.current = false;
+  }, []);
+
   useEffect(() => {
     if (typeof window === "undefined") return;
+    if (skipPersistUntilHydrateRef.current) return;
     if (saveTimer.current) window.clearTimeout(saveTimer.current);
     saveTimer.current = window.setTimeout(() => {
       try {
