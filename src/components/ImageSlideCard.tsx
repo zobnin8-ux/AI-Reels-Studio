@@ -116,7 +116,7 @@ export function ImageSlideCard({
     if (!image.slideId) return "";
     const raw = resolveImagePrompt(state.imagePrompts, image.slideId);
     return raw ? sanitizeForOpenAIImage(raw, state.contentType, state.project) : "";
-  }, [state.imagePrompts, state.contentType, image.slideId]);
+  }, [state.imagePrompts, state.contentType, state.project, image.slideId]);
 
   useEffect(() => {
     if (!railSheetOpen) return;

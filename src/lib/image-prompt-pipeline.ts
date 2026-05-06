@@ -126,7 +126,8 @@ export function softenImagePromptForModeration(prompt: string, project: ProjectI
     const zobninPairs: Array<[RegExp, Replacement]> = [
       [
         /\b(a|an)\s+(\d{1,2})[- ]year[- ]old\s+(man|woman|guy|gal|male|female|person|professional|executive)\b/gi,
-        (_m: string, _art: string, _age: string, kind: string) => {
+        (_match: string, ...args: unknown[]) => {
+          const kind = String(args[2] ?? "");
           const isMale = /man|guy|male/i.test(kind);
           const isFemale = /woman|gal|female/i.test(kind);
           if (isMale) return "a man in his early forties";
