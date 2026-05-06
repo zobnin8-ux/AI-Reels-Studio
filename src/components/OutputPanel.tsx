@@ -145,14 +145,10 @@ export function OutputPanel() {
       <div className="panel-strip">
         <div className="strip-row">
           <span className="strip-tag">Вывод</span>
-          <span className="strip-meta">ассеты</span>
         </div>
         <h2 className="strip-title">
           Экспорт <b>·</b> ZIP
         </h2>
-        <p className="strip-sub">
-          Сценарий, опциональные уточнения к кадрам, подпись, музыка и сборка архива.
-        </p>
         <div className="seg mt-3" role="group" aria-label="Режим правой панели">
           <button
             type="button"
@@ -195,7 +191,6 @@ export function OutputPanel() {
                 {scenarioOpen ? "свернуть" : "развернуть"}
               </button>
             </div>
-            <p className="asset-desc">Структура слайдов из диалога.</p>
             {scenarioOpen ? (
               <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
                 {state.slides.map((s, i) => (
@@ -232,10 +227,6 @@ export function OutputPanel() {
               </div>
               <span className="asset-badge">опция</span>
             </div>
-            <p className="asset-desc">
-              Опционально: короткие правки к автособранному промпту (одна строка — один кадр). Картинки строятся из
-              текста слайда + селекторов; это поле можно оставить пустым.
-            </p>
             <textarea
               className="textarea"
               value={promptLinesText}
@@ -256,9 +247,6 @@ export function OutputPanel() {
               </div>
               <span className="asset-badge">сборка</span>
             </div>
-            <p className="asset-desc">
-              Тут только то, что нужно для финального результата: генерация кадров и скачивание ZIP.
-            </p>
 
             <ReadinessChecklist state={state} compact />
 
@@ -346,7 +334,6 @@ export function OutputPanel() {
             </div>
             <span className="asset-badge">текст</span>
           </div>
-          <p className="asset-desc">Подпись из диалога или правка здесь.</p>
           <textarea
             className="textarea"
             value={state.caption}
@@ -361,11 +348,10 @@ export function OutputPanel() {
           <div className="asset-block">
           <div className="asset-head">
             <div className="asset-h">
-              Музыка <b>meta</b>
+              Музыка
             </div>
             <span className="asset-badge">мета</span>
           </div>
-          <p className="asset-desc">Поисковые запросы и направления (без стриминга).</p>
           <div className="field">
             <span className="label mono">Поиск</span>
             <textarea
@@ -428,12 +414,7 @@ export function OutputPanel() {
         ) : null}
 
         <div className="export-dock">
-          <div className="export-dock-title">Финальный пакет</div>
-          <div className="export-list">
-            В архив попадут: <span>сценарий</span>, <span>промпты OpenAI</span>,{" "}
-            <span>уточнения</span>, <span>кадры</span>,{" "}
-            <span>подпись</span> и <span>музыка</span> (если заполнены).
-          </div>
+          <div className="export-dock-title">Архив</div>
           <button
             type="button"
             className="download-btn"

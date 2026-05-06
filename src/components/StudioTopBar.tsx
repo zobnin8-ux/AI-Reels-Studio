@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo } from "react";
 import { useStudio } from "@/lib/studio-store";
 import { useStudioActivity } from "@/lib/studio-activity";
 
@@ -10,26 +10,14 @@ const projectOptions: { id: string; label: string }[] = [
   { id: "olgatrip", label: "OlgaTrip" }
 ];
 
-function formatSes(d: Date): string {
-  const dd = String(d.getDate()).padStart(2, "0");
-  const mm = String(d.getMonth() + 1).padStart(2, "0");
-  return `${dd}·${mm}`;
-}
-
 export function StudioTopBar() {
   const { state } = useStudio();
   const { chatBusy, imagePipelineBusy, zipBusy } = useStudioActivity();
-  const [now, setNow] = useState(() => new Date());
 
   const projectLabel = useMemo(
     () => projectOptions.find((p) => p.id === state.project)?.label ?? state.project,
     [state.project]
   );
-
-  useEffect(() => {
-    const id = window.setInterval(() => setNow(new Date()), 60_000);
-    return () => window.clearInterval(id);
-  }, []);
 
   const imgDone = useMemo(() => state.images.filter((x) => x.status === "done").length, [state.images]);
   const imgTotal = state.images.length;
@@ -92,29 +80,10 @@ export function StudioTopBar() {
           <span className="dot" style={{ background: statusTone }} />
           <span>{statusLabel}</span>
         </div>
-        <div className="meta-chip" title={statusDetail}>
-          <span className="key">STP</span>
-          <span className="val" style={{ maxWidth: 200, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-            {statusDetail}
+        <div className="meta-chip" title={`Слайды · кадры · ${projectLabel}`}>
+          <span className="val" style={{ maxWidth: 280, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+            {state.slides.length} слайд. · {imgDone}/{imgTotal || 0} · {projectLabel}
           </span>
-        </div>
-        <div className="meta-chip">
-          <span className="key">SLD</span>
-          <span className="val">{state.slides.length}</span>
-        </div>
-        <div className="meta-chip">
-          <span className="key">IMG</span>
-          <span className="val">
-            {imgDone}/{imgTotal || 0}
-          </span>
-        </div>
-        <div className="meta-chip">
-          <span className="key">PRJ</span>
-          <span className="val">{projectLabel}</span>
-        </div>
-        <div className="meta-chip">
-          <span className="key">SES</span>
-          <span className="val">{formatSes(now)}</span>
         </div>
       </div>
     </header>

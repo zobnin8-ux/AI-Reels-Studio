@@ -2,7 +2,6 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useStudio } from "@/lib/studio-store";
-import { ReadinessChecklist } from "@/components/ReadinessChecklist";
 import type { ProjectId, StudioState } from "@/lib/state";
 import { parseSessionImport, SESSION_EXPORT_VERSION } from "@/lib/session-import";
 
@@ -132,8 +131,6 @@ export function ControlPanel() {
     resetContentAfterProjectSwitch(nextProject);
   }
 
-  const stripMeta = "онлайн · API";
-
   function exportSessionJson() {
     try {
       const envelope = {
@@ -171,7 +168,7 @@ export function ControlPanel() {
     } catch {
       setImportNotice({
         kind: "error",
-        message: "Не удалось прочитать файл. Проверь, что это JSON сессии."
+        message: "Не удалось прочитать файл."
       });
     } finally {
       if (importRef.current) importRef.current.value = "";
@@ -183,20 +180,13 @@ export function ControlPanel() {
       <div className="panel-strip">
         <div className="strip-row">
           <span className="strip-tag">Параметры</span>
-          <span className="strip-meta">{stripMeta}</span>
         </div>
         <h2 className="strip-title">
           Сессия <b>контур</b>
         </h2>
-        <p className="strip-sub">Контур съёмки: проект, формат, тон и провайдер модели.</p>
       </div>
 
       <div className="panel-body min-h-0">
-        <div className="warn-strip">
-          Сессия хранится <b>только в браузере</b>. Перезагрузка/очистка данных может стереть работу — используй{" "}
-          <b>Экспорт JSON</b> ниже как бэкап.
-        </div>
-
         {importNotice ? (
           <div
             role="status"
@@ -220,7 +210,6 @@ export function ControlPanel() {
 
         <div className="group">
           <div className="group-title">Проект</div>
-          <p className="group-hint">Контекст и системный промпт. Смена очистит черновик.</p>
           <div className="field">
             <span className="label mono">Профиль</span>
             <select
@@ -239,7 +228,6 @@ export function ControlPanel() {
 
         <div className="group">
           <div className="group-title">Формат и длина</div>
-          <p className="group-hint">Как выглядит вывод и сколько кадров в сценарии.</p>
           <div className="field-row">
             <div className="field">
               <span className="label">Тип</span>
@@ -278,7 +266,6 @@ export function ControlPanel() {
 
         <div className="group">
           <div className="group-title">Тон и стиль</div>
-          <p className="group-hint">Настроение для текста в чате и для света/контраста в генерации кадров.</p>
           <div className="field-row">
             <div className="field">
               <span className="label">Тон</span>
@@ -321,7 +308,6 @@ export function ControlPanel() {
 
         <div className="group">
           <div className="group-title">CTA и вывод</div>
-          <p className="group-hint">Как зовём в действие и где текст относительно картинки.</p>
           <div className="field">
             <span className="label">Режим CTA</span>
             <select
@@ -394,7 +380,6 @@ export function ControlPanel() {
 
         <div className="group">
           <div className="group-title">Тема</div>
-          <p className="group-hint">Коротко, о чём ролик — попадёт в контекст диалога.</p>
           <div className="field">
             <span className="label mono">Тема</span>
             <input
@@ -406,13 +391,8 @@ export function ControlPanel() {
           </div>
         </div>
 
-        <ReadinessChecklist state={state} />
-
         <div className="group">
           <div className="group-title">Фон студии</div>
-          <p className="group-hint">
-            Спокойный — меньше сетки и декора (удобнее при записи экрана). Насыщенный — полный визуал интерфейса.
-          </p>
           <div className="field">
             <span className="label mono">Режим оформления</span>
             <div className="mode-pill" role="group" aria-label="Режим оформления фона">
@@ -436,7 +416,6 @@ export function ControlPanel() {
 
         <div className="group">
           <div className="group-title">Провайдер</div>
-          <p className="group-hint">Какой API держит диалог и JSON-патчи состояния.</p>
           <div className="seg" role="group" aria-label="Провайдер LLM">
             <button
               type="button"
@@ -455,26 +434,17 @@ export function ControlPanel() {
           </div>
         </div>
 
-        <div className="group">
-          <div className="group-title">Сессия</div>
-          <p className="group-hint">
-            Автосейв включён (в браузере). Здесь можно экспортировать или импортировать сессию вручную.
-          </p>
-          <div className="field-row">
+        <details className="group session-file-details">
+          <summary className="group-title session-file-summary">Файл сессии</summary>
+          <div className="field-row session-file-fields">
             <div className="field">
-              <span className="label">Экспорт</span>
-              <button type="button" className="gen-btn" onClick={() => exportSessionJson()}>
-                Экспорт JSON
+              <button type="button" className="gen-btn w-full" onClick={() => exportSessionJson()}>
+                Сохранить файл
               </button>
             </div>
             <div className="field">
-              <span className="label">Импорт</span>
-              <button
-                type="button"
-                className="gen-btn"
-                onClick={() => importRef.current?.click()}
-              >
-                Импорт JSON
+              <button type="button" className="gen-btn w-full" onClick={() => importRef.current?.click()}>
+                Загрузить файл
               </button>
               <input
                 ref={importRef}
@@ -485,20 +455,19 @@ export function ControlPanel() {
               />
             </div>
           </div>
-          <div className="field">
-            <span className="label">Сброс</span>
+          <div className="field session-file-reset">
             <button
               type="button"
-              className="studio-btn-ghost rounded-xl border border-border bg-black/20 px-3 py-2 text-sm text-text hover:bg-black/30"
+              className="studio-btn-ghost w-full rounded-xl border border-border bg-black/20 px-3 py-2 text-sm text-text hover:bg-black/30"
               onClick={() => {
                 const ok = window.confirm("Сбросить всю сессию? Это очистит диалог, сценарий и ассеты.");
                 if (ok) dispatch({ type: "resetAll" });
               }}
             >
-              Сбросить сессию
+              Сбросить всё
             </button>
           </div>
-        </div>
+        </details>
       </div>
     </>
   );

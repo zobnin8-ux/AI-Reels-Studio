@@ -388,13 +388,6 @@ export function DialoguePanel() {
 
   const clockStr = clock.toLocaleTimeString("ru-RU", { hour12: false });
 
-  const topicOk = state.topic.trim().length > 0;
-  const slidesOk = state.slides.length > 0;
-  const imgTotal = state.images.length;
-  const imgDone = state.images.filter((x) => x.status === "done" || x.status === "error").length;
-  const imagesPackaged =
-    imgTotal > 0 && imgDone === imgTotal && state.images.some((x) => x.status === "done");
-
   return (
     <div className="stage-inner">
       <div className="panel-strip">
@@ -408,40 +401,9 @@ export function DialoguePanel() {
         <h1 className="stage-h1">
           Сценарий собирается <b>здесь</b>
         </h1>
-        <p className="stage-lead">
-          Опиши идею — тему, цифру, диалог или настроение. Студия разложит её на{" "}
-          <span>{state.slideCount} кадров</span>; картинки собираются отдельно из текста слайдов и селекторов.
-          Подпись и музыку — по запросу.
-        </p>
       </div>
 
-      <nav className="flow-hint" aria-label="Шаги работы">
-        <ol className="flow-hint-list">
-          <li className={["flow-hint-step", topicOk ? "done" : !topicOk ? "active" : ""].filter(Boolean).join(" ")}>
-            <span className="flow-hint-n" aria-hidden>
-              1
-            </span>
-            Тема слева
-          </li>
-          <li
-            className={["flow-hint-step", slidesOk ? "done" : topicOk ? "active" : ""].filter(Boolean).join(" ")}
-          >
-            <span className="flow-hint-n" aria-hidden>
-              2
-            </span>
-            Диалог — сценарий
-          </li>
-          <li
-            className={["flow-hint-step", imagesPackaged ? "done" : slidesOk ? "active" : ""]
-              .filter(Boolean)
-              .join(" ")}
-          >
-            <span className="flow-hint-n" aria-hidden>
-              3
-            </span>
-            Сборка: кадры и ZIP
-          </li>
-        </ol>
+      <nav className="flow-hint flow-hint--toolbar" aria-label="Откат хода">
         <div className="flow-hint-actions">
           <button
             type="button"
@@ -474,7 +436,7 @@ export function DialoguePanel() {
       {busy ? (
         <div className="busy-ribbon" role="status" aria-live="polite">
           <span className="dot-pulse" aria-hidden />
-          Запрос к модели… ответ появится в ленте ниже.
+          Запрос к модели…
         </div>
       ) : null}
 
@@ -546,12 +508,10 @@ export function DialoguePanel() {
                 </svg>
               </div>
               <h3 className="empty-h">
-                Готов принять <b>направление</b>
+                Чат с моделью
               </h3>
               <p className="empty-p">
-                Опиши тему, настроение или одну фразу — и я разложу её на сценарий.
-                <br />
-                <kbd>Enter</kbd> — отправить · <kbd>Shift</kbd> + <kbd>Enter</kbd> — новая строка
+                <kbd>Enter</kbd> — отправить · <kbd>Shift</kbd>+<kbd>Enter</kbd> — строка
               </p>
             </div>
           ) : (

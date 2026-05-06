@@ -354,6 +354,42 @@ aside.panel.anim-4 .panel-strip {
   color: var(--text-muted);
 }
 
+/* Компактная панель без списка шагов — только откат */
+.flow-hint.flow-hint--toolbar {
+  display: flex;
+  justify-content: flex-end;
+  margin: 0 var(--s-4) 10px;
+  padding: 6px 10px;
+  border: none;
+  background: transparent;
+}
+.flow-hint.flow-hint--toolbar .flow-hint-actions {
+  margin-top: 0;
+  padding-top: 0;
+  border-top: none;
+}
+
+.session-file-details {
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--r-md);
+  padding: 0 12px 12px;
+}
+.session-file-summary {
+  list-style: none;
+  cursor: pointer;
+  padding: 12px 0 8px;
+  user-select: none;
+}
+.session-file-summary::-webkit-details-marker {
+  display: none;
+}
+.session-file-fields {
+  margin-top: 4px;
+}
+.session-file-reset {
+  margin-top: 10px;
+}
+
 .bubble .bubble-role {
   font-family: "JetBrains Mono", monospace;
   font-size: 10px;
