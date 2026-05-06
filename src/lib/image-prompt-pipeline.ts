@@ -170,12 +170,6 @@ export function sanitizeForOpenAIImage(
     out += `\n\nVertical ${aspect} framing. Reserve generous negative space for later text overlay.`;
   }
 
-  if (project === "zobnin") {
-    // Не дописывать «substances / violence / intimacy» — сами слова в хвосте повышают риск ложного moderation_blocked.
-    out +=
-      "\n\nImage safety: bright editorial office scene; adults in professional clothing at work; calm, neutral mood; suitable for a general-audience business magazine.";
-  }
-
   return out;
 }
 
