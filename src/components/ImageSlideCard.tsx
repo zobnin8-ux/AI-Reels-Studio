@@ -3,7 +3,7 @@
 import type { GeneratedImage } from "@/lib/state";
 import { useStudio } from "@/lib/studio-store";
 import { regenerateOneImage } from "@/lib/actions";
-import { mergeImagePromptManual } from "@/lib/image-prompt-sync";
+import { mergeImagePromptManual, upsertImageBySlideId } from "@/lib/image-prompt-sync";
 import { resolveImagePrompt, sanitizeForOpenAIImage } from "@/lib/image-prompt-pipeline";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
@@ -60,14 +60,32 @@ export function ImageSlideCard({
 
   async function onRegenerate() {
     if (!image.slideId?.trim()) return;
-    const imagePrompts = mergeImagePromptManual(state, image.slideId, localPrompt);
+    const slideId = image.slideId;
+    const imagePrompts = mergeImagePromptManual(state, slideId, localPrompt);
     const mergedState = { ...state, imagePrompts };
-    dispatch({ type: "set", patch: { imagePrompts } });
+    const imgRow = mergedState.images.find((i) => i.slideId === slideId);
+    const imageId = imgRow?.id ?? `img_${slideId}`;
     setBusy(true);
     try {
-      const nextImage = await regenerateOneImage(mergedState, image.id, image.slideId);
-      const next = mergedState.images.map((x) => (x.id === image.id ? nextImage : x));
-      dispatch({ type: "set", patch: { images: next } });
+      const nextImage = await regenerateOneImage(mergedState, imageId, slideId);
+      const nextImages = upsertImageBySlideId(mergedState.images, nextImage);
+      dispatch({ type: "set", patch: { imagePrompts, images: nextImages } });
+    } catch (e: unknown) {
+      const m = e instanceof Error ? e.message : String(e);
+      setErrorShake(true);
+      window.setTimeout(() => setErrorShake(false), 500);
+      const errImage: GeneratedImage = {
+        id: imageId,
+        slideId,
+        prompt: imgRow?.prompt ?? image.prompt,
+        finalPrompt: imgRow?.finalPrompt,
+        status: "error",
+        error: m
+      };
+      dispatch({
+        type: "set",
+        patch: { imagePrompts, images: upsertImageBySlideId(mergedState.images, errImage) }
+      });
     } finally {
       setBusy(false);
     }

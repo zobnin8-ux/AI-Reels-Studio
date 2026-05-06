@@ -139,3 +139,15 @@ export function alignImagesToSlides(
     };
   });
 }
+
+/** Заменяет кадр по slideId или добавляет в конец (без дубликатов slideId в одном массиве). */
+export function upsertImageBySlideId<T extends { id: string; slideId?: string }>(
+  rows: T[],
+  next: T
+): T[] {
+  const sid = next.slideId;
+  if (!sid) return [...rows, next];
+  const idx = rows.findIndex((r) => r.slideId === sid);
+  if (idx < 0) return [...rows, next];
+  return rows.map((r, i) => (i === idx ? next : r));
+}

@@ -7,17 +7,11 @@ import { ImageGenerationProgress } from "@/components/ImageGenerationProgress";
 import { ReadinessChecklist } from "@/components/ReadinessChecklist";
 import { downloadZip, generateImagesFromState, regenerateOneImage } from "@/lib/actions";
 import { requestDialogueTurn } from "@/lib/dialogue-bridge";
-import { mergeImagePromptManual } from "@/lib/image-prompt-sync";
+import { mergeImagePromptManual, upsertImageBySlideId } from "@/lib/image-prompt-sync";
 import { resolveImagePrompt } from "@/lib/image-prompt-pipeline";
 import type { Slide } from "@/lib/state";
 
 const OUTPUT_SCENARIO_OPEN_KEY = "ai-reels-studio:v2026:scenarioOpen";
-
-function upsertImageRow<T extends { slideId?: string; id: string }>(rows: T[], next: T): T[] {
-  const idx = rows.findIndex((r) => r.slideId === next.slideId);
-  if (idx < 0) return [...rows, next];
-  return rows.map((r, i) => (i === idx ? next : r));
-}
 
 export function OutputPanel() {
   const { state, dispatch } = useStudio();
@@ -75,18 +69,29 @@ export function OutputPanel() {
     const id = imgRow?.id ?? `img_${slideId}`;
     const ip = mergeImagePromptManual(state, slideId, promptTextForSlide(slideId));
     const merged = { ...state, imagePrompts: ip };
-    dispatch({ type: "set", patch: { imagePrompts: ip } });
     setRegenSlideId(slideId);
     setGenError(null);
     try {
       const next = await regenerateOneImage(merged, id, slideId);
       dispatch({
         type: "set",
-        patch: { images: upsertImageRow(merged.images, next) }
+        patch: { imagePrompts: ip, images: upsertImageBySlideId(merged.images, next) }
       });
     } catch (e: unknown) {
       const m = e instanceof Error ? e.message : "Ошибка кадра";
       setGenError(m);
+      const errRow: (typeof state.images)[number] = {
+        id,
+        slideId,
+        prompt: imgRow?.prompt ?? "",
+        finalPrompt: imgRow?.finalPrompt,
+        status: "error",
+        error: m
+      };
+      dispatch({
+        type: "set",
+        patch: { imagePrompts: ip, images: upsertImageBySlideId(merged.images, errRow) }
+      });
       setPromptsShake(true);
       window.setTimeout(() => setPromptsShake(false), 500);
     } finally {
