@@ -134,22 +134,22 @@ export function ImageSlideCard({
 
     const prevFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
 
-    function listFocusable() {
+    function listFocusable(root: HTMLDivElement) {
       return Array.from(
-        panel.querySelectorAll<HTMLElement>(
+        root.querySelectorAll<HTMLElement>(
           "button:not([disabled]), textarea:not([disabled]), [href], input:not([disabled]), select:not([disabled])"
         )
       );
     }
 
     const raf = requestAnimationFrame(() => {
-      const nodes = listFocusable();
+      const nodes = listFocusable(panel);
       (nodes[0] ?? panel).focus();
     });
 
     function onKeyDown(e: KeyboardEvent) {
       if (e.key !== "Tab") return;
-      const nodes = listFocusable();
+      const nodes = listFocusable(panel);
       if (nodes.length === 0) return;
       const first = nodes[0];
       const last = nodes[nodes.length - 1];
@@ -228,7 +228,7 @@ export function ImageSlideCard({
                 title="Скопировать полный промпт"
                 aria-label={`Кадр ${index + 1}: скопировать полный промпт в буфер обмена`}
               >
-                {copied ? "Copied" : "Copy prompt"}
+                {copied ? "Скопировано" : "Копировать промпт"}
               </button>
               <button
                 type="button"
@@ -369,7 +369,7 @@ export function ImageSlideCard({
                         disabled={!localFinal.trim()}
                         onClick={() => void copyFinalPrompt()}
                       >
-                        {copied ? "Copied" : "Copy prompt"}
+                        {copied ? "Скопировано" : "Копировать промпт"}
                       </button>
                       <button
                         type="button"

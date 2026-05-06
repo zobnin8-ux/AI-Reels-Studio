@@ -436,6 +436,42 @@ body{
   flex-shrink:0;width:14px;height:14px;color:var(--warn);margin-top:1px;
 }
 
+.session-import-notice{
+  margin-top: var(--s-3);
+  padding: 10px 12px;
+  border-radius: var(--r-sm);
+  font-size:11.5px;
+  line-height:1.5;
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:10px;
+}
+.session-import-notice--ok{
+  background: rgba(91,224,218,0.08);
+  border: 1px solid rgba(91,224,218,0.28);
+  color: var(--accent-bright);
+}
+.session-import-notice--err{
+  background: var(--warn-tint);
+  border: 1px solid rgba(232,168,87,0.25);
+  color: #F4D6A8;
+}
+.session-import-notice-dismiss{
+  flex-shrink:0;
+  margin:0;padding:2px 8px;
+  border-radius: var(--r-sm);
+  border:1px solid rgba(255,255,255,0.12);
+  background: transparent;
+  color: inherit;
+  font-size:14px;
+  line-height:1;
+  cursor:pointer;
+}
+.session-import-notice-dismiss:hover{
+  border-color: rgba(255,255,255,0.25);
+}
+
 /* === Readiness checklist (replaces % bars) === */
 .readiness{
   background: var(--bg-elev-2);

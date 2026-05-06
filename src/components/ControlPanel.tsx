@@ -15,6 +15,8 @@ const projectOptions: { id: ProjectId; label: string }[] = [
 const emptyMusic = () => ({ queries: [] as string[], recommendations: [] as string[], avoid: [] as string[] });
 const BG_MODE_KEY = "ai-reels-studio:v2026:bgMode";
 
+type SessionImportNotice = { kind: "ok" | "error"; message: string };
+
 function defaultsForProject(project: ProjectId): Partial<StudioState> {
   if (project === "olgatrip") {
     return {
@@ -51,10 +53,18 @@ export function ControlPanel() {
     }
   });
   const importRef = useRef<HTMLInputElement>(null);
+  const [importNotice, setImportNotice] = useState<SessionImportNotice | null>(null);
 
   useEffect(() => {
     document.body.classList.toggle("showcase", richStudioBackground);
   }, [richStudioBackground]);
+
+  useEffect(() => {
+    if (!importNotice) return;
+    const ms = importNotice.kind === "error" ? 12_000 : 7000;
+    const t = window.setTimeout(() => setImportNotice(null), ms);
+    return () => window.clearTimeout(t);
+  }, [importNotice]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -153,12 +163,16 @@ export function ControlPanel() {
       const parsed = JSON.parse(text) as unknown;
       const res = parseSessionImport(parsed);
       if (!res.ok) {
-        window.alert(`Импорт отклонён: ${res.error}`);
+        setImportNotice({ kind: "error", message: `Импорт отклонён: ${res.error}` });
         return;
       }
       dispatch({ type: "replace", state: res.state, resetSessionUndo: true });
+      setImportNotice({ kind: "ok", message: "Сессия загружена из файла." });
     } catch {
-      window.alert("Не получилось импортировать JSON сессии. Проверь файл.");
+      setImportNotice({
+        kind: "error",
+        message: "Не удалось прочитать файл. Проверь, что это JSON сессии."
+      });
     } finally {
       if (importRef.current) importRef.current.value = "";
     }
@@ -180,8 +194,29 @@ export function ControlPanel() {
       <div className="panel-body min-h-0">
         <div className="warn-strip">
           Сессия хранится <b>только в браузере</b>. Перезагрузка/очистка данных может стереть работу — используй{" "}
-          <b>Export JSON</b> ниже как бэкап.
+          <b>Экспорт JSON</b> ниже как бэкап.
         </div>
+
+        {importNotice ? (
+          <div
+            role="status"
+            aria-live="polite"
+            className={[
+              "session-import-notice",
+              importNotice.kind === "ok" ? "session-import-notice--ok" : "session-import-notice--err"
+            ].join(" ")}
+          >
+            <span>{importNotice.message}</span>
+            <button
+              type="button"
+              className="session-import-notice-dismiss"
+              onClick={() => setImportNotice(null)}
+              aria-label="Закрыть уведомление"
+            >
+              ×
+            </button>
+          </div>
+        ) : null}
 
         <div className="group">
           <div className="group-title">Проект</div>
@@ -427,19 +462,19 @@ export function ControlPanel() {
           </p>
           <div className="field-row">
             <div className="field">
-              <span className="label">Export</span>
+              <span className="label">Экспорт</span>
               <button type="button" className="gen-btn" onClick={() => exportSessionJson()}>
-                Export JSON
+                Экспорт JSON
               </button>
             </div>
             <div className="field">
-              <span className="label">Import</span>
+              <span className="label">Импорт</span>
               <button
                 type="button"
                 className="gen-btn"
                 onClick={() => importRef.current?.click()}
               >
-                Import JSON
+                Импорт JSON
               </button>
               <input
                 ref={importRef}
@@ -451,7 +486,7 @@ export function ControlPanel() {
             </div>
           </div>
           <div className="field">
-            <span className="label">Reset</span>
+            <span className="label">Сброс</span>
             <button
               type="button"
               className="studio-btn-ghost rounded-xl border border-border bg-black/20 px-3 py-2 text-sm text-text hover:bg-black/30"
@@ -460,7 +495,7 @@ export function ControlPanel() {
                 if (ok) dispatch({ type: "resetAll" });
               }}
             >
-              Reset session
+              Сбросить сессию
             </button>
           </div>
         </div>

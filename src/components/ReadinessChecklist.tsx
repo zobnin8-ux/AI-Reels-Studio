@@ -68,7 +68,7 @@ export function ReadinessChecklist({
         status: refinements
       },
       { key: "frames", label: "Кадры", stateLabel: imgBusy ? "генерация" : imgDone ? "синхрон" : "—", status: frames },
-      { key: "caption", label: "Caption", stateLabel: state.caption.trim() ? "есть" : "—", status: caption },
+      { key: "caption", label: "Подпись", stateLabel: state.caption.trim() ? "есть" : "—", status: caption },
       { key: "music", label: "Музыка", stateLabel: musicTouched ? "заполнено" : "по запросу", status: music },
       { key: "zip", label: "Экспорт ZIP", stateLabel: exportReady ? "доступен" : "ждём данные", status: zip }
     ];

@@ -34,7 +34,13 @@ export function StudioTopBar() {
   const imgDone = useMemo(() => state.images.filter((x) => x.status === "done").length, [state.images]);
   const imgTotal = state.images.length;
   const genIx = useMemo(() => state.images.findIndex((x) => x.status === "generating"), [state.images]);
-  const statusLabel = zipBusy ? "ZIP" : imagePipelineBusy ? "Images" : chatBusy ? "Chat" : "Ready";
+  const statusLabel = zipBusy
+    ? "ZIP"
+    : imagePipelineBusy
+      ? "Кадры"
+      : chatBusy
+        ? "Чат"
+        : "Готово";
   const statusTone = zipBusy
     ? "var(--warn)"
     : imagePipelineBusy

@@ -504,10 +504,10 @@ export function DialoguePanel() {
               setTurnResults(null);
             }}
           >
-            Undo
+            Отменить ход
           </button>
           <button type="button" className="asset-badge" onClick={() => setTurnResults(null)}>
-            OK
+            Готово
           </button>
         </div>
       ) : null}

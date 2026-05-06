@@ -160,7 +160,7 @@ export function OutputPanel() {
             onClick={() => setMode("draft")}
             disabled={!!busy}
           >
-            Draft
+            Черновик
           </button>
           <button
             type="button"
@@ -168,7 +168,7 @@ export function OutputPanel() {
             onClick={() => setMode("build")}
             disabled={!!busy}
           >
-            Build
+            Сборка
           </button>
         </div>
       </div>
@@ -185,7 +185,7 @@ export function OutputPanel() {
           <div className="asset-block">
             <div className="asset-head">
               <div className="asset-h">
-                Сценарий <b>preview</b>
+                Сценарий · <b>превью</b>
               </div>
               <button
                 type="button"
@@ -263,7 +263,7 @@ export function OutputPanel() {
             <ReadinessChecklist state={state} compact />
 
             <div className="field" style={{ marginTop: 10 }}>
-              <span className="label mono">Auto-generate</span>
+              <span className="label mono">Автогенерация</span>
               <div
                 className="seg"
                 role="group"
@@ -275,9 +275,9 @@ export function OutputPanel() {
                   className={!state.autoGenerateImages ? "active" : ""}
                   onClick={() => dispatch({ type: "set", patch: { autoGenerateImages: false } })}
                   disabled={!!busy}
-                  title="Кадры генерируются только по кнопке Generate images"
+                  title="Кадры только по кнопке «Сгенерировать кадры»"
                 >
-                  Off
+                  Выкл
                 </button>
                 <button
                   type="button"
@@ -286,15 +286,17 @@ export function OutputPanel() {
                   disabled={!!busy}
                   title="Если в сообщении явно попросить «сгенерируй кадры», студия запустит генерацию автоматически"
                 >
-                  On
+                  Вкл
                 </button>
               </div>
             </div>
 
             <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-              <span className="asset-badge">slides: {state.slides.length}</span>
-              <span className="asset-badge">images done: {doneCount}/{state.images.length || 0}</span>
-              {errCount ? <span className="asset-badge">errors: {errCount}</span> : null}
+              <span className="asset-badge">слайдов: {state.slides.length}</span>
+              <span className="asset-badge">
+                кадров: {doneCount}/{state.images.length || 0}
+              </span>
+              {errCount ? <span className="asset-badge">ошибок: {errCount}</span> : null}
             </div>
 
             <div style={{ marginTop: 10 }}>
@@ -308,7 +310,11 @@ export function OutputPanel() {
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
                     <path d="M12 3v10M8 7l4-4 4 4M5 21h14" />
                   </svg>
-                  {busy === "images" ? <span className="studio-pulse-slow">Генерация…</span> : "Generate images"}
+                  {busy === "images" ? (
+                    <span className="studio-pulse-slow">Генерация…</span>
+                  ) : (
+                    "Сгенерировать кадры"
+                  )}
                 </button>
                 <button
                   type="button"
@@ -316,7 +322,7 @@ export function OutputPanel() {
                   onClick={() => genAbortRef.current?.abort()}
                   disabled={!genAbortRef.current || busy !== "images"}
                 >
-                  Cancel
+                  Прервать
                 </button>
               </div>
               {showBatchProgress ? <ImageGenerationProgress images={state.images} /> : null}
@@ -325,7 +331,7 @@ export function OutputPanel() {
               ) : null}
               {!canGenerateImages ? (
                 <p style={{ marginTop: 8, fontSize: 11, color: "var(--text-muted)" }}>
-                  Нужны слайды из диалога — затем Generate images.
+                  Нужны слайды из диалога — затем «Сгенерировать кадры».
                 </p>
               ) : null}
             </div>
@@ -336,7 +342,7 @@ export function OutputPanel() {
           <div className="asset-block">
           <div className="asset-head">
             <div className="asset-h">
-              Caption <b>пост</b>
+              Подпись к <b>посту</b>
             </div>
             <span className="asset-badge">text</span>
           </div>
@@ -426,7 +432,7 @@ export function OutputPanel() {
           <div className="export-list">
             В архив попадут: <span>сценарий</span>, <span>промпты OpenAI</span>,{" "}
             <span>уточнения</span>, <span>кадры</span>,{" "}
-            <span>caption</span> и <span>музыка</span> (если заполнены).
+            <span>подпись</span> и <span>музыка</span> (если заполнены).
           </div>
           <button
             type="button"
@@ -437,7 +443,7 @@ export function OutputPanel() {
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <path d="M12 3v12M8 11l4 4 4-4M5 21h14" />
             </svg>
-            {busy === "zip" ? "Сборка…" : "Download ZIP"}
+            {busy === "zip" ? "Сборка…" : "Скачать ZIP"}
           </button>
         </div>
       </div>
