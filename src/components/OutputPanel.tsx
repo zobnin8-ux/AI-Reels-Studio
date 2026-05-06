@@ -112,6 +112,18 @@ export function OutputPanel() {
     requestDialogueTurn(lines.join("\n"));
   }
 
+  function askGenerateMusic() {
+    const hint = typeof window !== "undefined" ? window.prompt("Уточнение по музыке (необязательно)", "") : "";
+    const lines = [
+      "Подбери музыку для этого проекта и сценария.",
+      "Верни ТОЛЬКО statePatch.music в формате: {\"queries\":[],\"recommendations\":[],\"avoid\":[]}.",
+      "Queries: короткие поисковые запросы (1 строка = 1 запрос). Recommendations: направления/жанры/темпо/вокал/настроение. Avoid: что избегать.",
+      "Не меняй slides, imagePrompts, caption и прочие поля.",
+      hint && hint.trim() ? `Пожелание: ${hint.trim()}` : ""
+    ].filter(Boolean);
+    requestDialogueTurn(lines.join("\n"));
+  }
+
   async function onGenerateImages() {
     if (state.slides.length === 0) return;
 
@@ -441,72 +453,81 @@ export function OutputPanel() {
           </div>
         ) : null}
 
-        {mode === "draft" ? (
-          <div className="asset-block">
-            <div className="asset-head">
-              <div className="asset-h">Музыка</div>
+        <div className="asset-block">
+          <div className="asset-head">
+            <div className="asset-h">Музыка</div>
+            <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
               <span className="asset-badge">мета</span>
-            </div>
-            <div className="field">
-              <span className="label mono">Поиск</span>
-              <textarea
-                className="textarea"
-                value={state.music.queries.join("\n")}
-                onChange={(e) =>
-                  dispatch({
-                    type: "set",
-                    patch: {
-                      music: {
-                        ...state.music,
-                        queries: e.target.value.split("\n").map((l) => l.trim()).filter(Boolean)
-                      }
-                    }
-                  })
-                }
-                placeholder="Одна строка — один запрос"
-                rows={3}
-              />
-            </div>
-            <div className="field">
-              <span className="label mono">Направления</span>
-              <textarea
-                className="textarea"
-                value={state.music.recommendations.join("\n")}
-                onChange={(e) =>
-                  dispatch({
-                    type: "set",
-                    patch: {
-                      music: {
-                        ...state.music,
-                        recommendations: e.target.value.split("\n").map((l) => l.trim()).filter(Boolean)
-                      }
-                    }
-                  })
-                }
-                rows={3}
-              />
-            </div>
-            <div className="field">
-              <span className="label mono">Избегать</span>
-              <textarea
-                className="textarea"
-                value={state.music.avoid.join("\n")}
-                onChange={(e) =>
-                  dispatch({
-                    type: "set",
-                    patch: {
-                      music: {
-                        ...state.music,
-                        avoid: e.target.value.split("\n").map((l) => l.trim()).filter(Boolean)
-                      }
-                    }
-                  })
-                }
-                rows={2}
-              />
+              <button
+                type="button"
+                className="asset-badge"
+                onClick={() => askGenerateMusic()}
+                disabled={!!busy}
+                title="Попросить модель заполнить music (queries / recommendations / avoid)"
+              >
+                Запросить у модели
+              </button>
             </div>
           </div>
-        ) : null}
+          <div className="field">
+            <span className="label mono">Поиск</span>
+            <textarea
+              className="textarea"
+              value={state.music.queries.join("\n")}
+              onChange={(e) =>
+                dispatch({
+                  type: "set",
+                  patch: {
+                    music: {
+                      ...state.music,
+                      queries: e.target.value.split("\n").map((l) => l.trim()).filter(Boolean)
+                    }
+                  }
+                })
+              }
+              placeholder="Одна строка — один запрос"
+              rows={3}
+            />
+          </div>
+          <div className="field">
+            <span className="label mono">Направления</span>
+            <textarea
+              className="textarea"
+              value={state.music.recommendations.join("\n")}
+              onChange={(e) =>
+                dispatch({
+                  type: "set",
+                  patch: {
+                    music: {
+                      ...state.music,
+                      recommendations: e.target.value.split("\n").map((l) => l.trim()).filter(Boolean)
+                    }
+                  }
+                })
+              }
+              rows={3}
+            />
+          </div>
+          <div className="field">
+            <span className="label mono">Избегать</span>
+            <textarea
+              className="textarea"
+              value={state.music.avoid.join("\n")}
+              onChange={(e) =>
+                dispatch({
+                  type: "set",
+                  patch: {
+                    music: {
+                      ...state.music,
+                      avoid: e.target.value.split("\n").map((l) => l.trim()).filter(Boolean)
+                    }
+                  }
+                })
+              }
+              rows={2}
+            />
+          </div>
+        </div>
 
         <div className="export-dock">
           <div className="export-dock-title">Архив</div>
