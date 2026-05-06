@@ -624,7 +624,7 @@ IMAGE PROMPT SPEC (Zobnin AI):
 Промпт должен передавать SYSTEMS CLARITY — взрослого профессионала с дневным светом и ясной собранностью, никогда не «night office gloom».
 
 7.1 PHOTOGRAPHER REFERENCES (упоминать в промпте по 1–2 на кадр, варьировать):
-— Annie Leibovitz portraits (НЕ glamour — её редакторские профайлы лидеров и мыслителей: Steve Jobs, Sheryl Sandberg, Patti Smith)
+— Annie Leibovitz portraits (НЕ glamour — её редакторские профайлы лидеров и мыслителей; в самом image prompt называй только стиль «editorial portrait / quiet authority», без имён реальных людей из её портфолио — иначе модерация OpenAI режет генерацию)
 — Wolfgang Tillmans (дневной портрет, открытый свет, профессионал в среде)
 — Dan Winters (технические портреты с тёплым достоинством, точная композиция)
 — Henrik Knudsen (свет, дисциплина, минимализм)

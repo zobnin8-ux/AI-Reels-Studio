@@ -37,6 +37,22 @@ export function softenImagePromptForModeration(prompt: string): string {
     [/\bsuspicious\b/gi, "curious"],
     [/\bassessing\b/gi, "considering"],
     [/\bevaluating\b/gi, "working through"],
+    [/\bexamining\b/gi, "looking at"],
+    [/\banalyzing\b/gi, "reviewing"],
+    [/\bjudging\b/gi, "considering"],
+    [/\bweighing\b/gi, "considering"],
+    [/\bdoubtful\b/gi, "thoughtful"],
+    [/\bcritical (expression|look|gaze)\b/gi, "thoughtful $1"],
+    [/\bpiercing (gaze|look|eyes)\b/gi, "attentive $1"],
+    [/\bpointed (expression|look|gaze)\b/gi, "direct $1"],
+    [/\bintense\b/gi, "steady"],
+    [/\binterrogat\w*\b/gi, "discussion"],
+    [/\bsurveillance\b/gi, "overview"],
+    [/\binvestigating\b/gi, "reviewing"],
+    [/\bconfrontation\b/gi, "conversation"],
+    [/\bSteve Jobs\b/gi, "a tech executive"],
+    [/\bSheryl Sandberg\b/gi, "an executive"],
+    [/\bPatti Smith\b/gi, "a musician"],
     [/\blate at night\b/gi, "mid-morning"],
     [/\bpast midnight\b/gi, "late morning"],
     [/\bdeep into the night\b/gi, "mid-morning"],
@@ -155,8 +171,9 @@ export function sanitizeForOpenAIImage(
   }
 
   if (project === "zobnin") {
+    // Не дописывать «substances / violence / intimacy» — сами слова в хвосте повышают риск ложного moderation_blocked.
     out +=
-      "\n\nImage safety: editorial workplace photography; calm, present professionals; neutral collaborative tone; routine professional context only — no substances, violence, or intimacy implied.";
+      "\n\nImage safety: bright editorial office scene; adults in professional clothing at work; calm, neutral mood; suitable for a general-audience business magazine.";
   }
 
   return out;
