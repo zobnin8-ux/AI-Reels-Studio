@@ -265,48 +265,6 @@ export function ControlPanel() {
         </div>
 
         <div className="group">
-          <div className="group-title">Тон и стиль</div>
-          <div className="field-row">
-            <div className="field">
-              <span className="label">Тон</span>
-              <select
-                className="select"
-                value={state.mood}
-                onChange={(e) =>
-                  dispatch({ type: "set", patch: { mood: e.target.value as StudioState["mood"] } })
-                }
-              >
-                <option value="aggressive">Жёсткий</option>
-                <option value="soft">Мягкий</option>
-                <option value="provocative">Провокация</option>
-                <option value="positive">Позитив</option>
-                <option value="neutral">Нейтрально</option>
-              </select>
-            </div>
-            <div className="field">
-              <span className="label">Визуал</span>
-              <select
-                className="select"
-                value={state.visualStyle}
-                onChange={(e) =>
-                  dispatch({
-                    type: "set",
-                    patch: { visualStyle: e.target.value as StudioState["visualStyle"] }
-                  })
-                }
-              >
-                <option value="darkBrutal">Тёмный брутальный</option>
-                <option value="lightMinimal">Светлый минимал</option>
-                <option value="brightPositive">Яркий позитив</option>
-                <option value="portraLifestyle">Портрет lifestyle</option>
-                <option value="editorial">Редакционный</option>
-                <option value="tech">Техно</option>
-              </select>
-            </div>
-          </div>
-        </div>
-
-        <div className="group">
           <div className="group-title">CTA и вывод</div>
           <div className="field">
             <span className="label">Режим CTA</span>

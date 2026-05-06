@@ -8,6 +8,23 @@ import type {
   ZobninSceneMeta
 } from "@/lib/state";
 
+/** Нейтральная база для Image API: тон и «визуал» задаются текстом слайдов и диалогом, не селекторами UI. */
+export const IMAGE_PIPELINE_TONE: Mood = "neutral";
+export const IMAGE_PIPELINE_VISUAL: VisualStyle = "editorial";
+
+/** Минимальная длина финальной строки для OpenAI Image — ниже этого добавляем технический добивочный блок. */
+export const MIN_IMAGE_PROMPT_CHARS = 200;
+
+function ensureMinImagePromptLength(prompt: string, minLen: number): string {
+  let out = prompt.trim();
+  if (out.length >= minLen) return out;
+  const pad = `
+PHOTOGRAPHIC EXTENSION (mandatory density — photorealistic documentary feel, no text in frame):
+Articulate lens intent (e.g. 35–50mm observational), motivated practical light, depth of field choice, surface textures, spatial depth, subject-environment tension, micro-expression or posture beat that carries emotion without illustrating slide wording literally. Reserve generous negative space for later typography overlay; single coherent moment; continuity with anchors above.
+`.trim();
+  return `${out}\n\n${pad}`;
+}
+
 /**
  * Сборка финального image prompt для OpenAI Image API по ТЗ:
  * MASTER_PROMPT + ACCOUNT_WORLD + TONE_MAP + VISUAL_STYLE_MAP + interpretSlide + COMPOSITION_RULES + NEGATIVE_RULES.
@@ -219,7 +236,7 @@ export function buildImagePrompt(input: BuildImagePromptInput): string {
     out += `\n\nUSER REFINEMENT (cosmetic only):\n${hint}`;
   }
 
-  return out;
+  return ensureMinImagePromptLength(out, MIN_IMAGE_PROMPT_CHARS);
 }
 
 /** Текст слайда для поля slideText: заголовок + тело. */

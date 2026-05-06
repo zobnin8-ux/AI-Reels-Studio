@@ -1,6 +1,12 @@
 "use client";
 
-import { buildImagePrompt, formatSceneAnchorsFromMeta, slideBodyForImagePrompt } from "@/lib/build-image-prompt";
+import {
+  buildImagePrompt,
+  formatSceneAnchorsFromMeta,
+  IMAGE_PIPELINE_TONE,
+  IMAGE_PIPELINE_VISUAL,
+  slideBodyForImagePrompt
+} from "@/lib/build-image-prompt";
 import {
   sceneMetaMatchesProject,
   type ChatMessage,
@@ -26,7 +32,7 @@ function aspectFromContentType(contentType: StudioState["contentType"]) {
   return contentType === "reels" ? ("9:16" as const) : ("4:5" as const);
 }
 
-/** Сборка единственной строки для OpenAI Image API по ТЗ (аккаунт, тон, стиль, текст слайда + опц. косметика). */
+/** Сборка строки для OpenAI Image API: тон/«стиль» шаблона фиксированы нейтрально — живость задают текст слайда и sceneMeta из диалога. */
 function composeImagePrompt(
   state: StudioState,
   slide: { id: string; title: string; text: string },
@@ -36,8 +42,8 @@ function composeImagePrompt(
   const useAnchors = meta && sceneMetaMatchesProject(state.project, meta);
   return buildImagePrompt({
     account: state.project,
-    tone: state.mood,
-    visualStyle: state.visualStyle,
+    tone: IMAGE_PIPELINE_TONE,
+    visualStyle: IMAGE_PIPELINE_VISUAL,
     slideText: slideBodyForImagePrompt(slide),
     cosmeticHint: cosmeticHint.trim() || undefined,
     sceneAnchors: useAnchors ? formatSceneAnchorsFromMeta(meta) : undefined
@@ -94,8 +100,6 @@ export function buildSelectorsPayload(
   | "project"
   | "contentType"
   | "slideCount"
-  | "mood"
-  | "visualStyle"
   | "outputMode"
   | "ctaMode"
   | "website"
@@ -106,8 +110,6 @@ export function buildSelectorsPayload(
     project: state.project,
     contentType: state.contentType,
     slideCount: state.slideCount,
-    mood: state.mood,
-    visualStyle: state.visualStyle,
     outputMode: state.outputMode,
     ctaMode: state.ctaMode,
     website: state.website,
@@ -403,8 +405,8 @@ export async function regenerateOneImage(
       ? composeImagePrompt(state, slide, hint)
       : buildImagePrompt({
           account: state.project,
-          tone: state.mood,
-          visualStyle: state.visualStyle,
+          tone: IMAGE_PIPELINE_TONE,
+          visualStyle: IMAGE_PIPELINE_VISUAL,
           slideText: hint || "(no slide)",
           cosmeticHint: undefined
         });

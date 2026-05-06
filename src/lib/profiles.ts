@@ -307,15 +307,14 @@ And that is what creates the shift.
 
 ---
 APP INTEGRATION (same request receives SESSION CONTEXT SELECTORS + CURRENT SESSION STATE below):
-- SELECTORS win on conflicts; MOOD/TONE modulates sharpness and intensity (not image prompts).
-- VISUAL STYLE nudges how cinematic vs stark written scenes feel in slide text — still moment-based, never generic.
+- HARD UI CONSTRAINTS only: slide count, reels/post, output mode, CTA — see SESSION CONTEXT SELECTORS. Emotional tone and visual language in copy come from the user's messages and your slides, not from mood/visual dropdowns (removed).
 - SLIDE COUNT TARGET: match when generating full scenarios; preserve slide ids on partial edits.
 - CONTENT FORMAT (reels/post): Reels beats vs Post pacing per selectors.
 - OUTPUT MODE: follow global rules for on-slide vs separate vs both.
 - CTA MODE: follow injected rules (beznego.com / poslenego.com when website mode aligns with profile).
 - statePatch.prompts: optional short cosmetic hints per slide only when user asks for regeneration tweaks — never English image prompts.
 - statePatch.sceneMeta: when slides change, include per-slide visual anchors (see SCENE METADATA above); never surface in "reply".
-- Background images are composed in-app from slide text + account + tone + visual style + sceneMeta (poslenego schema when PROJECT is poslenego).`,
+- Background images are composed in-app from slide text + account world + sceneMeta + a neutral technical photo template for OpenAI Image (poslenego schema); richness comes from slide copy and anchors.`,
   },
   zobnin: {
     id: "zobnin",
@@ -608,14 +607,14 @@ Every output must feel like:
 
 ---
 APP INTEGRATION (same request receives SESSION CONTEXT SELECTORS + CURRENT SESSION STATE below):
-- SELECTORS win on conflicts with examples above; MOOD/TONE and VISUAL STYLE modulate sharpness and density of lines (not image prompts).
+- HARD UI CONSTRAINTS only: slide count, reels/post, output mode, CTA. Sharpness and density of lines come from dialogue and script — not from mood/visual selectors (removed).
 - SLIDE COUNT TARGET: match slide count when building full scenarios; preserve ids on partial edits.
 - CONTENT FORMAT (reels/post): use Reels pacing when reels; post structure when post.
 - OUTPUT MODE: obey global rules for on-slide vs separate vs both copy.
 - CTA MODE: follow injected CTA rules in SESSION CONTEXT SELECTORS ("write System" remains allowed where selectors permit).
 - statePatch.prompts: optional short cosmetic hints per slide only when user asks for regeneration tweaks — never English image prompts.
 - statePatch.sceneMeta: when slides change, include per-slide system/visual anchors (see SYSTEM / SCENE METADATA above); same array length as slides; never surface in "reply".
-- Background images are built in-app from slide text + account + tone + visual style + sceneMeta (zobnin schema when PROJECT is zobnin).`,
+- Background images are built in-app from slide text + account world + sceneMeta + neutral template (zobnin schema when PROJECT is zobnin).`,
   },
   olgatrip: {
     id: "olgatrip",
@@ -974,13 +973,12 @@ Rules:
 APP INTEGRATION (same request also receives SESSION CONTEXT SELECTORS + CURRENT SESSION STATE below):
 - SLIDE COUNT TARGET: when generating or rebuilding a full scenario, match exactly that many slides; preserve slide ids when the user edits partially.
 - CONTENT FORMAT (reels/post): use labeled time beats for Reels; for Post, adapt sections without inventing fake second-by-second timing unless appropriate.
-- MOOD/TONE (selector): modulates heat, directness, vulnerability vs tension in the language — it never replaces the SCENE DIVERSITY ENGINE.
-- VISUAL STYLE (selector): nudges how spare vs concrete the written moments are; not a fixed aesthetic in copy and not an image prompt.
+- Heat, directness, vulnerability vs tension in language — infer from the user's messages and scene arc; SCENE DIVERSITY ENGINE still applies; mood/visual UI selectors removed.
 - OUTPUT MODE: follow global rules for on-slide vs separate vs both text.
 - CTA MODE: obey the CTA lines injected in SESSION CONTEXT SELECTORS while keeping OlgaTrip softness unless selectors demand otherwise.
 - statePatch.prompts: only optional short per-slide cosmetic hints when the user asks for regeneration tweaks — never full English image prompts.
 - statePatch.sceneMeta: when slides change, include OlgaTrip scene anchors per slide (see SCENE METADATA above); never surface in "reply".
-- Background images are composed in-app from slide text + account + tone + visual style + sceneMeta (OlgaTrip schema when PROJECT is olgatrip); never author raw VISUAL PROMPTS for the image API in this chat.`,
+- Background images are composed in-app from slide text + account world + sceneMeta + neutral template (OlgaTrip schema); never author raw VISUAL PROMPTS for the image API in this chat.`,
   }
 };
 

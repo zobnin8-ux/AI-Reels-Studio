@@ -8,15 +8,6 @@ const selectorsSchema = z.object({
   project: z.enum(["poslenego", "zobnin", "olgatrip"]),
   contentType: z.enum(["reels", "post"]),
   slideCount: z.union([z.literal(5), z.literal(7), z.literal(9), z.literal(10), z.literal(12)]),
-  mood: z.enum(["aggressive", "soft", "provocative", "positive", "neutral"]),
-  visualStyle: z.enum([
-    "darkBrutal",
-    "lightMinimal",
-    "brightPositive",
-    "portraLifestyle",
-    "editorial",
-    "tech"
-  ]),
   outputMode: z.enum(["textInImages", "textSeparate", "both"]),
   ctaMode: z.enum(["website", "direct", "none", "custom"]),
   website: z.string(),
