@@ -83,7 +83,7 @@ export function StudioTopBar() {
           <span className="brand-mark">
             Reels <b>Studio</b>
           </span>
-          <span className="brand-sub">v 2 0 2 6 · neural studio</span>
+          <span className="brand-sub">v 2 0 2 6 · нейро-студия</span>
         </div>
       </div>
 

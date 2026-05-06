@@ -132,7 +132,7 @@ export function ControlPanel() {
     resetContentAfterProjectSwitch(nextProject);
   }
 
-  const stripMeta = "live · api";
+  const stripMeta = "онлайн · API";
 
   function exportSessionJson() {
     try {
@@ -250,8 +250,8 @@ export function ControlPanel() {
                   dispatch({ type: "set", patch: { contentType: e.target.value as StudioState["contentType"] } })
                 }
               >
-                <option value="reels">Reels · 9:16 · 1080×1920</option>
-                <option value="post">Post · 4:5 (1080×1350)</option>
+                <option value="reels">Ролики · 9:16 · 1080×1920</option>
+                <option value="post">Пост · 4:5 (1080×1350)</option>
               </select>
             </div>
             <div className="field">
@@ -289,11 +289,11 @@ export function ControlPanel() {
                   dispatch({ type: "set", patch: { mood: e.target.value as StudioState["mood"] } })
                 }
               >
-                <option value="aggressive">Aggressive</option>
-                <option value="soft">Soft</option>
-                <option value="provocative">Provocative</option>
-                <option value="positive">Positive</option>
-                <option value="neutral">Neutral</option>
+                <option value="aggressive">Жёсткий</option>
+                <option value="soft">Мягкий</option>
+                <option value="provocative">Провокация</option>
+                <option value="positive">Позитив</option>
+                <option value="neutral">Нейтрально</option>
               </select>
             </div>
             <div className="field">
@@ -308,12 +308,12 @@ export function ControlPanel() {
                   })
                 }
               >
-                <option value="darkBrutal">Dark brutal</option>
-                <option value="lightMinimal">Light minimal</option>
-                <option value="brightPositive">Bright positive</option>
-                <option value="portraLifestyle">Portra lifestyle</option>
-                <option value="editorial">Editorial</option>
-                <option value="tech">Tech</option>
+                <option value="darkBrutal">Тёмный брутальный</option>
+                <option value="lightMinimal">Светлый минимал</option>
+                <option value="brightPositive">Яркий позитив</option>
+                <option value="portraLifestyle">Портрет lifestyle</option>
+                <option value="editorial">Редакционный</option>
+                <option value="tech">Техно</option>
               </select>
             </div>
           </div>
@@ -323,7 +323,7 @@ export function ControlPanel() {
           <div className="group-title">CTA и вывод</div>
           <p className="group-hint">Как зовём в действие и где текст относительно картинки.</p>
           <div className="field">
-            <span className="label">CTA mode</span>
+            <span className="label">Режим CTA</span>
             <select
               className="select"
               value={state.ctaMode}
@@ -331,10 +331,10 @@ export function ControlPanel() {
                 dispatch({ type: "set", patch: { ctaMode: e.target.value as StudioState["ctaMode"] } })
               }
             >
-              <option value="website">Website</option>
-              <option value="direct">Direct trigger</option>
-              <option value="none">None</option>
-              <option value="custom">Custom</option>
+              <option value="website">Сайт</option>
+              <option value="direct">Триггер в кадре</option>
+              <option value="none">Без CTA</option>
+              <option value="custom">Свой текст</option>
             </select>
           </div>
           {state.ctaMode === "website" ? (
@@ -377,7 +377,7 @@ export function ControlPanel() {
             </div>
           ) : null}
           <div className="field">
-            <span className="label">Output mode</span>
+            <span className="label">Текст в выводе</span>
             <select
               className="select"
               value={state.outputMode}
@@ -385,9 +385,9 @@ export function ControlPanel() {
                 dispatch({ type: "set", patch: { outputMode: e.target.value as StudioState["outputMode"] } })
               }
             >
-              <option value="textInImages">Text inside images</option>
-              <option value="textSeparate">Text separate</option>
-              <option value="both">Both</option>
+              <option value="textInImages">Текст в кадрах</option>
+              <option value="textSeparate">Текст отдельно</option>
+              <option value="both">И то, и другое</option>
             </select>
           </div>
         </div>
@@ -396,7 +396,7 @@ export function ControlPanel() {
           <div className="group-title">Тема</div>
           <p className="group-hint">Коротко, о чём ролик — попадёт в контекст диалога.</p>
           <div className="field">
-            <span className="label mono">Topic</span>
+            <span className="label mono">Тема</span>
             <input
               className="input"
               value={state.topic}

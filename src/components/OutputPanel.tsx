@@ -230,7 +230,7 @@ export function OutputPanel() {
               <div className="asset-h">
                 Уточнения <b>по кадрам</b>
               </div>
-              <span className="asset-badge">opt</span>
+              <span className="asset-badge">опция</span>
             </div>
             <p className="asset-desc">
               Опционально: короткие правки к автособранному промпту (одна строка — один кадр). Картинки строятся из
@@ -254,7 +254,7 @@ export function OutputPanel() {
               <div className="asset-h">
                 Сборка <b>пакета</b>
               </div>
-              <span className="asset-badge">build</span>
+              <span className="asset-badge">сборка</span>
             </div>
             <p className="asset-desc">
               Тут только то, что нужно для финального результата: генерация кадров и скачивание ZIP.
@@ -344,7 +344,7 @@ export function OutputPanel() {
             <div className="asset-h">
               Подпись к <b>посту</b>
             </div>
-            <span className="asset-badge">text</span>
+            <span className="asset-badge">текст</span>
           </div>
           <p className="asset-desc">Подпись из диалога или правка здесь.</p>
           <textarea
@@ -363,7 +363,7 @@ export function OutputPanel() {
             <div className="asset-h">
               Музыка <b>meta</b>
             </div>
-            <span className="asset-badge">library</span>
+            <span className="asset-badge">мета</span>
           </div>
           <p className="asset-desc">Поисковые запросы и направления (без стриминга).</p>
           <div className="field">

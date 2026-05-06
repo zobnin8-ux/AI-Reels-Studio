@@ -129,8 +129,10 @@ export function ImageSlideCard({
 
   useEffect(() => {
     if (!railSheetOpen) return;
-    const panel = railSheetPanelRef.current;
-    if (!panel) return;
+    const panelEl = railSheetPanelRef.current;
+    if (!panelEl) return;
+    /** Отдельная привязка — TS не сохраняет сужение для ref во вложенных функциях. */
+    const sheetRoot: HTMLDivElement = panelEl;
 
     const prevFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
 
@@ -143,13 +145,13 @@ export function ImageSlideCard({
     }
 
     const raf = requestAnimationFrame(() => {
-      const nodes = listFocusable(panel);
-      (nodes[0] ?? panel).focus();
+      const nodes = listFocusable(sheetRoot);
+      (nodes[0] ?? sheetRoot).focus();
     });
 
     function onKeyDown(e: KeyboardEvent) {
       if (e.key !== "Tab") return;
-      const nodes = listFocusable(panel);
+      const nodes = listFocusable(sheetRoot);
       if (nodes.length === 0) return;
       const first = nodes[0];
       const last = nodes[nodes.length - 1];
@@ -164,10 +166,10 @@ export function ImageSlideCard({
       }
     }
 
-    panel.addEventListener("keydown", onKeyDown);
+    sheetRoot.addEventListener("keydown", onKeyDown);
     return () => {
       cancelAnimationFrame(raf);
-      panel.removeEventListener("keydown", onKeyDown);
+      sheetRoot.removeEventListener("keydown", onKeyDown);
       prevFocus?.focus();
     };
   }, [railSheetOpen]);
@@ -306,7 +308,7 @@ export function ImageSlideCard({
               ) : status === "waiting" ? (
                 <span>В очереди</span>
               ) : (
-                <span>preview</span>
+                <span>превью</span>
               )}
             </div>
           )}

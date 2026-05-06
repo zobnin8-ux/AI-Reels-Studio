@@ -100,7 +100,7 @@ const SHORTCUTS: { label: string; message: string }[] = [
       "Дай короткие опциональные уточнения для перегенерации кадров (свет, настроение), если нужно — по одному на слайд."
   },
   {
-    label: "Caption",
+    label: "Подпись",
     message: "Напиши caption, не повторяя текст слайдов, с учётом CTA."
   },
   {
@@ -315,7 +315,7 @@ export function DialoguePanel() {
       if (patch.slides !== undefined) results.push({ key: "slides", label: "Слайды" });
       if (patch.prompts !== undefined) results.push({ key: "prompts", label: "Уточнения" });
       if (patch.sceneMeta !== undefined) results.push({ key: "sceneMeta", label: "Якоря" });
-      if (patch.caption !== undefined) results.push({ key: "caption", label: "Caption" });
+      if (patch.caption !== undefined) results.push({ key: "caption", label: "Подпись" });
       if (patch.music !== undefined) results.push({ key: "music", label: "Музыка" });
       if (results.length > 0) {
         const undoState: StudioState = {
@@ -349,7 +349,7 @@ export function DialoguePanel() {
             return { ...r, items: [...r.items, { key: "images", label: "Кадры" }] };
           });
         } catch (imgErr: unknown) {
-          const m = imgErr instanceof Error ? imgErr.message : "Image gen error";
+          const m = imgErr instanceof Error ? imgErr.message : "ошибка генерации";
           const errMsg: ChatMessage = {
             id: uid("a"),
             role: "assistant",
@@ -411,7 +411,7 @@ export function DialoguePanel() {
         <p className="stage-lead">
           Опиши идею — тему, цифру, диалог или настроение. Студия разложит её на{" "}
           <span>{state.slideCount} кадров</span>; картинки собираются отдельно из текста слайдов и селекторов.
-          Caption и музыку — по запросу.
+          Подпись и музыку — по запросу.
         </p>
       </div>
 
@@ -421,7 +421,7 @@ export function DialoguePanel() {
             <span className="flow-hint-n" aria-hidden>
               1
             </span>
-            Тема слева (Topic)
+            Тема слева
           </li>
           <li
             className={["flow-hint-step", slidesOk ? "done" : topicOk ? "active" : ""].filter(Boolean).join(" ")}
@@ -439,7 +439,7 @@ export function DialoguePanel() {
             <span className="flow-hint-n" aria-hidden>
               3
             </span>
-            Build: кадры и ZIP
+            Сборка: кадры и ZIP
           </li>
         </ol>
         <div className="flow-hint-actions">

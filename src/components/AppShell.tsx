@@ -15,7 +15,7 @@ function AppGrid() {
   return (
     <main className="layout">
       <aside className="panel anim-1 min-h-0">
-        <PanelErrorBoundary label="Control Panel">
+        <PanelErrorBoundary label="Параметры">
           <ControlPanel />
         </PanelErrorBoundary>
       </aside>
