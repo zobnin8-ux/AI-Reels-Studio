@@ -28,6 +28,7 @@ export function ImageSlideCard({
   const prevErrorRef = useRef<string | undefined>(undefined);
   const [railSheetOpen, setRailSheetOpen] = useState(false);
   const [copied, setCopied] = useState(false);
+  const railSheetPanelRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     setLocalPrompt(image.prompt);
@@ -123,6 +124,51 @@ export function ImageSlideCard({
     document.body.style.overflow = "hidden";
     return () => {
       document.body.style.overflow = prev;
+    };
+  }, [railSheetOpen]);
+
+  useEffect(() => {
+    if (!railSheetOpen) return;
+    const panel = railSheetPanelRef.current;
+    if (!panel) return;
+
+    const prevFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+
+    function listFocusable() {
+      return Array.from(
+        panel.querySelectorAll<HTMLElement>(
+          "button:not([disabled]), textarea:not([disabled]), [href], input:not([disabled]), select:not([disabled])"
+        )
+      );
+    }
+
+    const raf = requestAnimationFrame(() => {
+      const nodes = listFocusable();
+      (nodes[0] ?? panel).focus();
+    });
+
+    function onKeyDown(e: KeyboardEvent) {
+      if (e.key !== "Tab") return;
+      const nodes = listFocusable();
+      if (nodes.length === 0) return;
+      const first = nodes[0];
+      const last = nodes[nodes.length - 1];
+      if (e.shiftKey) {
+        if (document.activeElement === first) {
+          e.preventDefault();
+          last.focus();
+        }
+      } else if (document.activeElement === last) {
+        e.preventDefault();
+        first.focus();
+      }
+    }
+
+    panel.addEventListener("keydown", onKeyDown);
+    return () => {
+      cancelAnimationFrame(raf);
+      panel.removeEventListener("keydown", onKeyDown);
+      prevFocus?.focus();
     };
   }, [railSheetOpen]);
 
@@ -272,9 +318,11 @@ export function ImageSlideCard({
                   type="button"
                   className="frame-rail-sheet-backdrop"
                   aria-label="Закрыть панель промпта"
+                  tabIndex={-1}
                   onClick={() => setRailSheetOpen(false)}
                 />
                 <div
+                  ref={railSheetPanelRef}
                   className="frame-rail-sheet"
                   role="dialog"
                   aria-modal="true"

@@ -156,7 +156,7 @@ export function ControlPanel() {
         window.alert(`Импорт отклонён: ${res.error}`);
         return;
       }
-      dispatch({ type: "replace", state: res.state });
+      dispatch({ type: "replace", state: res.state, resetSessionUndo: true });
     } catch {
       window.alert("Не получилось импортировать JSON сессии. Проверь файл.");
     } finally {

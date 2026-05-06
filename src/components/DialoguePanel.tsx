@@ -114,7 +114,7 @@ const SHORTCUTS: { label: string; message: string }[] = [
 ];
 
 export function DialoguePanel() {
-  const { state, dispatch } = useStudio();
+  const { state, dispatch, sessionUndoResetEpoch } = useStudio();
   const { setChatBusy } = useStudioActivity();
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);
@@ -138,6 +138,19 @@ export function DialoguePanel() {
   /** Полные снимки сессии до каждого успешного хода (откат ⌘/Ctrl+Shift+Z). */
   const sessionUndoStackRef = useRef<StudioState[]>([]);
   const [sessionUndoDepth, setSessionUndoDepth] = useState(0);
+  const prevSessionUndoEpochRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    if (prevSessionUndoEpochRef.current === null) {
+      prevSessionUndoEpochRef.current = sessionUndoResetEpoch;
+      return;
+    }
+    if (sessionUndoResetEpoch === prevSessionUndoEpochRef.current) return;
+    prevSessionUndoEpochRef.current = sessionUndoResetEpoch;
+    sessionUndoStackRef.current = [];
+    setSessionUndoDepth(0);
+    setTurnResults(null);
+  }, [sessionUndoResetEpoch]);
 
   useEffect(() => {
     setSoundOn(getSoundEnabled());

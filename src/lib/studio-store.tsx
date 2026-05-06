@@ -1,12 +1,21 @@
 "use client";
 
-import React, { createContext, useContext, useEffect, useMemo, useReducer, useRef } from "react";
+import React, {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useReducer,
+  useRef,
+  useState
+} from "react";
 import { syncImagesWithSlidePrompts } from "@/lib/prompt-sync";
 import { createInitialState, type StudioState } from "@/lib/state";
 
 type Action =
   | { type: "set"; patch: Partial<StudioState> }
-  | { type: "replace"; state: StudioState }
+  | { type: "replace"; state: StudioState; resetSessionUndo?: boolean }
   | { type: "resetAll" };
 
 const STORAGE_KEY = "ai-reels-studio:v2026:session";
@@ -91,13 +100,30 @@ function reducer(state: StudioState, action: Action): StudioState {
 type StudioStore = {
   state: StudioState;
   dispatch: React.Dispatch<Action>;
+  /** Увеличивается при импорте сессии и полном сбросе — сбрасывает локальный стек «шаг назад» в диалоге. */
+  sessionUndoResetEpoch: number;
 };
 
 const Ctx = createContext<StudioStore | null>(null);
 
 export function StudioProvider({ children }: { children: React.ReactNode }) {
-  const [state, dispatch] = useReducer(reducer, undefined, loadInitialState);
-  const value = useMemo(() => ({ state, dispatch }), [state]);
+  const [state, _dispatch] = useReducer(reducer, undefined, loadInitialState);
+  const [sessionUndoResetEpoch, setSessionUndoResetEpoch] = useState(0);
+
+  const dispatch = useCallback((action: Action) => {
+    if (
+      (action.type === "replace" && action.resetSessionUndo) ||
+      action.type === "resetAll"
+    ) {
+      setSessionUndoResetEpoch((n) => n + 1);
+    }
+    _dispatch(action);
+  }, []);
+
+  const value = useMemo(
+    () => ({ state, dispatch, sessionUndoResetEpoch }),
+    [state, dispatch, sessionUndoResetEpoch]
+  );
 
   const saveTimer = useRef<number | null>(null);
   useEffect(() => {
@@ -119,7 +145,7 @@ export function StudioProvider({ children }: { children: React.ReactNode }) {
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }
 
-export function useStudio() {
+export function useStudio(): StudioStore {
   const v = useContext(Ctx);
   if (!v) throw new Error("useStudio must be used within StudioProvider");
   return v;
