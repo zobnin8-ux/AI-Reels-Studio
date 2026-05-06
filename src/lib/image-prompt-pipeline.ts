@@ -14,6 +14,29 @@ const ASPECT_PHRASES = {
 export function softenImagePromptForModeration(prompt: string): string {
   let s = prompt;
   const pairs: [RegExp, string][] = [
+    // OPENAI MODERATION HYGIENE safety net (profile zobnin §7.11) — prefer clean prompts from the model
+    [/\bnot\s+stressed,?\s*just\s+evaluating\b/gi, "composed and attentive"],
+    [/\bnot\s+frustrated,?\s*not\s+pleased,?\s*just\s+assessing\b/gi, "calm and focused, mid-thought"],
+    [/\bno\s+longer\s+overwhelmed\b/gi, "focused and present"],
+    [/\bwithout\s+anxiety\s+or\s+tension\b/gi, "calm and steady"],
+    [/\bhand\s+on\s+(his|her|their|the)?\s*temple\b/gi, "hand resting near the desk edge"],
+    [/\brubbing\s+(his|her|their)?\s*eyes\b/gi, "looking at the screen"],
+    [/\btouching\s+(his|her|their)?\s*forehead\b/gi, "upright posture at the desk"],
+    [/\bhand\s+on\s+chin\s+in\s+worry\b/gi, "hand resting on the desk"],
+    [/\bfingers\s+pressed\s+to\s+(his|her|their)?\s*face\b/gi, "fingers on the keyboard"],
+    [/\bhead\s+in\s+hands\b/gi, "seated upright at the desk"],
+    [/\b(a|an)\s+\d{1,2}[- ]year[- ]old\s+man\b/gi, "a man in his early forties"],
+    [/\b(a|an)\s+\d{1,2}[- ]year[- ]old\s+woman\b/gi, "a woman in her early forties"],
+    [/\b(a|an)\s+\d{1,2}[- ]year[- ]old\s+(guy|male)\b/gi, "a man in his early forties"],
+    [/\b(a|an)\s+\d{1,2}[- ]year[- ]old\s+(gal|female)\b/gi, "a woman in her early forties"],
+    [/\b(a|an)\s+\d{1,2}[- ]year[- ]old\s+(person|professional|executive)\b/gi, "an adult professional"],
+    [/\bscrutinizing\b/gi, "looking closely at"],
+    [/\bstudying\s+intently\b/gi, "reading carefully"],
+    [/\bdissecting\b/gi, "working through"],
+    [/\bskeptical\b/gi, "thoughtful"],
+    [/\bsuspicious\b/gi, "curious"],
+    [/\bassessing\b/gi, "considering"],
+    [/\bevaluating\b/gi, "working through"],
     [/\blate at night\b/gi, "mid-morning"],
     [/\bpast midnight\b/gi, "late morning"],
     [/\bdeep into the night\b/gi, "mid-morning"],
@@ -133,7 +156,7 @@ export function sanitizeForOpenAIImage(
 
   if (project === "zobnin") {
     out +=
-      "\n\nImage safety: editorial workplace only; calm neutral mood; professional adults; no distress, conflict, substances, violence, or intimacy implied.";
+      "\n\nImage safety: editorial workplace photography; calm, present professionals; neutral collaborative tone; routine professional context only — no substances, violence, or intimacy implied.";
   }
 
   return out;
