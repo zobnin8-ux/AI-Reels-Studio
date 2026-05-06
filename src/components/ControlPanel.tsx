@@ -17,11 +17,13 @@ const BG_MODE_KEY = "ai-reels-studio:v2026:bgMode";
 type SessionImportNotice = { kind: "ok" | "error"; message: string };
 
 function defaultsForProject(project: ProjectId): Partial<StudioState> {
+  const base: Partial<StudioState> = {
+    contentType: "reels",
+    slideCount: 7
+  };
   if (project === "olgatrip") {
     return {
-      mood: "soft",
-      visualStyle: "lightMinimal",
-      outputMode: "both",
+      ...base,
       ctaMode: "direct",
       website: "olgatrip.com",
       triggerWord: "море",
@@ -30,13 +32,20 @@ function defaultsForProject(project: ProjectId): Partial<StudioState> {
   }
   if (project === "poslenego") {
     return {
+      ...base,
       ctaMode: "website",
       website: "poslenego.com",
       triggerWord: "",
       customCta: ""
     };
   }
-  return {};
+  return {
+    ...base,
+    ctaMode: "website",
+    website: "zobnin.ai",
+    triggerWord: "",
+    customCta: ""
+  };
 }
 
 export function ControlPanel() {
@@ -79,22 +88,20 @@ export function ControlPanel() {
       state.messages.length > 0 ||
       state.slides.length > 0 ||
       state.angles.length > 0 ||
-      state.prompts.some((p) => p.prompt.trim().length > 0) ||
+      state.imagePrompts.some((p) => p.prompt.trim().length > 0 || (p.manualOverride?.trim() ?? "").length > 0) ||
       state.caption.trim().length > 0 ||
       state.music.queries.length > 0 ||
       state.music.recommendations.length > 0 ||
-      state.images.length > 0 ||
-      state.sceneMeta.length > 0
+      state.images.length > 0
     );
   }, [
     state.messages.length,
     state.slides.length,
     state.angles.length,
-    state.prompts,
+    state.imagePrompts,
     state.caption,
     state.music,
-    state.images.length,
-    state.sceneMeta.length
+    state.images.length
   ]);
 
   function resetContentAfterProjectSwitch(nextProject: ProjectId) {
@@ -108,8 +115,7 @@ export function ControlPanel() {
         angles: [],
         slides: [],
         approved: false,
-        prompts: [],
-        sceneMeta: [],
+        imagePrompts: [],
         images: [],
         caption: "",
         music: emptyMusic(),
@@ -254,7 +260,7 @@ export function ControlPanel() {
                   })
                 }
               >
-                {[5, 7, 9, 10, 12].map((n) => (
+                {[5, 7, 9].map((n) => (
                   <option key={n} value={n}>
                     {n}
                   </option>
@@ -265,20 +271,19 @@ export function ControlPanel() {
         </div>
 
         <div className="group">
-          <div className="group-title">CTA и вывод</div>
+          <div className="group-title">CTA</div>
           <div className="field">
-            <span className="label">Режим CTA</span>
+            <span className="label">Режим</span>
             <select
               className="select"
-              value={state.ctaMode}
+              value={state.ctaMode === "custom" ? "none" : state.ctaMode}
               onChange={(e) =>
                 dispatch({ type: "set", patch: { ctaMode: e.target.value as StudioState["ctaMode"] } })
               }
             >
               <option value="website">Сайт</option>
-              <option value="direct">Триггер в кадре</option>
+              <option value="direct">Триггер-слово</option>
               <option value="none">Без CTA</option>
-              <option value="custom">Свой текст</option>
             </select>
           </div>
           {state.ctaMode === "website" ? (
@@ -307,33 +312,6 @@ export function ControlPanel() {
               </div>
             </div>
           ) : null}
-          {state.ctaMode === "custom" ? (
-            <div className="conditional">
-              <div className="field">
-                <span className="label mono">Свой CTA</span>
-                <input
-                  className="input"
-                  value={state.customCta}
-                  onChange={(e) => dispatch({ type: "set", patch: { customCta: e.target.value } })}
-                  placeholder="Свой CTA"
-                />
-              </div>
-            </div>
-          ) : null}
-          <div className="field">
-            <span className="label">Текст в выводе</span>
-            <select
-              className="select"
-              value={state.outputMode}
-              onChange={(e) =>
-                dispatch({ type: "set", patch: { outputMode: e.target.value as StudioState["outputMode"] } })
-              }
-            >
-              <option value="textInImages">Текст в кадрах</option>
-              <option value="textSeparate">Текст отдельно</option>
-              <option value="both">И то, и другое</option>
-            </select>
-          </div>
         </div>
 
         <div className="group">

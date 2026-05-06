@@ -80,15 +80,17 @@ function asAngles(x: unknown): StudioState["angles"] | null {
   return out;
 }
 
-function asPrompts(x: unknown): StudioState["prompts"] | null {
+function asImagePrompts(x: unknown): StudioState["imagePrompts"] | null {
   if (!Array.isArray(x)) return null;
-  const out: StudioState["prompts"] = [];
+  const out: StudioState["imagePrompts"] = [];
   for (const p of x) {
     if (!isRecord(p)) return null;
     const slideId = asString(p.slideId);
     const prompt = asString(p.prompt);
+    const manualOverride =
+      p.manualOverride === undefined ? undefined : asString(p.manualOverride) ?? undefined;
     if (!slideId || prompt === null) return null;
-    out.push({ slideId, prompt });
+    out.push({ slideId, prompt, manualOverride });
   }
   return out;
 }
@@ -120,17 +122,11 @@ function asImages(x: unknown): StudioState["images"] | null {
   return out;
 }
 
-function asSceneMeta(x: unknown): StudioState["sceneMeta"] | null {
-  if (!Array.isArray(x)) return null;
-  // sceneMeta формы сложные; для импорта достаточно проверить, что это массив объектов с slideId.
-  const out: StudioState["sceneMeta"] = [];
-  for (const m of x) {
-    if (!isRecord(m)) return null;
-    const slideId = asString(m.slideId);
-    if (!slideId) return null;
-    out.push(m as StudioState["sceneMeta"][number]);
-  }
-  return out;
+/** Нормализует slideCount из старых сессий (10/12 → ближайший 5/7/9). */
+function normalizeSlideCount(n: number | null): StudioState["slideCount"] | null {
+  if (n === 5 || n === 7 || n === 9) return n;
+  if (n === 10 || n === 12) return 9;
+  return null;
 }
 
 export function parseSessionImport(raw: unknown):
@@ -138,7 +134,6 @@ export function parseSessionImport(raw: unknown):
   | { ok: false; error: string } {
   let candidate: unknown = raw;
 
-  // Envelope v1
   if (isRecord(raw) && raw.v === SESSION_EXPORT_VERSION && "state" in raw) {
     candidate = raw.state;
   }
@@ -148,10 +143,8 @@ export function parseSessionImport(raw: unknown):
   const provider = asString(candidate.provider);
   const project = asString(candidate.project);
   const contentType = asString(candidate.contentType);
-  const slideCount = asNumber(candidate.slideCount);
-  const mood = asString(candidate.mood);
-  const visualStyle = asString(candidate.visualStyle);
-  const outputMode = asString(candidate.outputMode);
+  const slideCountRaw = asNumber(candidate.slideCount);
+  const slideCount = normalizeSlideCount(slideCountRaw);
   const autoGenerateImages = asBool(candidate.autoGenerateImages);
   const ctaMode = asString(candidate.ctaMode);
   const website = asString(candidate.website);
@@ -172,29 +165,7 @@ export function parseSessionImport(raw: unknown):
     return { ok: false, error: "Неверный project." };
   }
   if (contentType !== "reels" && contentType !== "post") return { ok: false, error: "Неверный contentType." };
-  if (![5, 7, 9, 10, 12].includes(slideCount ?? -1)) return { ok: false, error: "Неверный slideCount." };
-  if (
-    mood !== "aggressive" &&
-    mood !== "soft" &&
-    mood !== "provocative" &&
-    mood !== "positive" &&
-    mood !== "neutral"
-  ) {
-    return { ok: false, error: "Неверный mood." };
-  }
-  if (
-    visualStyle !== "darkBrutal" &&
-    visualStyle !== "lightMinimal" &&
-    visualStyle !== "brightPositive" &&
-    visualStyle !== "portraLifestyle" &&
-    visualStyle !== "editorial" &&
-    visualStyle !== "tech"
-  ) {
-    return { ok: false, error: "Неверный visualStyle." };
-  }
-  if (outputMode !== "textInImages" && outputMode !== "textSeparate" && outputMode !== "both") {
-    return { ok: false, error: "Неверный outputMode." };
-  }
+  if (slideCount === null) return { ok: false, error: "Неверный slideCount (ожидается 5, 7 или 9)." };
   if (ctaMode !== "website" && ctaMode !== "direct" && ctaMode !== "none" && ctaMode !== "custom") {
     return { ok: false, error: "Неверный ctaMode." };
   }
@@ -206,24 +177,28 @@ export function parseSessionImport(raw: unknown):
 
   const angles = asAngles(candidate.angles);
   const slides = asSlides(candidate.slides);
-  const prompts = asPrompts(candidate.prompts);
-  const sceneMeta = asSceneMeta(candidate.sceneMeta);
   const images = asImages(candidate.images);
   const messages = asChatMessages(candidate.messages);
   const music = asMusic(candidate.music);
 
-  if (!angles || !slides || !prompts || !sceneMeta || !images || !messages || !music) {
-    return { ok: false, error: "Неверная структура массивов (angles/slides/prompts/sceneMeta/images/messages/music)." };
+  let imagePrompts: StudioState["imagePrompts"];
+  if (candidate.imagePrompts === undefined) {
+    imagePrompts = [];
+  } else {
+    const parsed = asImagePrompts(candidate.imagePrompts);
+    if (!parsed) return { ok: false, error: "Неверный imagePrompts." };
+    imagePrompts = parsed;
+  }
+
+  if (!angles || !slides || !images || !messages || !music) {
+    return { ok: false, error: "Неверная структура массивов (angles/slides/images/messages/music)." };
   }
 
   const state: StudioState = {
     provider,
     project,
     contentType,
-    slideCount: slideCount as StudioState["slideCount"],
-    mood: mood as StudioState["mood"],
-    visualStyle: visualStyle as StudioState["visualStyle"],
-    outputMode: outputMode as StudioState["outputMode"],
+    slideCount,
     autoGenerateImages: autoGenerateImages ?? false,
     ctaMode: ctaMode as StudioState["ctaMode"],
     website,
@@ -234,8 +209,7 @@ export function parseSessionImport(raw: unknown):
     angles,
     slides,
     approved,
-    prompts,
-    sceneMeta,
+    imagePrompts,
     images,
     caption,
     music,

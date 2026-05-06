@@ -2,13 +2,12 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { buildDialogueSystemPrompt } from "@/lib/dialogue-context";
 import { sanitizeModelReplyForDisplay } from "@/lib/chat-reply-format";
-import { chatApiResponseSchema, sceneMetaEntrySchema } from "@/lib/chat-response";
+import { chatApiResponseSchema, sessionImagePromptSchema } from "@/lib/chat-response";
 
 const selectorsSchema = z.object({
   project: z.enum(["poslenego", "zobnin", "olgatrip"]),
   contentType: z.enum(["reels", "post"]),
-  slideCount: z.union([z.literal(5), z.literal(7), z.literal(9), z.literal(10), z.literal(12)]),
-  outputMode: z.enum(["textInImages", "textSeparate", "both"]),
+  slideCount: z.union([z.literal(5), z.literal(7), z.literal(9)]),
   ctaMode: z.enum(["website", "direct", "none", "custom"]),
   website: z.string(),
   triggerWord: z.string(),
@@ -21,8 +20,7 @@ const sessionSchema = z.object({
   angles: z.array(z.object({ id: z.string(), label: z.string() })),
   slides: z.array(z.object({ id: z.string(), title: z.string(), text: z.string() })),
   approved: z.boolean(),
-  prompts: z.array(z.object({ slideId: z.string(), prompt: z.string() })),
-  sceneMeta: z.array(sceneMetaEntrySchema),
+  imagePrompts: z.array(sessionImagePromptSchema),
   caption: z.string(),
   music: z.object({
     queries: z.array(z.string()),
@@ -130,7 +128,6 @@ async function callAnthropicChat(
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) throw new Error("Missing ANTHROPIC_API_KEY");
 
-  // См. актуальные ID: https://docs.anthropic.com/en/docs/about-claude/models/all-models
   const model = process.env.ANTHROPIC_MODEL || "claude-sonnet-4-6";
   const anthropicMessages = msgs.map((m) => ({
     role: m.role,
@@ -146,7 +143,7 @@ async function callAnthropicChat(
     },
     body: JSON.stringify({
       model,
-      max_tokens: 8192,
+      max_tokens: 16384,
       system,
       messages: anthropicMessages
     })
@@ -203,8 +200,6 @@ export async function POST(request: Request) {
         reply: sanitizeModelReplyForDisplay(out.reply)
       });
     } catch {
-      // Fallback: если модель нарушила JSON-контракт, не роняем диалог.
-      // Пытаемся достать чистый reply из JSON-подобного текста.
       const fallbackReply =
         sanitizeModelReplyForDisplay(extractReplyText(raw)) ||
         "Не удалось распарсить ответ модели. Повтори запрос чуть иначе.";

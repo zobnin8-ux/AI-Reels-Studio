@@ -3,9 +3,20 @@
 import type { GeneratedImage } from "@/lib/state";
 import { useStudio } from "@/lib/studio-store";
 import { regenerateOneImage } from "@/lib/actions";
-import { mergePromptForSlide } from "@/lib/prompt-sync";
+import { mergeImagePromptManual } from "@/lib/image-prompt-sync";
+import { resolveImagePrompt, sanitizeForOpenAIImage } from "@/lib/image-prompt-pipeline";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
+
+function resolvedPromptText(
+  imagePrompts: { slideId: string; prompt: string; manualOverride?: string }[],
+  slideId: string | undefined
+): string {
+  if (!slideId) return "";
+  const row = imagePrompts.find((p) => p.slideId === slideId);
+  if (!row) return "";
+  return (row.manualOverride?.trim() || row.prompt.trim() || "").trim();
+}
 
 export function ImageSlideCard({
   index,
@@ -15,14 +26,13 @@ export function ImageSlideCard({
 }: {
   index: number;
   image: GeneratedImage;
-  /** Клик по готовому превью — полноэкранный просмотр (если передан). */
   onPreview?: () => void;
-  /** В колонке v2026 — компактный вид внутри `.reel-frame`. `frameRail` — лента над чатом: крупное превью, промпты в боковой панели. */
   variant?: "card" | "frame" | "thumb" | "frameRail";
 }) {
   const { state, dispatch } = useStudio();
-  const [localPrompt, setLocalPrompt] = useState(image.prompt);
-  const [localFinal, setLocalFinal] = useState(image.finalPrompt ?? "");
+  const [localPrompt, setLocalPrompt] = useState(() =>
+    resolvedPromptText(state.imagePrompts, image.slideId)
+  );
   const [busy, setBusy] = useState(false);
   const [errorShake, setErrorShake] = useState(false);
   const prevErrorRef = useRef<string | undefined>(undefined);
@@ -31,12 +41,8 @@ export function ImageSlideCard({
   const railSheetPanelRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    setLocalPrompt(image.prompt);
-  }, [image.prompt]);
-
-  useEffect(() => {
-    setLocalFinal(image.finalPrompt ?? "");
-  }, [image.finalPrompt]);
+    setLocalPrompt(resolvedPromptText(state.imagePrompts, image.slideId));
+  }, [state.imagePrompts, image.slideId]);
 
   useEffect(() => {
     if (image.error && image.error !== prevErrorRef.current) {
@@ -48,39 +54,18 @@ export function ImageSlideCard({
 
   function commitPromptToStore() {
     if (!image.slideId?.trim()) return;
-    const prompts = mergePromptForSlide(state, image.slideId, localPrompt);
-    dispatch({ type: "set", patch: { prompts } });
-  }
-
-  function commitFinalPromptToStore() {
-    dispatch({
-      type: "set",
-      patch: {
-        images: state.images.map((img) =>
-          img.id === image.id ? { ...img, finalPrompt: localFinal } : img
-        )
-      }
-    });
+    const imagePrompts = mergeImagePromptManual(state, image.slideId, localPrompt);
+    dispatch({ type: "set", patch: { imagePrompts } });
   }
 
   async function onRegenerate() {
     if (!image.slideId?.trim()) return;
-    const prompts = mergePromptForSlide(state, image.slideId, localPrompt);
-    const imagesWithFinal = state.images.map((img) =>
-      img.id === image.id ? { ...img, finalPrompt: localFinal } : img
-    );
-    const mergedState = { ...state, prompts, images: imagesWithFinal };
-    dispatch({ type: "set", patch: { prompts, images: imagesWithFinal } });
+    const imagePrompts = mergeImagePromptManual(state, image.slideId, localPrompt);
+    const mergedState = { ...state, imagePrompts };
+    dispatch({ type: "set", patch: { imagePrompts } });
     setBusy(true);
     try {
-      const override = localFinal.trim() || undefined;
-      const nextImage = await regenerateOneImage(
-        mergedState,
-        image.id,
-        image.slideId,
-        localPrompt,
-        override
-      );
+      const nextImage = await regenerateOneImage(mergedState, image.id, image.slideId);
       const next = mergedState.images.map((x) => (x.id === image.id ? nextImage : x));
       dispatch({ type: "set", patch: { images: next } });
     } finally {
@@ -109,6 +94,12 @@ export function ImageSlideCard({
     return !!image.slideId?.trim() && !busy && !lockPromptEdit;
   }, [busy, image.slideId, lockPromptEdit]);
 
+  const sanitizedPreview = useMemo(() => {
+    if (!image.slideId) return "";
+    const raw = resolveImagePrompt(state.imagePrompts, image.slideId);
+    return raw ? sanitizeForOpenAIImage(raw, state.contentType) : "";
+  }, [state.imagePrompts, state.contentType, image.slideId]);
+
   useEffect(() => {
     if (!railSheetOpen) return;
     function onKey(e: KeyboardEvent) {
@@ -131,7 +122,6 @@ export function ImageSlideCard({
     if (!railSheetOpen) return;
     const panelEl = railSheetPanelRef.current;
     if (!panelEl) return;
-    /** Отдельная привязка — TS не сохраняет сужение для ref во вложенных функциях. */
     const sheetRoot: HTMLDivElement = panelEl;
 
     const prevFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
@@ -174,8 +164,8 @@ export function ImageSlideCard({
     };
   }, [railSheetOpen]);
 
-  async function copyFinalPrompt() {
-    const text = (localFinal ?? "").trim();
+  async function copySanitizedPrompt() {
+    const text = sanitizedPreview.trim();
     if (!text) return;
     try {
       await navigator.clipboard.writeText(text);
@@ -225,12 +215,12 @@ export function ImageSlideCard({
               <button
                 type="button"
                 className="asset-badge"
-                disabled={!localFinal.trim()}
-                onClick={() => void copyFinalPrompt()}
-                title="Скопировать полный промпт"
-                aria-label={`Кадр ${index + 1}: скопировать полный промпт в буфер обмена`}
+                disabled={!sanitizedPreview.trim()}
+                onClick={() => void copySanitizedPrompt()}
+                title="Скопировать строку, уходящую в OpenAI (после санитарной досыпки)"
+                aria-label={`Кадр ${index + 1}: скопировать промпт`}
               >
-                {copied ? "Скопировано" : "Копировать промпт"}
+                {copied ? "Скопировано" : "Копировать"}
               </button>
               <button
                 type="button"
@@ -247,7 +237,7 @@ export function ImageSlideCard({
                 className="asset-badge"
                 onClick={() => setRailSheetOpen(true)}
                 title="Промпт и перегенерация в боковой панели"
-                aria-label={`Кадр ${index + 1}: открыть панель промпта и перегенерации`}
+                aria-label={`Кадр ${index + 1}: открыть панель промпта`}
               >
                 Details
               </button>
@@ -345,33 +335,29 @@ export function ImageSlideCard({
                   </div>
                   <div className="frame-rail-sheet-body">
                     <div className="text-[10px] font-medium uppercase tracking-wide text-muted/90">
-                      OpenAI · полный промпт
+                      Английский промпт (Anthropic → вы правите)
                     </div>
-                    <textarea
-                      value={localFinal}
-                      onChange={(e) => setLocalFinal(e.target.value)}
-                      onBlur={() => commitFinalPromptToStore()}
-                      readOnly={lockPromptEdit}
-                      title="Текст, отправленный в OpenAI Image для этого кадра; можно править и перегенерировать."
-                      placeholder="После генерации здесь появится полный промпт…"
-                      className="textarea min-h-[140px] w-full font-mono text-[11px] leading-snug"
-                    />
-                    <div className="text-[10px] text-muted/80">Уточнение к сборке (опция)</div>
                     <textarea
                       value={localPrompt}
                       onChange={(e) => setLocalPrompt(e.target.value)}
                       onBlur={() => commitPromptToStore()}
                       readOnly={lockPromptEdit}
-                      className="textarea min-h-[72px] w-full font-mono text-[10px] leading-snug"
+                      title="Плотный английский промпт для gpt-image"
+                      placeholder="Сначала получи промпты из диалога…"
+                      className="textarea min-h-[140px] w-full font-mono text-[11px] leading-snug"
                     />
+                    <div className="text-[10px] text-muted/80">Строка в OpenAI (с досыпкой формата / no-text)</div>
+                    <div className="max-h-[100px] overflow-y-auto rounded border border-border bg-black/25 p-2 font-mono text-[10px] text-muted/90">
+                      {sanitizedPreview || "—"}
+                    </div>
                     <div className="flex flex-wrap justify-end gap-2 pt-2">
                       <button
                         type="button"
                         className="asset-badge"
-                        disabled={!localFinal.trim()}
-                        onClick={() => void copyFinalPrompt()}
+                        disabled={!sanitizedPreview.trim()}
+                        onClick={() => void copySanitizedPrompt()}
                       >
-                        {copied ? "Скопировано" : "Копировать промпт"}
+                        {copied ? "Скопировано" : "Копировать в API"}
                       </button>
                       <button
                         type="button"
@@ -396,17 +382,17 @@ export function ImageSlideCard({
         {!isFrameRail ? (
           <div className={["min-w-0 overflow-hidden", isThumb ? "min-h-0 flex-1 space-y-2" : "space-y-2"].join(" ")}>
             {isFrameLike || isThumb ? (
-              <div className="text-[10px] font-medium uppercase tracking-wide text-muted/90">OpenAI · полный промпт</div>
+              <div className="text-[10px] font-medium uppercase tracking-wide text-muted/90">Промпт картинки (EN)</div>
             ) : (
-              <div className="text-xs font-medium text-muted">Промпт OpenAI (полный)</div>
+              <div className="text-xs font-medium text-muted">Промпт картинки (англ.)</div>
             )}
             <textarea
-              value={localFinal}
-              onChange={(e) => setLocalFinal(e.target.value)}
-              onBlur={() => commitFinalPromptToStore()}
+              value={localPrompt}
+              onChange={(e) => setLocalPrompt(e.target.value)}
+              onBlur={() => commitPromptToStore()}
               readOnly={lockPromptEdit}
-              title="Текст, отправленный в OpenAI Image для этого кадра; можно править и перегенерировать."
-              placeholder="После генерации здесь появится полный промпт…"
+              title="Текст от модели; правка здесь задаёт manualOverride"
+              placeholder="Промпт из диалога…"
               className={
                 isThumb
                   ? "textarea min-h-[72px] flex-1 resize-none font-mono text-[10px] leading-snug"
@@ -416,24 +402,30 @@ export function ImageSlideCard({
               }
             />
             {isFrameLike || isThumb ? (
-              <div className="text-[10px] text-muted/80">Уточнение к сборке (опция)</div>
+              <div className="text-[10px] text-muted/80">В OpenAI (после санитарной досыпки)</div>
             ) : (
-              <div className="text-xs font-medium text-muted">Краткое уточнение к сборке (опция)</div>
+              <div className="text-xs font-medium text-muted">Финальная строка в API</div>
             )}
-            <textarea
-              value={localPrompt}
-              onChange={(e) => setLocalPrompt(e.target.value)}
-              onBlur={() => commitPromptToStore()}
-              readOnly={lockPromptEdit}
+            <div
               className={
                 isThumb
-                  ? "textarea min-h-[44px] flex-1 resize-none font-mono text-[10px] leading-snug"
+                  ? "max-h-[56px] overflow-y-auto rounded-md border border-border bg-black/20 p-2 font-mono text-[9px] text-muted/85"
                   : isFrameLike
-                    ? "textarea min-h-[56px] font-mono text-[10px] leading-snug"
-                    : "min-h-16 w-full min-w-0 max-w-full resize-y rounded-xl border border-border bg-black/25 px-3 py-2 font-mono text-[10px] outline-none focus:ring-2 focus:ring-accent/25"
+                    ? "max-h-[72px] overflow-y-auto rounded-md border border-border bg-black/20 p-2 font-mono text-[10px] text-muted/85"
+                    : "max-h-24 overflow-y-auto rounded-xl border border-border bg-black/25 px-3 py-2 font-mono text-[10px] text-muted/85"
               }
-            />
-            <div className="flex justify-end">
+            >
+              {sanitizedPreview || "—"}
+            </div>
+            <div className="flex justify-end gap-2">
+              <button
+                type="button"
+                className="asset-badge"
+                disabled={!sanitizedPreview.trim()}
+                onClick={() => void copySanitizedPrompt()}
+              >
+                {copied ? "Ок" : "Копировать"}
+              </button>
               <button
                 type="button"
                 onClick={() => void onRegenerate()}

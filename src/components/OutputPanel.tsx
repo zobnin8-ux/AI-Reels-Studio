@@ -5,15 +5,25 @@ import { useStudio } from "@/lib/studio-store";
 import { useStudioActivity } from "@/lib/studio-activity";
 import { ImageGenerationProgress } from "@/components/ImageGenerationProgress";
 import { ReadinessChecklist } from "@/components/ReadinessChecklist";
-import { downloadZip, generateImagesFromState } from "@/lib/actions";
-import type { SlidePrompt } from "@/lib/state";
+import { downloadZip, generateImagesFromState, regenerateOneImage } from "@/lib/actions";
+import { requestDialogueTurn } from "@/lib/dialogue-bridge";
+import { mergeImagePromptManual } from "@/lib/image-prompt-sync";
+import { resolveImagePrompt } from "@/lib/image-prompt-pipeline";
+import type { Slide } from "@/lib/state";
 
 const OUTPUT_SCENARIO_OPEN_KEY = "ai-reels-studio:v2026:scenarioOpen";
+
+function upsertImageRow<T extends { slideId?: string; id: string }>(rows: T[], next: T): T[] {
+  const idx = rows.findIndex((r) => r.slideId === next.slideId);
+  if (idx < 0) return [...rows, next];
+  return rows.map((r, i) => (i === idx ? next : r));
+}
 
 export function OutputPanel() {
   const { state, dispatch } = useStudio();
   const { setZipBusy } = useStudioActivity();
   const [busy, setBusy] = useState<null | string>(null);
+  const [regenSlideId, setRegenSlideId] = useState<string | null>(null);
   const [scenarioOpen, setScenarioOpen] = useState(() => {
     if (typeof window === "undefined") return true;
     try {
@@ -39,30 +49,62 @@ export function OutputPanel() {
   const showBatchProgress =
     state.images.length > 0 && state.images.some((x) => x.status === "waiting" || x.status === "generating");
 
-  const promptLinesText = useMemo(() => {
-    if (state.slides.length === 0) {
-      return state.prompts.map((p) => p.prompt).join("\n");
-    }
-    return state.slides
-      .map((s) => state.prompts.find((p) => p.slideId === s.id)?.prompt ?? "")
-      .join("\n");
-  }, [state.slides, state.prompts]);
+  function updateSlide(slideId: string, patch: Partial<Slide>) {
+    dispatch({
+      type: "set",
+      patch: {
+        slides: state.slides.map((s) => (s.id === slideId ? { ...s, ...patch } : s))
+      }
+    });
+  }
 
-  function applyPromptTextarea(next: string) {
-    const lines = next.split("\n");
-    if (state.slides.length === 0) {
-      const prompts: SlidePrompt[] = lines.map((prompt, i) => ({
-        slideId: `slide_${i}`,
-        prompt
-      }));
-      dispatch({ type: "set", patch: { prompts } });
-      return;
+  function promptTextForSlide(slideId: string): string {
+    const row = state.imagePrompts.find((p) => p.slideId === slideId);
+    return (row?.manualOverride?.trim() || row?.prompt || "").trim();
+  }
+
+  function commitImagePrompt(slideId: string, text: string) {
+    dispatch({
+      type: "set",
+      patch: { imagePrompts: mergeImagePromptManual(state, slideId, text) }
+    });
+  }
+
+  async function onRegenerateSlide(slideId: string) {
+    const imgRow = state.images.find((i) => i.slideId === slideId);
+    const id = imgRow?.id ?? `img_${slideId}`;
+    const ip = mergeImagePromptManual(state, slideId, promptTextForSlide(slideId));
+    const merged = { ...state, imagePrompts: ip };
+    dispatch({ type: "set", patch: { imagePrompts: ip } });
+    setRegenSlideId(slideId);
+    setGenError(null);
+    try {
+      const next = await regenerateOneImage(merged, id, slideId);
+      dispatch({
+        type: "set",
+        patch: { images: upsertImageRow(merged.images, next) }
+      });
+    } catch (e: unknown) {
+      const m = e instanceof Error ? e.message : "Ошибка кадра";
+      setGenError(m);
+      setPromptsShake(true);
+      window.setTimeout(() => setPromptsShake(false), 500);
+    } finally {
+      setRegenSlideId(null);
     }
-    const prompts: SlidePrompt[] = state.slides.map((s, i) => ({
-      slideId: s.id,
-      prompt: lines[i] ?? ""
-    }));
-    dispatch({ type: "set", patch: { prompts } });
+  }
+
+  function askRewriteImagePrompt(slideIndex: number) {
+    const s = state.slides[slideIndex];
+    if (!s) return;
+    const hint = typeof window !== "undefined" ? window.prompt("Уточнение для модели (необязательно)", "") : "";
+    const lines = [
+      `Перепиши только английский image prompt для слайда ${slideIndex + 1} (slideId: ${s.id}, заголовок: «${s.title}»).`,
+      "Не меняй тексты других слайдов и не пересобирай сценарий целиком.",
+      'В statePatch верни только imagePrompts с одним объектом {"slideId","prompt"} для этого slideId.',
+      hint && hint.trim() ? `Пожелание: ${hint.trim()}` : ""
+    ].filter(Boolean);
+    requestDialogueTurn(lines.join("\n"));
   }
 
   async function onGenerateImages() {
@@ -109,7 +151,7 @@ export function OutputPanel() {
 
   const hasSomethingToExport =
     state.slides.length > 0 ||
-    state.prompts.some((p) => p.prompt.trim()) ||
+    state.imagePrompts.some((p) => p.prompt.trim()) ||
     state.caption.trim().length > 0 ||
     state.music.queries.length > 0 ||
     state.music.recommendations.length > 0 ||
@@ -123,7 +165,8 @@ export function OutputPanel() {
   const doneCount = state.images.filter((x) => x.status === "done").length;
   const errCount = state.images.filter((x) => x.status === "error").length;
 
-  // Persist mode so the panel feels stable.
+  const draftSlideCards = useMemo(() => state.slides, [state.slides]);
+
   useEffect(() => {
     try {
       window.localStorage.setItem("ai-reels-studio:v2026:outputsMode", mode);
@@ -177,11 +220,11 @@ export function OutputPanel() {
           </div>
         ) : null}
 
-        {mode === "draft" && state.slides.length > 0 ? (
-          <div className="asset-block">
+        {mode === "draft" && draftSlideCards.length > 0 ? (
+          <div className={["asset-block", promptsShake ? "studio-shake" : ""].filter(Boolean).join(" ")}>
             <div className="asset-head">
               <div className="asset-h">
-                Сценарий · <b>превью</b>
+                Слайды · <b>текст и промпты</b>
               </div>
               <button
                 type="button"
@@ -192,54 +235,103 @@ export function OutputPanel() {
               </button>
             </div>
             {scenarioOpen ? (
-              <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-                {state.slides.map((s, i) => (
-                  <div
-                    key={s.id}
-                    style={{
-                      borderRadius: "var(--r-sm)",
-                      border: "1px solid var(--border-subtle)",
-                      padding: 10,
-                      background: "rgba(8,16,20,0.45)"
-                    }}
-                  >
-                    <div style={{ fontSize: 11, fontWeight: 600, color: "var(--text-dim)" }}>
-                      {String(i + 1).padStart(2, "0")}. {s.title}
-                    </div>
-                    <div style={{ marginTop: 6, fontSize: 12, lineHeight: 1.55, whiteSpace: "pre-wrap" }}>
-                      {s.text}
-                    </div>
-                  </div>
-                ))}
+              <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
                 {state.approved ? (
                   <div style={{ fontSize: 11, fontWeight: 500, color: "var(--ok)" }}>Сценарий утверждён.</div>
                 ) : null}
+                {draftSlideCards.map((s, i) => {
+                  const img = state.images.find((x) => x.slideId === s.id);
+                  const hasPrompt = Boolean(resolveImagePrompt(state.imagePrompts, s.id));
+                  return (
+                    <div
+                      key={s.id}
+                      style={{
+                        borderRadius: "var(--r-sm)",
+                        border: "1px solid var(--border-subtle)",
+                        padding: 12,
+                        background: "rgba(8,16,20,0.45)"
+                      }}
+                    >
+                      <div style={{ fontSize: 10, fontWeight: 600, color: "var(--text-dim)", marginBottom: 6 }}>
+                        {String(i + 1).padStart(2, "0")}
+                      </div>
+                      <input
+                        className="input"
+                        style={{ marginBottom: 8 }}
+                        value={s.title}
+                        onChange={(e) => updateSlide(s.id, { title: e.target.value })}
+                        aria-label={`Заголовок слайда ${i + 1}`}
+                      />
+                      <textarea
+                        className="textarea"
+                        style={{ minHeight: 72 }}
+                        value={s.text}
+                        onChange={(e) => updateSlide(s.id, { text: e.target.value })}
+                        aria-label={`Текст слайда ${i + 1}`}
+                      />
+                      <details style={{ marginTop: 10 }}>
+                        <summary style={{ cursor: "pointer", fontSize: 12, fontWeight: 600 }}>
+                          Промпт картинки (English)
+                        </summary>
+                        <textarea
+                          className="textarea"
+                          style={{ marginTop: 8, minHeight: 100, fontFamily: "var(--font-mono, monospace)", fontSize: 11 }}
+                          value={promptTextForSlide(s.id)}
+                          onChange={(e) => commitImagePrompt(s.id, e.target.value)}
+                          placeholder="Появится из ответа Anthropic…"
+                        />
+                      </details>
+                      <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 10, alignItems: "center" }}>
+                        <button
+                          type="button"
+                          className="gen-btn"
+                          style={{ padding: "6px 12px", fontSize: 12 }}
+                          disabled={!hasPrompt || regenSlideId === s.id || pipelineBusy}
+                          onClick={() => void onRegenerateSlide(s.id)}
+                        >
+                          {regenSlideId === s.id ? "…" : "Перегенерировать этот кадр"}
+                        </button>
+                        <button
+                          type="button"
+                          className="studio-btn-ghost rounded-lg border border-border bg-black/20 px-3 py-1.5 text-xs"
+                          onClick={() => askRewriteImagePrompt(i)}
+                        >
+                          Попросить Anthropic переписать промпт
+                        </button>
+                      </div>
+                      {img?.imageBase64 && img.status === "done" ? (
+                        <div
+                          style={{
+                            marginTop: 10,
+                            maxWidth: 140,
+                            borderRadius: 8,
+                            overflow: "hidden",
+                            border: "1px solid var(--border-subtle)"
+                          }}
+                        >
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img
+                            src={`data:${img.mimeType ?? "image/png"};base64,${img.imageBase64}`}
+                            alt=""
+                            style={{ width: "100%", display: "block" }}
+                          />
+                        </div>
+                      ) : null}
+                      {img?.error ? (
+                        <p style={{ marginTop: 8, fontSize: 11, color: "#fca5a5" }}>{img.error}</p>
+                      ) : null}
+                    </div>
+                  );
+                })}
               </div>
+            ) : null}
+            {genError && mode === "draft" ? (
+              <p style={{ marginTop: 10, fontSize: 11, color: "#fca5a5" }}>{genError}</p>
             ) : null}
           </div>
         ) : null}
 
-        {mode === "draft" ? (
-          <div className={["asset-block", promptsShake ? "studio-shake" : ""].filter(Boolean).join(" ")}>
-            <div className="asset-head">
-              <div className="asset-h">
-                Уточнения <b>по кадрам</b>
-              </div>
-              <span className="asset-badge">опция</span>
-            </div>
-            <textarea
-              className="textarea"
-              value={promptLinesText}
-              onChange={(e) => applyPromptTextarea(e.target.value)}
-              placeholder={
-                state.slides.length
-                  ? "Уточнения по строкам — порядок как у слайдов (можно пусто)."
-                  : "Сначала слайды из диалога."
-              }
-              rows={10}
-            />
-          </div>
-        ) : (
+        {mode === "build" ? (
           <div className={["asset-block", promptsShake ? "studio-shake" : ""].filter(Boolean).join(" ")}>
             <div className="asset-head">
               <div className="asset-h">
@@ -263,7 +355,7 @@ export function OutputPanel() {
                   className={!state.autoGenerateImages ? "active" : ""}
                   onClick={() => dispatch({ type: "set", patch: { autoGenerateImages: false } })}
                   disabled={!!busy}
-                  title="Кадры только по кнопке «Сгенерировать кадры»"
+                  title="Кадры только по кнопке"
                 >
                   Выкл
                 </button>
@@ -272,7 +364,7 @@ export function OutputPanel() {
                   className={state.autoGenerateImages ? "active" : ""}
                   onClick={() => dispatch({ type: "set", patch: { autoGenerateImages: true } })}
                   disabled={!!busy}
-                  title="Если в сообщении явно попросить «сгенерируй кадры», студия запустит генерацию автоматически"
+                  title="Явный запрос в чате может запустить генерацию"
                 >
                   Вкл
                 </button>
@@ -301,7 +393,7 @@ export function OutputPanel() {
                   {busy === "images" ? (
                     <span className="studio-pulse-slow">Генерация…</span>
                   ) : (
-                    "Сгенерировать кадры"
+                    "Сгенерировать все картинки"
                   )}
                 </button>
                 <button
@@ -319,97 +411,95 @@ export function OutputPanel() {
               ) : null}
               {!canGenerateImages ? (
                 <p style={{ marginTop: 8, fontSize: 11, color: "var(--text-muted)" }}>
-                  Нужны слайды из диалога — затем «Сгенерировать кадры».
+                  Нужны слайды из диалога — затем промпты от модели и «Сгенерировать все картинки».
                 </p>
               ) : null}
             </div>
-          </div>
-        )}
-
-        {mode === "draft" ? (
-          <div className="asset-block">
-          <div className="asset-head">
-            <div className="asset-h">
-              Подпись к <b>посту</b>
-            </div>
-            <span className="asset-badge">текст</span>
-          </div>
-          <textarea
-            className="textarea"
-            value={state.caption}
-            onChange={(e) => dispatch({ type: "set", patch: { caption: e.target.value } })}
-            placeholder="Подпись…"
-            rows={4}
-          />
           </div>
         ) : null}
 
         {mode === "draft" ? (
           <div className="asset-block">
-          <div className="asset-head">
-            <div className="asset-h">
-              Музыка
+            <div className="asset-head">
+              <div className="asset-h">
+                Подпись к <b>посту</b>
+              </div>
+              <span className="asset-badge">текст</span>
             </div>
-            <span className="asset-badge">мета</span>
-          </div>
-          <div className="field">
-            <span className="label mono">Поиск</span>
             <textarea
               className="textarea"
-              value={state.music.queries.join("\n")}
-              onChange={(e) =>
-                dispatch({
-                  type: "set",
-                  patch: {
-                    music: {
-                      ...state.music,
-                      queries: e.target.value.split("\n").map((l) => l.trim()).filter(Boolean)
-                    }
-                  }
-                })
-              }
-              placeholder="Одна строка — один запрос"
-              rows={3}
+              value={state.caption}
+              onChange={(e) => dispatch({ type: "set", patch: { caption: e.target.value } })}
+              placeholder="Подпись…"
+              rows={4}
             />
           </div>
-          <div className="field">
-            <span className="label mono">Направления</span>
-            <textarea
-              className="textarea"
-              value={state.music.recommendations.join("\n")}
-              onChange={(e) =>
-                dispatch({
-                  type: "set",
-                  patch: {
-                    music: {
-                      ...state.music,
-                      recommendations: e.target.value.split("\n").map((l) => l.trim()).filter(Boolean)
+        ) : null}
+
+        {mode === "draft" ? (
+          <div className="asset-block">
+            <div className="asset-head">
+              <div className="asset-h">Музыка</div>
+              <span className="asset-badge">мета</span>
+            </div>
+            <div className="field">
+              <span className="label mono">Поиск</span>
+              <textarea
+                className="textarea"
+                value={state.music.queries.join("\n")}
+                onChange={(e) =>
+                  dispatch({
+                    type: "set",
+                    patch: {
+                      music: {
+                        ...state.music,
+                        queries: e.target.value.split("\n").map((l) => l.trim()).filter(Boolean)
+                      }
                     }
-                  }
-                })
-              }
-              rows={3}
-            />
-          </div>
-          <div className="field">
-            <span className="label mono">Избегать</span>
-            <textarea
-              className="textarea"
-              value={state.music.avoid.join("\n")}
-              onChange={(e) =>
-                dispatch({
-                  type: "set",
-                  patch: {
-                    music: {
-                      ...state.music,
-                      avoid: e.target.value.split("\n").map((l) => l.trim()).filter(Boolean)
+                  })
+                }
+                placeholder="Одна строка — один запрос"
+                rows={3}
+              />
+            </div>
+            <div className="field">
+              <span className="label mono">Направления</span>
+              <textarea
+                className="textarea"
+                value={state.music.recommendations.join("\n")}
+                onChange={(e) =>
+                  dispatch({
+                    type: "set",
+                    patch: {
+                      music: {
+                        ...state.music,
+                        recommendations: e.target.value.split("\n").map((l) => l.trim()).filter(Boolean)
+                      }
                     }
-                  }
-                })
-              }
-              rows={2}
-            />
-          </div>
+                  })
+                }
+                rows={3}
+              />
+            </div>
+            <div className="field">
+              <span className="label mono">Избегать</span>
+              <textarea
+                className="textarea"
+                value={state.music.avoid.join("\n")}
+                onChange={(e) =>
+                  dispatch({
+                    type: "set",
+                    patch: {
+                      music: {
+                        ...state.music,
+                        avoid: e.target.value.split("\n").map((l) => l.trim()).filter(Boolean)
+                      }
+                    }
+                  })
+                }
+                rows={2}
+              />
+            </div>
           </div>
         ) : null}
 

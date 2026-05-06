@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
+import { resolveImagePrompt } from "@/lib/image-prompt-pipeline";
 import type { StudioState } from "@/lib/state";
 
 type ItemStatus = "empty" | "progress" | "done" | "skip";
@@ -17,13 +18,13 @@ export function ReadinessChecklist({
   compact = false
 }: {
   state: StudioState;
-  /** Компактный вид для встраивания в Build-блок. */
   compact?: boolean;
 }) {
   const items = useMemo(() => {
     const hasSlides = state.slides.length > 0;
-    const anyCosmetic =
-      state.prompts.some((p) => p.prompt.trim().length > 0) && state.slides.length > 0;
+    const allImagePrompts =
+      hasSlides &&
+      state.slides.every((s) => Boolean(resolveImagePrompt(state.imagePrompts, s.id)));
 
     const imgBusy =
       state.images.length > 0 &&
@@ -39,11 +40,11 @@ export function ReadinessChecklist({
       state.music.avoid.length > 0;
 
     const scenario: ItemStatus = hasSlides ? "done" : state.messages.length > 0 ? "progress" : "empty";
-    const refinements: ItemStatus = hasSlides
-      ? anyCosmetic
+    const prompts: ItemStatus = hasSlides
+      ? allImagePrompts
         ? "done"
-        : "skip"
-      : state.prompts.some((p) => p.prompt.trim())
+        : "progress"
+      : state.imagePrompts.some((p) => p.prompt.trim())
         ? "done"
         : "empty";
     const frames: ItemStatus =
@@ -52,7 +53,7 @@ export function ReadinessChecklist({
     const music: ItemStatus = musicTouched ? "done" : "skip";
     const exportReady =
       hasSlides ||
-      state.prompts.some((p) => p.prompt.trim()) ||
+      state.imagePrompts.some((p) => p.prompt.trim()) ||
       state.caption.trim().length > 0 ||
       musicTouched ||
       state.messages.length > 0 ||
@@ -62,10 +63,10 @@ export function ReadinessChecklist({
     return [
       { key: "scenario", label: "Сценарий", stateLabel: hasSlides ? "готово" : "ждём", status: scenario },
       {
-        key: "refinements",
-        label: "Уточнения кадров",
-        stateLabel: anyCosmetic ? "есть" : "не нужны",
-        status: refinements
+        key: "prompts",
+        label: "Промпты картинок",
+        stateLabel: allImagePrompts ? "есть" : hasSlides ? "ждём модель" : "—",
+        status: prompts
       },
       { key: "frames", label: "Кадры", stateLabel: imgBusy ? "генерация" : imgDone ? "синхрон" : "—", status: frames },
       { key: "caption", label: "Подпись", stateLabel: state.caption.trim() ? "есть" : "—", status: caption },

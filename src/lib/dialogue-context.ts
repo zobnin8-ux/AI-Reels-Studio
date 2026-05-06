@@ -3,27 +3,12 @@ import type { StudioState } from "@/lib/state";
 
 export type SessionSnapshotForApi = Pick<
   StudioState,
-  | "topic"
-  | "selectedAngleId"
-  | "angles"
-  | "slides"
-  | "approved"
-  | "prompts"
-  | "sceneMeta"
-  | "caption"
-  | "music"
+  "topic" | "selectedAngleId" | "angles" | "slides" | "approved" | "imagePrompts" | "caption" | "music"
 >;
 
 export type SelectorSnapshotForApi = Pick<
   StudioState,
-  | "project"
-  | "contentType"
-  | "slideCount"
-  | "outputMode"
-  | "ctaMode"
-  | "website"
-  | "triggerWord"
-  | "customCta"
+  "project" | "contentType" | "slideCount" | "ctaMode" | "website" | "triggerWord" | "customCta"
 >;
 
 function selectorsBlock(sel: SelectorSnapshotForApi) {
@@ -31,25 +16,10 @@ function selectorsBlock(sel: SelectorSnapshotForApi) {
     sel.contentType === "reels" ? "9:16 (1080×1920)" : "4:5 (1080×1350)";
   return `PROJECT: ${sel.project}
 CONTENT FORMAT: ${sel.contentType} (${aspect})
-SLIDE COUNT TARGET: ${sel.slideCount}
-OUTPUT MODE (text on images vs separate): ${sel.outputMode}
+SLIDE COUNT TARGET: ${sel.slideCount} (hint — not a hard cap on edits)
 CTA MODE & RULES: ${getCtaHint(sel)}
 
-CREATIVE FREEDOM (no mood/visual dropdowns in UI):
-Infer tone, pacing, warmth, tension, and how concrete vs spare the writing feels ONLY from the user's messages and the slides you author — not from separate MOOD/VISUAL selectors.
-Image backgrounds are rendered later by the app + OpenAI Image using slide text and sceneMeta; the chat model must not assume studio-side mood/visual toggles.`;
-}
-
-function olgatripRules(project: SelectorSnapshotForApi["project"]) {
-  if (project !== "olgatrip") return "";
-  return `
-OLGATRIP — booster (profile above is canonical):
-- Hard UI selectors (format, slide count, output mode, CTA) + SESSION STATE win on conflicts; SCENE DIVERSITY ENGINE + anti-repetition always apply.
-- Full-package "reply": IDEA → HOOK → SCRIPT (0–3 / 3–10 / 10–25 / 25–35) → CAPTION → MUSIC MOOD; never image prompts for backgrounds.
-- statePatch.prompts: short cosmetic hints only on explicit user ask for regeneration tweaks.
-- When slides are generated or rebuilt, include statePatch.sceneMeta (OlgaTrip schema, one entry per slide with slideId); never describe sceneMeta in "reply".
-- Never put statePatch.caption or statePatch.music on script-only turns — only when the user explicitly asks for caption or music (same as global RULES).
-`;
+Copy tone, pacing, warmth, and density follow the user's messages and the profile — there are no separate mood/visual dropdowns in the UI.`;
 }
 
 /** Full system prompt: profile + selectors + JSON contract + session snapshot (re-sent every request). */
@@ -66,8 +36,7 @@ export function buildDialogueSystemPrompt(
       angles: session.angles,
       slides: session.slides,
       approved: session.approved,
-      prompts: session.prompts,
-      sceneMeta: session.sceneMeta,
+      imagePrompts: session.imagePrompts,
       caption: session.caption,
       music: session.music
     },
@@ -80,7 +49,6 @@ export function buildDialogueSystemPrompt(
 ---
 SESSION CONTEXT — HARD CONSTRAINTS FROM UI (only these; everything else comes from dialogue):
 ${selectorsBlock(selectors)}
-${olgatripRules(selectors.project)}
 
 ---
 CURRENT SESSION STATE (authoritative; update via statePatch only when user intent requires it):
@@ -91,46 +59,47 @@ RESPONSE FORMAT (mandatory — valid JSON only, single object):
 {
   "reply": "<natural language for the user — markdown ok>",
   "statePatch": {
-    /* optional; include ONLY keys that change */
     "topic": string?,
     "angles": [{"id","label"}, ...]?,
     "selectedAngleId": string | null?,
     "slides": [{"id","title","text"}, ...]?,
     "approved": boolean?,
-    "prompts": [{"slideId","prompt"}, ...]?,
-    "sceneMeta": poslenego → [{"slideId","scene_type","environment","visual_focus"}, ...] OR zobnin → [{"slideId","human_moment","ai_interaction","framing","environment","visual_focus"}, ...] OR olgatrip → [{"slideId","scene_type","environment","social_context","visual_focus","light_type"}, ...]?,
+    "imagePrompts": [{"slideId","prompt"}, ...]?,
     "caption": string?,
     "music": {"queries":[],"recommendations":[],"avoid":[]}?
   }
 }
 
+CRITICAL RULES FOR imagePrompts:
+- WHEN slides change (full rebuild OR any slide rewritten), include imagePrompts with one entry per slide (same slideIds, same order as slides).
+- Each prompt MUST be in English, a single dense paragraph, 80–180 words.
+- Each prompt MUST follow the active profile's IMAGE PROMPT SPEC (photographer references, film/lens, light, wardrobe, casting, environments, framing, mandatory closing line).
+- Each prompt MUST end with the profile's mandatory closing line pattern, including vertical aspect: use "9:16" for reels and "4:5" for post when you name the aspect.
+- If the user asks to rewrite ONE slide's image prompt only — return imagePrompts with only that slideId entry (the app merges by slideId).
+- If the user asks to rewrite ALL image prompts — return a full imagePrompts array for every slide, keep slides unchanged.
+- Do NOT contradict the profile TABOOS.
+- Put imagePrompts in statePatch only when slides already exist in session (not for empty initial state).
+
 RULES:
-- HARD UI CONSTRAINTS (slide count, reels/post format, output mode, CTA) override conflicting defaults; emotional tone and visual language are NOT chosen from dropdowns — derive them from conversation and script quality.
+- HARD UI CONSTRAINTS (slide count target, reels/post format, CTA) override conflicting defaults; emotional tone and visual language are NOT chosen from removed dropdowns — derive them from conversation and script quality.
 - Always return "reply" as what the user reads (creative partner tone).
 - Infer intent from short messages ("эта", "эту", numbers): update selectedAngleId or refine slides accordingly.
-- ANGLES / ВАРИАНТЫ ТЕМ / ОПЦИИ ВЫБОРА: In natural-language "reply", list options only as **1. … 2. … 3. …** (Arabic numerals, max five items). Do NOT use stars, bullets with letters (A/B/C), Roman numerals, emoji numbering, or mixed styles. In statePatch.angles, each item MUST use id exactly **"1"**, **"2"**, **"3"**, **"4"**, **"5"** in order from first to fifth option; labels carry the text. selectedAngleId must be one of those ids as a string when user chooses an option.
-- When refining scenarios: EDIT the current slides — preserve slide "id" fields whenever possible; keep structure unless the user asks to change structure or slide count.
-- Slide count: aim for exactly SLIDE COUNT TARGET slides when generating/rebuilding full scenario; if user asks partial edits, keep existing ids for untouched slides.
-- Do NOT regenerate the entire scenario from scratch unless the user explicitly asks for a full redo.
+- ANGLES / ВАРИАНТЫ: In "reply", list options only as **1. … 2. … 3. …** (Arabic numerals, max five). In statePatch.angles, ids must be **"1"** … **"5"** in order.
+- When refining scenarios: EDIT current slides — preserve slide "id" when possible.
+- Slide count: aim for SLIDE COUNT TARGET when generating full scenario; partial edits keep ids for untouched slides.
+- Do NOT regenerate the entire scenario unless the user explicitly asks for a full redo.
 - When user approves ("утверждаю", "approve", etc.): set approved: true.
-- Respect OUTPUT MODE strictly for COPY (slides/caption), not for image pipeline:
-  - textInImages: slides should be concise on-screen copy (short lines), not long narration paragraphs.
-  - textSeparate: keep slide text as structure/idea; avoid writing heavy on-image wording.
-  - both: provide concise on-image line + supporting context in slide text.
-- Respect CTA MODE strictly:
-  - none: do not add any CTA in slides/caption.
-  - website: CTA must use the selected website.
-  - direct: CTA must use the selected trigger word.
-  - custom: CTA must use customCta.
-- Image backgrounds are NOT authored here as raw English prompts: the app builds OpenAI Image requests from slide text + PROJECT + sceneMeta + a neutral technical template (no per-chat mood/visual selectors). Do not invent full English image prompts unless the user explicitly asks for short cosmetic refinement lines for regeneration.
-- Caption: put statePatch.caption ONLY when the user explicitly asks for a caption / подпись / текст поста in this turn (shortcut «Caption» counts). If the user only asked for a script or scenario, omit "caption" from statePatch entirely — do not auto-fill a weak caption.
-- Music: put statePatch.music ONLY when the user explicitly asks for music / soundtrack / треки / подбор музыки in this turn (shortcut «Музыка» counts). Never fill "music" from scenario slides, IDEA/HOOK blocks, or creative script content. If the user did not ask for music this turn, omit "music" entirely from statePatch.
+- Respect CTA MODE: none / website / direct / custom per SESSION CONTEXT.
+- Caption: statePatch.caption ONLY when the user explicitly asks for caption / подпись in this turn.
+- Music: statePatch.music ONLY when the user explicitly asks for music / soundtrack in this turn.
 - If nothing structural changes, omit statePatch or use {}.
-- When the user asks for cosmetic tweaks for a slide frame ("теплее", "меньше людей", "улучши промпт кадра N" as refinement hints), put a SHORT line in statePatch.prompts for that slideId (slideId must match). These are optional notes for regeneration, not full image prompts.
-- When the user asks to refine a slide tweak from chat, update statePatch.prompts for that slideId with the short new refinement text.
-- PROJECT poslenego: when generating or rebuilding slides, include statePatch.sceneMeta — one entry per slide with matching slideId (poslenego schema; visual anchors for OpenAI Image; never describe sceneMeta in "reply"). See profile «После него».
-- PROJECT zobnin: same — statePatch.sceneMeta with zobnin schema fields; count must equal slides.length when slides are included in statePatch; never mention sceneMeta in "reply". See profile Zobnin AI.
-- PROJECT olgatrip: same — statePatch.sceneMeta with OlgaTrip fields (slideId + scene_type, environment, social_context, visual_focus, light_type); vary combinations within a reel; never mention sceneMeta in "reply". See profile OlgaTrip.
+- ON FIRST FULL SCRIPT: when user approves an angle and you author full slides, ALWAYS include matching imagePrompts (one per slide).
+- ON SLIDE EDITS: if any slide text changes, regenerate that slide's imagePrompt to match.
+- ON COSMETIC / SCENE TWEAKS ("слайд 3 теплее", "меньше людей в кадре 5", "в кафе"): UPDATE only that slide's imagePrompts entry; do NOT touch other slides' prompts unless asked.
+- ON FULL VISUAL REWRITE: if user says "перепиши все промпты картинок" — regenerate all imagePrompts, slides unchanged.
+- NEVER author imagePrompts that contradict the profile's TABOOS.
+- ALWAYS follow IMAGE PROMPT SPEC of the active project.
+- imagePrompts go in statePatch ONLY when slides exist.
 
 `;
 

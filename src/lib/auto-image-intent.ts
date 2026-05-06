@@ -1,3 +1,6 @@
+import { resolveImagePrompt } from "@/lib/image-prompt-pipeline";
+import type { StudioState } from "@/lib/state";
+
 /** Сообщение пользователя подразумевает запуск генерации картинок без отдельного клика справа. */
 export function userWantsImageGeneration(userText: string): boolean {
   const t = userText.trim();
@@ -10,8 +13,7 @@ export function userWantsImageGeneration(userText: string): boolean {
   );
 }
 
-export function canRunImageGeneration(state: {
-  slides: { id: string }[];
-}): boolean {
-  return state.slides.length > 0;
+export function canRunImageGeneration(state: StudioState): boolean {
+  if (state.slides.length === 0) return false;
+  return state.slides.every((s) => Boolean(resolveImagePrompt(state.imagePrompts, s.id)));
 }

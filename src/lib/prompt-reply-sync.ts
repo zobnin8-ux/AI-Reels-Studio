@@ -1,6 +1,6 @@
 /**
- * Когда модель не кладёт промпт в statePatch, вытаскиваем его из reply
- * и синхронизируем в prompts[] для нужного слайда.
+ * Когда модель не кладёт imagePrompts в statePatch, вытаскиваем абзац из reply
+ * и синхронизируем в imagePrompts для нужного слайда.
  */
 
 export function userWantsPromptImprovement(userText: string): boolean {

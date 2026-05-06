@@ -7,7 +7,8 @@ import { getSoundEnabled, playSendClick, setSoundEnabled } from "@/lib/ui-sound"
 import { generateImagesFromState, mergeStatePatch, sendDialogueTurn } from "@/lib/actions";
 import { canRunImageGeneration, userWantsImageGeneration } from "@/lib/auto-image-intent";
 import type { ChatMessage, StudioState } from "@/lib/state";
-import { mergePromptForSlide } from "@/lib/prompt-sync";
+import { mergeImagePromptFromModelReply } from "@/lib/image-prompt-sync";
+import { subscribeDialogueFlush, takePendingDialogueTurn } from "@/lib/dialogue-bridge";
 import { ImageStripPanel } from "@/components/ImageStripPanel";
 import {
   extractMusicFromReply,
@@ -97,7 +98,7 @@ const SHORTCUTS: { label: string; message: string }[] = [
   {
     label: "Уточни кадры",
     message:
-      "Дай короткие опциональные уточнения для перегенерации кадров (свет, настроение), если нужно — по одному на слайд."
+      "Обнови imagePrompts: плотные английские промпты под gpt-image для каждого слайда (или укажи, какие слайды тронуть), без смены русского текста слайдов, если не просили."
   },
   {
     label: "Подпись",
@@ -139,6 +140,7 @@ export function DialoguePanel() {
   const sessionUndoStackRef = useRef<StudioState[]>([]);
   const [sessionUndoDepth, setSessionUndoDepth] = useState(0);
   const prevSessionUndoEpochRef = useRef<number | null>(null);
+  const runTurnRef = useRef<(t: string) => Promise<void>>(async () => {});
 
   useEffect(() => {
     if (prevSessionUndoEpochRef.current === null) {
@@ -215,6 +217,13 @@ export function DialoguePanel() {
   }, [busy, dispatch]);
 
   useEffect(() => {
+    return subscribeDialogueFlush(() => {
+      const t = takePendingDialogueTurn();
+      if (t) void runTurnRef.current(t);
+    });
+  }, []);
+
+  useEffect(() => {
     function onKeyDown(e: KeyboardEvent) {
       const mod = e.ctrlKey || e.metaKey;
       if (!mod || !e.shiftKey) return;
@@ -269,9 +278,8 @@ export function DialoguePanel() {
         patch.caption = unwrapCaptionValue(patch.caption);
       }
 
-      // Если модель не положила промпт в statePatch — пробуем вытащить из reply:
-      // явный номер слайда в сообщении, режим «улучши промпт», номер кадра из текста ответа.
-      if (!patch.prompts && state.slides.length > 0) {
+      // Fallback: модель могла описать промпт в reply без statePatch.imagePrompts
+      if (!patch.imagePrompts && state.slides.length > 0) {
         let slideIdx = extractSlideIndexFromUserMessage(text, state.slides.length);
         if (!slideIdx && userWantsPromptImprovement(text)) {
           slideIdx = extractSlideIndexFromAssistantReply(reply);
@@ -282,8 +290,8 @@ export function DialoguePanel() {
         if (slideIdx && slideIdx >= 1 && slideIdx <= state.slides.length) {
           const targetSlideId = state.slides[slideIdx - 1]!.id;
           const promptCandidate = normalizeImagePromptFromReply(reply);
-          if (targetSlideId && promptCandidate.length >= 3) {
-            patch.prompts = mergePromptForSlide(state, targetSlideId, promptCandidate);
+          if (targetSlideId && promptCandidate.length >= 50) {
+            patch.imagePrompts = mergeImagePromptFromModelReply(state, targetSlideId, promptCandidate);
           }
         }
       }
@@ -313,8 +321,7 @@ export function DialoguePanel() {
       if (patch.topic !== undefined) results.push({ key: "topic", label: "Тема" });
       if (patch.angles !== undefined || patch.selectedAngleId !== undefined) results.push({ key: "angles", label: "Углы" });
       if (patch.slides !== undefined) results.push({ key: "slides", label: "Слайды" });
-      if (patch.prompts !== undefined) results.push({ key: "prompts", label: "Уточнения" });
-      if (patch.sceneMeta !== undefined) results.push({ key: "sceneMeta", label: "Якоря" });
+      if (patch.imagePrompts !== undefined) results.push({ key: "imagePrompts", label: "Промпты картинок" });
       if (patch.caption !== undefined) results.push({ key: "caption", label: "Подпись" });
       if (patch.music !== undefined) results.push({ key: "music", label: "Музыка" });
       if (results.length > 0) {
@@ -381,6 +388,8 @@ export function DialoguePanel() {
       setBusy(false);
     }
   }
+
+  runTurnRef.current = runTurn;
 
   async function onSend() {
     await runTurn(input);

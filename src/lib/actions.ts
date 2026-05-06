@@ -1,17 +1,9 @@
 "use client";
 
 import {
-  buildImagePrompt,
-  formatSceneAnchorsFromMeta,
-  IMAGE_PIPELINE_TONE,
-  IMAGE_PIPELINE_VISUAL,
-  slideBodyForImagePrompt
-} from "@/lib/build-image-prompt";
-import {
-  sceneMetaMatchesProject,
   type ChatMessage,
   type GeneratedImage,
-  type SceneMetaEntry,
+  type ImagePrompt,
   type StudioState
 } from "@/lib/state";
 import type { StatePatch } from "@/lib/chat-response";
@@ -23,6 +15,8 @@ import {
   remapSelectedAngleIdAfterNormalize
 } from "@/lib/angle-normalize";
 import { formatTypographyNotesForZip } from "@/lib/typography-export";
+import { resolveImagePrompt, sanitizeForOpenAIImage } from "@/lib/image-prompt-pipeline";
+import { sanitizePromptText } from "@/lib/image-prompt-sync";
 
 function uid(prefix: string) {
   return `${prefix}_${Math.random().toString(16).slice(2)}_${Date.now().toString(16)}`;
@@ -32,85 +26,13 @@ function aspectFromContentType(contentType: StudioState["contentType"]) {
   return contentType === "reels" ? ("9:16" as const) : ("4:5" as const);
 }
 
-/** Сборка строки для OpenAI Image API: тон/«стиль» шаблона фиксированы нейтрально — живость задают текст слайда и sceneMeta из диалога. */
-function composeImagePrompt(
-  state: StudioState,
-  slide: { id: string; title: string; text: string },
-  cosmeticHint: string
-) {
-  const meta = state.sceneMeta.find((m) => m.slideId === slide.id);
-  const useAnchors = meta && sceneMetaMatchesProject(state.project, meta);
-  return buildImagePrompt({
-    account: state.project,
-    tone: IMAGE_PIPELINE_TONE,
-    visualStyle: IMAGE_PIPELINE_VISUAL,
-    slideText: slideBodyForImagePrompt(slide),
-    cosmeticHint: cosmeticHint.trim() || undefined,
-    sceneAnchors: useAnchors ? formatSceneAnchorsFromMeta(meta) : undefined
-  });
-}
-
-function sanitizePromptText(raw: string): string {
-  let s = (raw ?? "").trim();
-  if (!s) return s;
-
-  // Частая форма от модели: {"prompt":"..."} или вложенный JSON с полем prompt.
-  const inlinePrompt = s.match(/"prompt"\s*:\s*"([\s\S]*?)"/i) ?? s.match(/prompt\s*:\s*([\s\S]*)$/i);
-  if (inlinePrompt?.[1]) s = inlinePrompt[1].trim();
-
-  const jsonLike = s.match(/^\{\s*"?prompt"?\s*:\s*([\s\S]*?)\s*\}$/i);
-  if (jsonLike?.[1]) s = jsonLike[1].trim();
-
-  // Удаляем markdown fenced blocks
-  const fenced = s.match(/```(?:[\w-]*)?\s*\n([\s\S]*?)```/);
-  if (fenced?.[1]) {
-    s = fenced[1].trim();
-  }
-
-  // Если осталась метка prompt:
-  s = s.replace(/^\s*(prompt|промпт)\s*[:\-]\s*/i, "");
-  s = s.replace(/^\s*[{[]\s*|[\]}]\s*$/g, "");
-
-  // Снимаем внешние кавычки/апострофы/бэктики
-  s = s.replace(/^[`"'«»\s]+|[`"'«»\s]+$/g, "");
-
-  // Нормализуем экранированные переводы строк от JSON
-  s = s.replace(/\\n/g, "\n").replace(/\\"/g, "\"");
-  s = s.replace(/\s*[,;]\s*$/g, "");
-
-  // Если модель отдала мини-объект/массив в одной строке, пытаемся достать самое длинное значение в кавычках.
-  if ((s.startsWith("{") && s.endsWith("}")) || (s.startsWith("[") && s.endsWith("]"))) {
-    const quoted = [...s.matchAll(/"([^"]{12,})"/g)].map((m) => m[1]!.trim());
-    if (quoted.length > 0) {
-      s = quoted.sort((a, b) => b.length - a.length)[0]!;
-    }
-  }
-
-  // Удаляем служебные префиксы вида "1) { ... }"
-  s = s.replace(/^\s*\d+[.)]\s*/, "");
-  s = s.replace(/^\s*[-*]\s*/, "");
-
-  return s.trim();
-}
-
 export function buildSelectorsPayload(
   state: StudioState
-): Pick<
-  StudioState,
-  | "project"
-  | "contentType"
-  | "slideCount"
-  | "outputMode"
-  | "ctaMode"
-  | "website"
-  | "triggerWord"
-  | "customCta"
-> {
+): Pick<StudioState, "project" | "contentType" | "slideCount" | "ctaMode" | "website" | "triggerWord" | "customCta"> {
   return {
     project: state.project,
     contentType: state.contentType,
     slideCount: state.slideCount,
-    outputMode: state.outputMode,
     ctaMode: state.ctaMode,
     website: state.website,
     triggerWord: state.triggerWord,
@@ -122,15 +44,7 @@ export function buildSessionPayload(
   state: StudioState
 ): Pick<
   StudioState,
-  | "topic"
-  | "selectedAngleId"
-  | "angles"
-  | "slides"
-  | "approved"
-  | "prompts"
-  | "sceneMeta"
-  | "caption"
-  | "music"
+  "topic" | "selectedAngleId" | "angles" | "slides" | "approved" | "imagePrompts" | "caption" | "music"
 > {
   return {
     topic: state.topic,
@@ -138,11 +52,39 @@ export function buildSessionPayload(
     angles: state.angles,
     slides: state.slides,
     approved: state.approved,
-    prompts: state.prompts,
-    sceneMeta: state.sceneMeta,
+    imagePrompts: state.imagePrompts,
     caption: state.caption,
     music: state.music
   };
+}
+
+function mergeImagePromptPatch(state: StudioState, patch: StatePatch, incoming: ImagePrompt[]): Partial<StudioState> {
+  const slidesFor = patch.slides ?? state.slides;
+  if (slidesFor.length > 0) {
+    return {
+      imagePrompts: slidesFor.map((s) => {
+        const inc = incoming.find((p) => p.slideId === s.id);
+        const prev = state.imagePrompts.find((p) => p.slideId === s.id);
+        if (inc) {
+          return {
+            slideId: s.id,
+            prompt: sanitizePromptText(inc.prompt),
+            manualOverride: undefined
+          };
+        }
+        return prev ?? { slideId: s.id, prompt: "" };
+      })
+    };
+  }
+  const byId = new Map(state.imagePrompts.map((p) => [p.slideId, { ...p }] as const));
+  for (const p of incoming) {
+    byId.set(p.slideId, {
+      slideId: p.slideId,
+      prompt: sanitizePromptText(p.prompt),
+      manualOverride: undefined
+    });
+  }
+  return { imagePrompts: Array.from(byId.values()) };
 }
 
 export function mergeStatePatch(state: StudioState, patch: StatePatch | undefined): Partial<StudioState> {
@@ -163,67 +105,21 @@ export function mergeStatePatch(state: StudioState, patch: StatePatch | undefine
   } else if (patch.selectedAngleId !== undefined) {
     out.selectedAngleId = coerceSelectedAngleId(patch.selectedAngleId, state.angles);
   }
-  if (patch.slides !== undefined) out.slides = patch.slides;
-  if (patch.approved !== undefined) out.approved = patch.approved;
-  if (patch.prompts !== undefined) {
-    const incoming = patch.prompts.map((p) => ({
-      slideId: p.slideId,
-      prompt: sanitizePromptText(p.prompt)
-    }));
-    /**
-     * Модель часто шлёт только изменённый кадр. Раньше мы затирали весь массив — правая колонка и
-     * mergePromptForSlide расходились с плитками; теперь мержим по slideId.
-     */
-    const slidesForPromptMerge = patch.slides ?? state.slides;
-    if (slidesForPromptMerge.length > 0) {
-      out.prompts = slidesForPromptMerge.map((s) => {
-        const inc = incoming.find((p) => p.slideId === s.id);
-        const prev = state.prompts.find((p) => p.slideId === s.id);
-        return {
-          slideId: s.id,
-          prompt: inc !== undefined ? inc.prompt : (prev?.prompt ?? "")
-        };
-      });
-    } else {
-      const byId = new Map(state.prompts.map((p) => [p.slideId, p.prompt]));
-      for (const p of incoming) {
-        byId.set(p.slideId, p.prompt);
-      }
-      out.prompts = Array.from(byId.entries()).map(([slideId, prompt]) => ({ slideId, prompt }));
+  if (patch.slides !== undefined) {
+    out.slides = patch.slides;
+    if (patch.imagePrompts === undefined) {
+      const ids = new Set(patch.slides.map((s) => s.id));
+      out.imagePrompts = state.imagePrompts.filter((p) => ids.has(p.slideId));
+      out.images = state.images.filter((img) => !img.slideId || ids.has(img.slideId));
     }
   }
-  if (patch.sceneMeta !== undefined) {
-    const incoming = patch.sceneMeta;
-    const slidesForMerge = patch.slides ?? state.slides;
-    if (slidesForMerge.length > 0) {
-      const merged: SceneMetaEntry[] = [];
-      for (const s of slidesForMerge) {
-        const inc = incoming.find((m) => m.slideId === s.id);
-        const prev = state.sceneMeta.find((m) => m.slideId === s.id);
-        const row = inc ?? prev;
-        if (row) merged.push({ ...row, slideId: s.id });
-      }
-      out.sceneMeta = merged;
-    } else {
-      const byId = new Map(state.sceneMeta.map((m) => [m.slideId, m]));
-      for (const m of incoming) {
-        byId.set(m.slideId, m);
-      }
-      out.sceneMeta = Array.from(byId.values());
-    }
+  if (patch.approved !== undefined) out.approved = patch.approved;
+  if (patch.imagePrompts !== undefined) {
+    Object.assign(out, mergeImagePromptPatch(state, patch, patch.imagePrompts));
   }
   if (patch.caption !== undefined) out.caption = unwrapCaptionValue(patch.caption);
   if (patch.music !== undefined) out.music = patch.music;
 
-  // Если сценарий изменился, а промпты не обновлялись в этом же ходе —
-  // считаем промпты/картинки устаревшими и сбрасываем их, чтобы не было рассинхрона.
-  if (patch.slides !== undefined && patch.prompts === undefined) {
-    out.prompts = [];
-    out.images = [];
-  }
-  if (patch.slides !== undefined && patch.sceneMeta === undefined) {
-    out.sceneMeta = [];
-  }
   return out;
 }
 
@@ -261,9 +157,6 @@ export type GenerateImagesProgressPayload = {
   images: GeneratedImage[];
 };
 
-/** Генерация картинок только по кнопке; использует текущие prompts[] и порядок слайдов. Не вызывает диалог.
- *  onProgress вызывается после каждого изменения массива (очередь → генерация → готово/ошибка) для Stage 2 UI.
- */
 export async function generateImagesFromState(
   state: StudioState,
   options?: { onProgress?: (p: GenerateImagesProgressPayload) => void; signal?: AbortSignal }
@@ -278,18 +171,22 @@ export async function generateImagesFromState(
   type SlideJob = {
     id: string;
     slideId: string;
-    cosmeticHint: string;
+    uiHint: string;
     finalPrompt: string;
   };
 
   const jobs: SlideJob[] = state.slides.map((slide) => {
-    const row = state.prompts.find((p) => p.slideId === slide.id);
-    const cosmeticHint = row?.prompt?.trim() ?? "";
-    const finalPrompt = composeImagePrompt(state, slide, cosmeticHint);
+    const raw = resolveImagePrompt(state.imagePrompts, slide.id);
+    if (!raw) {
+      throw new Error(
+        `Нет image prompt для слайда «${slide.title}». Попроси Anthropic сгенерировать промпты картинок для всех слайдов.`
+      );
+    }
+    const finalPrompt = sanitizeForOpenAIImage(raw, state.contentType);
     return {
       id: `img_${slide.id}`,
       slideId: slide.id,
-      cosmeticHint,
+      uiHint: raw.slice(0, 200),
       finalPrompt
     };
   });
@@ -297,7 +194,7 @@ export async function generateImagesFromState(
   const out: GeneratedImage[] = jobs.map((j) => ({
     id: j.id,
     slideId: j.slideId,
-    prompt: j.cosmeticHint,
+    prompt: j.uiHint,
     finalPrompt: j.finalPrompt,
     status: "waiting" as const
   }));
@@ -305,13 +202,12 @@ export async function generateImagesFromState(
 
   for (let i = 0; i < jobs.length; i++) {
     if (signal?.aborted) {
-      // помечаем остаток как отменённый, чтобы UI не висел на waiting
       for (let k = i; k < jobs.length; k++) {
         const jj = jobs[k]!;
         out[k] = {
           id: jj.id,
           slideId: jj.slideId,
-          prompt: jj.cosmeticHint,
+          prompt: jj.uiHint,
           finalPrompt: jj.finalPrompt,
           status: "error",
           error: "Отменено"
@@ -325,21 +221,21 @@ export async function generateImagesFromState(
     out[i] = {
       id: j.id,
       slideId: j.slideId,
-      prompt: j.cosmeticHint,
+      prompt: j.uiHint,
       finalPrompt: j.finalPrompt,
       status: "generating"
     };
     onProgress?.({ images: [...out] });
 
     try {
-      const img = await fetchOneImage(state, j.id, j.slideId, j.finalPrompt, j.cosmeticHint, signal);
+      const img = await fetchOneImage(state, j.id, j.slideId, j.finalPrompt, j.uiHint, signal);
       out[i] = img;
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : "Image error";
       out[i] = {
         id: j.id,
         slideId: j.slideId,
-        prompt: j.cosmeticHint,
+        prompt: j.uiHint,
         finalPrompt: j.finalPrompt,
         status: "error",
         error: msg
@@ -365,8 +261,7 @@ async function fetchOneImage(
     signal,
     body: JSON.stringify({
       prompt: apiPrompt,
-      aspect: aspectFromContentType(state.contentType),
-      stylePreset: state.visualStyle
+      aspect: aspectFromContentType(state.contentType)
     })
   });
   if (!res.ok) {
@@ -387,30 +282,32 @@ async function fetchOneImage(
 }
 
 /**
- * @param apiPromptOverride если задан — уходит в /api/image как есть (после правки полного промпта в UI).
+ * Перегенерация одного кадра: raw из imagePrompts (+ manualOverride), затем sanitize.
+ * Если передан apiPromptOverride — уходит в API как есть (уже финальная строка).
  */
 export async function regenerateOneImage(
   state: StudioState,
   imageId: string,
   slideId: string | undefined,
-  cosmeticHint: string,
   apiPromptOverride?: string
 ): Promise<GeneratedImage> {
-  const slide = slideId ? state.slides.find((s) => s.id === slideId) : undefined;
-  const hint = cosmeticHint.trim();
   const override = apiPromptOverride?.trim();
-  const finalPrompt = override
-    ? override
-    : slide
-      ? composeImagePrompt(state, slide, hint)
-      : buildImagePrompt({
-          account: state.project,
-          tone: IMAGE_PIPELINE_TONE,
-          visualStyle: IMAGE_PIPELINE_VISUAL,
-          slideText: hint || "(no slide)",
-          cosmeticHint: undefined
-        });
-  return fetchOneImage(state, imageId, slideId ?? "", finalPrompt, hint);
+  let finalPrompt: string;
+  let uiHint: string;
+  if (override) {
+    finalPrompt = override;
+    uiHint = override.slice(0, 200);
+  } else if (slideId) {
+    const raw = resolveImagePrompt(state.imagePrompts, slideId);
+    if (!raw) {
+      throw new Error("Нет промпта для этого слайда. Попроси модель выдать imagePrompts.");
+    }
+    finalPrompt = sanitizeForOpenAIImage(raw, state.contentType);
+    uiHint = raw.slice(0, 200);
+  } else {
+    throw new Error("Нет slideId для перегенерации.");
+  }
+  return fetchOneImage(state, imageId, slideId ?? "", finalPrompt, uiHint);
 }
 
 function formatMusicNotesForZip(music: StudioState["music"]): string {
@@ -432,7 +329,6 @@ function formatMusicNotesForZip(music: StudioState["music"]): string {
   return blocks.join("\n");
 }
 
-/** Имя архива: тема из левой панели + _reels | _post (безопасные символы для файловой системы). */
 function buildZipDownloadFileName(state: StudioState): string {
   const kind = state.contentType === "reels" ? "reels" : "post";
   let base = (state.topic ?? "").trim();
@@ -456,37 +352,12 @@ export async function downloadZip(state: StudioState) {
     .join("\n\n---\n\n");
   zip.file("scenario.txt", scenarioText || "");
 
-  const cosmeticLines = state.slides.length
-    ? state.slides.map((s, i) => {
-        const p = state.prompts.find((x) => x.slideId === s.id)?.prompt ?? "";
-        const label = p.trim() ? p : "(нет)";
-        return `${String(i + 1).padStart(2, "0")}. ${label}`;
-      })
-    : state.prompts.map((x, i) => `${String(i + 1).padStart(2, "0")}. ${x.prompt || "(нет)"}`);
-  zip.file("cosmetic_hints.txt", cosmeticLines.join("\n\n"));
-
-  if (state.sceneMeta.length > 0) {
-    const sceneLines = state.sceneMeta.map((m) => {
-      const slideIdx = state.slides.findIndex((s) => s.id === m.slideId);
-      const n = slideIdx >= 0 ? slideIdx + 1 : "?";
-      const head = `${String(n).padStart(2, "0")}. slideId=${m.slideId}`;
-      if ("human_moment" in m && "ai_interaction" in m) {
-        return `${head}\nhuman_moment=${m.human_moment}\nai_interaction=${m.ai_interaction}\nframing=${m.framing}\nenvironment=${m.environment}\nvisual_focus=${m.visual_focus}`;
-      }
-      if ("social_context" in m && "light_type" in m) {
-        return `${head}\nscene_type=${m.scene_type}\nenvironment=${m.environment}\nsocial_context=${m.social_context}\nvisual_focus=${m.visual_focus}\nlight_type=${m.light_type}`;
-      }
-      return `${head}\nscene_type=${m.scene_type}\nenvironment=${m.environment}\nvisual_focus=${m.visual_focus}`;
-    });
-    zip.file("scene_meta.txt", sceneLines.join("\n\n"));
-  }
-
   const openAiBlocks = state.slides.map((s, i) => {
-    const hint = state.prompts.find((x) => x.slideId === s.id)?.prompt?.trim() ?? "";
+    const raw = resolveImagePrompt(state.imagePrompts, s.id);
     const imgRow = state.images.find((x) => x.slideId === s.id);
     const block =
       imgRow?.finalPrompt?.trim() ||
-      composeImagePrompt(state, s, hint);
+      (raw ? sanitizeForOpenAIImage(raw, state.contentType) : "(нет промпта — запроси у модели)");
     return `--- ${String(i + 1).padStart(2, "0")}. ${s.title || s.id} ---\n${block}`;
   });
   zip.file("image_prompts_openai.txt", openAiBlocks.join("\n\n"));

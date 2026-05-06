@@ -10,7 +10,7 @@ import React, {
   useRef,
   useState
 } from "react";
-import { syncImagesWithSlidePrompts } from "@/lib/prompt-sync";
+import { syncImagesWithImagePrompts } from "@/lib/image-prompt-sync";
 import { createInitialState, type StudioState } from "@/lib/state";
 
 type Action =
@@ -19,12 +19,11 @@ type Action =
   | { type: "resetAll" };
 
 const STORAGE_KEY = "ai-reels-studio:v2026:session";
-const STORAGE_VERSION = 1;
+const STORAGE_VERSION = 2;
 
 function stripHeavyFieldsForStorage(state: StudioState): StudioState {
   return {
     ...state,
-    // base64 легко превышает лимиты localStorage и не критично для восстановления сценария
     images: state.images.map((img) => ({ ...img, imageBase64: undefined }))
   };
 }
@@ -40,7 +39,7 @@ function isProbablyStudioState(x: unknown): x is StudioState {
     Array.isArray(s.messages) &&
     Array.isArray(s.slides) &&
     Array.isArray(s.angles) &&
-    Array.isArray(s.prompts) &&
+    Array.isArray(s.imagePrompts) &&
     Array.isArray(s.images) &&
     typeof s.caption === "string" &&
     typeof s.music === "object" &&
@@ -58,16 +57,17 @@ function loadInitialState(): StudioState {
     if (parsed?.v !== STORAGE_VERSION) return base;
     if (!isProbablyStudioState(parsed.state)) return base;
     const merged: StudioState = { ...base, ...(parsed.state as StudioState) };
-    // Безопасность: любые несоответствия приводим к текущей схеме
     if (typeof merged.autoGenerateImages !== "boolean") merged.autoGenerateImages = false;
     if (!Array.isArray(merged.messages)) merged.messages = [];
     if (!Array.isArray(merged.slides)) merged.slides = [];
     if (!Array.isArray(merged.angles)) merged.angles = [];
-    if (!Array.isArray(merged.prompts)) merged.prompts = [];
+    if (!Array.isArray(merged.imagePrompts)) merged.imagePrompts = [];
     if (!Array.isArray(merged.images)) merged.images = [];
     if (!merged.music || typeof merged.music !== "object") {
       merged.music = base.music;
     }
+    const sc = merged.slideCount;
+    if (sc !== 5 && sc !== 7 && sc !== 9) merged.slideCount = 7;
     return merged;
   } catch {
     return base;
@@ -79,15 +79,14 @@ function reducer(state: StudioState, action: Action): StudioState {
     case "set": {
       const patch = action.patch;
       const next: StudioState = { ...state, ...patch };
-      if (patch.prompts !== undefined) {
-        next.images = syncImagesWithSlidePrompts(next.images, next.prompts);
+      if (patch.imagePrompts !== undefined) {
+        next.images = syncImagesWithImagePrompts(next.images, next.imagePrompts);
       }
       return next;
     }
     case "replace": {
       const next = action.state;
-      // при замене состояния синхронизируем изображения с промптами, чтобы не было рассинхрона UI
-      next.images = syncImagesWithSlidePrompts(next.images, next.prompts);
+      next.images = syncImagesWithImagePrompts(next.images, next.imagePrompts);
       return next;
     }
     case "resetAll":
@@ -100,7 +99,6 @@ function reducer(state: StudioState, action: Action): StudioState {
 type StudioStore = {
   state: StudioState;
   dispatch: React.Dispatch<Action>;
-  /** Увеличивается при импорте сессии и полном сбросе — сбрасывает локальный стек «шаг назад» в диалоге. */
   sessionUndoResetEpoch: number;
 };
 
@@ -150,4 +148,3 @@ export function useStudio(): StudioStore {
   if (!v) throw new Error("useStudio must be used within StudioProvider");
   return v;
 }
-

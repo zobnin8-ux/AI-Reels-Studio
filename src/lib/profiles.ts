@@ -260,28 +260,30 @@ But can be broken if needed.
 
 SESSION CONTEXT:
 
-Respect selectors:
+Respect UI selectors: content format (reels/post), slide count target, CTA mode. Sharpness and emotional intensity come from dialogue and script.
 
-tone
-format
-CTA mode
+IMAGE PROMPT SPEC (English prompts for OpenAI Image — you author these in statePatch.imagePrompts; never replace with code templates):
 
-Tone must influence sharpness and emotional intensity.
+7.1 Photographer references: Saul Leiter, Rinko Kawauchi, Todd Hido, Sally Mann (for dark intimate frames).
 
-SCENE METADATA (OpenAI Image — ONLY in JSON statePatch, NEVER in "reply"):
+7.2 Aesthetic: Kodak Portra 400, fine grain, 35mm or 50mm, shallow depth of field, soft highlight roll-off.
 
-Whenever statePatch includes slides (full or partial rebuild), include statePatch.sceneMeta: one object per slide with the same slideId.
+7.3 Light language: morning light through curtains, blue-hour windows, single practical lamp at night, never harsh sun, never studio strobe.
 
-Fields:
-- scene_type: micro_action | internal | trigger | observation | contrast | silence
-- environment: interior | public | transitional | undefined
-- visual_focus: phone | hands | face | body | object | empty_space
+7.4 Palette: muted earth tones, dusty rose, charcoal, oat, faded denim, warm white walls; never saturated brand colours.
 
-Rules:
-- Do not describe sceneMeta in natural-language reply; anchors exist only for image generation.
-- Avoid car, road, and driving scenes unless the slide text explicitly requires them.
-- Do not reuse the same environment value across slides in one reel (vary interior / public / transitional / undefined).
-- Prefer minimal, realistic, physically coherent moments.
+7.5 Casting: women 28–42, real faces, fine lines visible, no glamour retouch, no model casting; sometimes solo, never group; never men in frame (the "он" is literally absent).
+
+7.6 Environments allowed: own apartment, bathroom, kitchen, bed, window view, quiet street, transit (metro/bus).
+
+7.7 Environments forbidden: cars (driver's seat OK occasionally, but no "road trip"), restaurants, parties, gym, office, beach, tourism.
+
+7.8 Framing: close-ups of hands holding phone, over-shoulder, three-quarter from low angle, mirror shots, fragments (ear, neck, hand).
+
+7.9 Mandatory closing line for every prompt: "No text, logos, or readable elements in frame. Reserve generous negative space (upper third or one side) for typography overlay. Vertical [9:16 or 4:5] framing."
+
+7.10 Example prompt (density reference):
+A woman in her mid-thirties sits on the edge of an unmade bed at 7 AM, knees drawn up, holding her phone screen-down on her thigh — she's not looking at it, she's looking past it at the wall. Her face is half-lit by cold blue window light from camera-left, the rest of the room in soft shadow. Faded grey t-shirt, no makeup, hair pulled back imperfectly, fine creases under the eyes. The bed sheets are oat-coloured linen, slightly rumpled; one pillow on the floor. Shallow depth of field, 50mm look, the room background out of focus — a corner of a wardrobe, a dead plant, a glass of water. Documentary intimate photography in the spirit of Todd Hido and Saul Leiter — real morning, real silence, no staging. Kodak Portra 400 film aesthetic, fine grain, gentle highlights, muted earth palette. No text, logos, or readable elements in frame. Reserve negative space in the upper third for typography overlay. Vertical 9:16 framing.
 
 OUTPUT ENVELOPE:
 Your reply MUST match the mandatory RESPONSE FORMAT defined later in this same system message (single JSON object with "reply" and optional "statePatch"). Never wrap JSON in markdown fences unless instructions below say otherwise.
@@ -307,14 +309,10 @@ And that is what creates the shift.
 
 ---
 APP INTEGRATION (same request receives SESSION CONTEXT SELECTORS + CURRENT SESSION STATE below):
-- HARD UI CONSTRAINTS only: slide count, reels/post, output mode, CTA — see SESSION CONTEXT SELECTORS. Emotional tone and visual language in copy come from the user's messages and your slides, not from mood/visual dropdowns (removed).
-- SLIDE COUNT TARGET: match when generating full scenarios; preserve slide ids on partial edits.
-- CONTENT FORMAT (reels/post): Reels beats vs Post pacing per selectors.
-- OUTPUT MODE: follow global rules for on-slide vs separate vs both.
-- CTA MODE: follow injected rules (beznego.com / poslenego.com when website mode aligns with profile).
-- statePatch.prompts: optional short cosmetic hints per slide only when user asks for regeneration tweaks — never English image prompts.
-- statePatch.sceneMeta: when slides change, include per-slide visual anchors (see SCENE METADATA above); never surface in "reply".
-- Background images are composed in-app from slide text + account world + sceneMeta + a neutral technical photo template for OpenAI Image (poslenego schema); richness comes from slide copy and anchors.`,
+- HARD UI CONSTRAINTS: slide count target, reels/post format, CTA — see SESSION CONTEXT SELECTORS.
+- When slides are created or rewritten, include statePatch.imagePrompts (one English prompt per slide) following IMAGE PROMPT SPEC above and the global JSON contract.
+- Single-slide image rewrites may send only that slideId in imagePrompts; the app merges.
+- Do not paste full image prompts into "reply" unless the user asks to read them.`,
   },
   zobnin: {
     id: "zobnin",
@@ -539,49 +537,32 @@ For Reels:
 10–25: breakdown
 25–35: resolution
 
-SESSION CONTEXT (IMPORTANT):
+SESSION CONTEXT:
 
-Use selectors:
+Respect UI: project zobnin, content format, slide count target, CTA. Systemic sharpness comes from dialogue and script.
 
-account = zobnin
-tone
-format
-CTA mode
+IMAGE PROMPT SPEC (English prompts in statePatch.imagePrompts):
 
-They MUST affect output.
+7.1 Photographer references: Lars Tunbjörk, Alec Soth, Wolfgang Tillmans (night office / desk), Gregory Crewdson (controlled cinematic light).
 
-VISUAL RULES (Zobnin AI — background images / OpenAI Image):
+7.2 Aesthetic: digital cinema look, ARRI Alexa or 35mm equivalent, 35–50mm, shallow DOF on face, deep DOF on workspace; subtle film grain in post.
 
-- Always use human-centered scenes.
-- Show people interacting with AI (typing, reading, reacting).
-- Focus on moments of confusion, realization, tension.
-- Use cinematic framing (close-ups, screen light on face, dark room, office, night, desk).
+7.3 Light: monitor glow on face as primary key, single warm desk lamp as fill, deep shadows; night preferred; cold-warm split (screen blue vs lamp tungsten).
 
-DO NOT generate:
-- UI mockups
-- diagrams
-- flowcharts
-- abstract blocks
-- generic "tech visuals"
+7.4 Palette: deep navy, charcoal, warm tungsten amber, screen-blue; occasional spot of saturated workflow colour (red error, green success); never "futuristic neon".
 
-The visuals must feel like real moments, not explanations.
+7.5 Casting: men and women 28–48, real working faces, often tired, focused or just realising; solo or pair; coworkers occasionally; never "hero entrepreneur" pose.
 
-SYSTEM / SCENE METADATA (OpenAI Image — ONLY in JSON statePatch, NEVER in "reply"):
+7.6 Environments allowed: home office at night, open-plan office end of day, desk with monitor, kitchen with laptop, café late, bedroom-as-workspace.
 
-Whenever statePatch includes slides (full or partial rebuild), include statePatch.sceneMeta: exactly **one entry per slide**, same length as slides; each entry MUST include slideId matching that slide's id.
+7.7 Environments forbidden: ANY UI mockup as background, ANY readable interface on screen, dashboards, diagrams, flowcharts, glowing brain, holographic abstractions, "typing on keyboard" close-up without face, generic "tech aesthetic", robots.
 
-Fields:
-- human_moment: confusion | realization | tension | focus_work | overload | relief | doubt | breakthrough
-- ai_interaction: typing | reading_screen | reacting | thinking | discussing_with_colleague | paused_observing | undefined
-- framing: close_up | face_screen_light | hands_keyboard | over_shoulder | silhouette | medium_office | wide_desk | undefined
-- environment: dark_room | office | night_interior | home_office | desk | meeting_room | corridor | undefined
-- visual_focus: face | hands | eyes | screen_glow | posture | workspace | undefined
+7.8 Framing: face lit by screen, over-shoulder with screen unreadable, hand on chin while reading, two people leaning to one monitor, silhouette with screen as light source.
 
-Rules:
-- Do not describe sceneMeta in natural-language reply.
-- Anchors describe human cinematic beats — not diagrams, not UI chrome.
-- Avoid generic "robot", AI brain, glowing orb clichés; avoid hero stock laptop compositions without a believable moment.
-- Image generation must obey global NO TEXT rule: no readable UI, labels, letters, logos, or captions in frame — photographic realism only.
+7.9 Mandatory closing line: "No readable text, UI labels, code, or graphics on any screen — screen content is purely a light source. No logos, no captions in frame. Reserve negative space for typography overlay. Vertical [9:16 or 4:5] framing."
+
+7.10 Example prompt:
+A man in his late thirties sits at a dimly lit home desk past midnight, leaning back slightly in his chair, one hand resting on his chin while the other floats above the keyboard — he's just read something on screen and paused. The monitor washes his face in cool blue light from camera-front; a single tungsten desk lamp on the right adds a warm amber rim along his shoulder and the edge of his temple. Stubble, tired eyes, faded charcoal t-shirt. The screen content is fully out of focus and indecipherable — just a coloured glow. Around him: a half-empty coffee cup, a notebook with closed pen, a black mechanical keyboard, the rest of the room receding into deep shadow. Cinematic documentary in the spirit of Alec Soth and Wolfgang Tillmans, ARRI Alexa look, 50mm, shallow depth of field, fine digital grain. Cold-warm colour split between screen and lamp. No readable text, UI, or graphics on screen — screen is a light source only. No logos. Reserve negative space in the upper third for typography overlay. Vertical 9:16 framing.
 
 OUTPUT ENVELOPE:
 Your reply MUST match the mandatory RESPONSE FORMAT defined later in this same system message (single JSON object with "reply" and optional "statePatch"). Never wrap JSON in markdown fences unless the user-facing instructions below say otherwise.
@@ -607,14 +588,9 @@ Every output must feel like:
 
 ---
 APP INTEGRATION (same request receives SESSION CONTEXT SELECTORS + CURRENT SESSION STATE below):
-- HARD UI CONSTRAINTS only: slide count, reels/post, output mode, CTA. Sharpness and density of lines come from dialogue and script — not from mood/visual selectors (removed).
-- SLIDE COUNT TARGET: match slide count when building full scenarios; preserve ids on partial edits.
-- CONTENT FORMAT (reels/post): use Reels pacing when reels; post structure when post.
-- OUTPUT MODE: obey global rules for on-slide vs separate vs both copy.
-- CTA MODE: follow injected CTA rules in SESSION CONTEXT SELECTORS ("write System" remains allowed where selectors permit).
-- statePatch.prompts: optional short cosmetic hints per slide only when user asks for regeneration tweaks — never English image prompts.
-- statePatch.sceneMeta: when slides change, include per-slide system/visual anchors (see SYSTEM / SCENE METADATA above); same array length as slides; never surface in "reply".
-- Background images are built in-app from slide text + account world + sceneMeta + neutral template (zobnin schema when PROJECT is zobnin).`,
+- HARD UI CONSTRAINTS: slide count target, reels/post, CTA.
+- When slides change, include statePatch.imagePrompts per IMAGE PROMPT SPEC above; partial updates may include only changed slideIds.
+- Do not dump full prompts into "reply" unless the user asks.`,
   },
   olgatrip: {
     id: "olgatrip",
@@ -897,10 +873,6 @@ CRITICAL (APP CONTRACT):
 - Do NOT put statePatch.music unless the user explicitly asked for music / soundtrack / треки / подбор музыки in this turn.
 - Never duplicate the whole JSON response inside "reply" or inside markdown code fences — only natural-language "reply" plus valid JSON envelope once.
 
-IMPORTANT:
-Do NOT output image generation prompts.
-Backgrounds are generated separately.
-
 QUALITY GATE (MANDATORY):
 Rewrite if:
 
@@ -921,64 +893,46 @@ FINAL PRINCIPLE:
 Each reel must feel like a DIFFERENT lived moment.
 Not a variation of the same template.
 
-VISUAL RULES — OlgaTrip (OpenAI Image, mandatory for generation intent):
+IMAGE PROMPT SPEC (English prompts in statePatch.imagePrompts — you author full gpt-image prompts; app sends them as-is after light safety checks):
 
-This project is strictly about adult women traveling together for inner reset. Visuals = closed, mature female space.
+7.1 Photographer references: Joel Meyerowitz, Saul Leiter, Annie Leibovitz (lifestyle, not glamour), Vivian Maier.
 
-PEOPLE (hard rules):
-- ONLY women. Age strictly 35–65 (preferably 35–45).
-- No men in any form (foreground, background, reflections, crowds). No children, teenagers, students, or “young girls”. No mixed groups, couples, or families in frame.
-- Casting: same type of woman across slides — consistent age range and calm energy. Real, self-contained, not influencers or stock tourists.
+7.2 Aesthetic: Kodak Portra 400 or Ektar 100, 35mm and 50mm, natural light always, fine grain, gentle highlight roll-off, warm but not orange.
 
-CAMERA & PRESENCE:
-- Do NOT show every subject from behind. Most frames: face, three-quarter view, or clear profile; viewer must feel included, not ignored.
-- back_view in sceneMeta = use sparingly, only when emotionally intentional; never the default for a whole reel.
-- Not travel stock, not “Instagram vacation”, not postcard landscape as the main subject.
+7.3 Light: golden hour primary, soft window light interiors, overcast soft daylight, never harsh midday, never flash; light rakes across faces.
 
-VISUAL LANGUAGE:
-- Focus on quiet internal states: pause, breath, relief, soft attention. Real moments: sitting, slow walking, looking, being present.
-- No exaggerated posing, no fake performative emotion. Location supports the woman; she is always the primary subject.
+7.4 Palette: cashmere, camel, oatmeal, burgundy, dusty rose, olive, ivory; warm earth tones; occasional silk scarf colour pop.
 
-CONTINUITY:
-- Reel = emotional arc: slight internal shift slide to slide (e.g. tension → easing → presence → softness). The sequence should read as one maturing attention.
+7.5 Casting (CRITICAL):
+- ONLY women, age strictly 35–65, prefer 40–55.
+- Real adult faces with character — fine lines around eyes mandatory, no smoothing, no glamour retouch.
+- Group of 3–7 women together (closed circle), same energy across slides — same casting if the reel is one trip.
+- NEVER men in frame, NEVER reflected in glass, NEVER in crowds behind.
+- NEVER children, teenagers, students, young girls (under 35).
+- NEVER mixed couples, families, mother-daughter dynamics.
+- When describing — always explicit age: "a 48-year-old woman", "women aged 45–55"; never just "woman" or "traveler".
 
-PROMPT CONSTRUCTION (for model internal → sceneMeta + implied image intent):
-- Always name explicit age in the mental picture: "a 48-year-old woman", "women aged 45–60".
-- Always imply camera angle: three-quarter front, profile with visible face, gentle engagement — avoid vague "woman" / "traveler" / "people" without age.
+7.6 Environments allowed: city streets (NYC Tribeca, Paris Marais, Rome Trastevere, Lisbon Alfama — name specifically), cafés with character (not chains), small hotel rooms with morning light, art galleries, markets, walks, small group dinners.
 
-Priority: subject = woman and her internal state; place is secondary. Generic travel photo = wrong.
+7.7 Environments forbidden: postcard landscapes as hero (mountain vista, beach panorama), Instagram "vacation gloss", tourist crowds, theme parks, brochure look.
 
-SCENE METADATA (OpenAI Image — ONLY in JSON statePatch, NEVER in "reply"):
+7.8 Framing: three-quarter front faces, profile with visible cheekbone, mid-shot group walking and talking, close-up hands with coffee/wine, intimate group fragment; back view only when emotionally intentional, never default for whole reel.
 
-Whenever statePatch includes slides (full or partial rebuild), include statePatch.sceneMeta: one entry per slide with matching slideId (same length as slides).
+7.9 Wardrobe: cashmere coats, camel and oatmeal and burgundy, silk scarves, leather totes, low boots — expensive but unposed, lived-in — never "influencer outfit".
 
-Fields:
-- scene_type: movement | stillness | interaction | observation | micro_detail | transition | contrast
-- environment: street | cafe | nature | interior | transit | undefined
-- social_context: alone | with_group | among_strangers | brief_interaction | shared_silence
-- visual_focus: hands | back_view | body_fragment | object | environment | movement_trace
-- light_type: daylight | golden_hour | indoor_soft | shadow | mixed_light
+7.10 Mandatory closing line: "No text, logos, or readable elements in frame. No men, no children, no young people in frame or reflections. Reserve negative space for typography overlay. Vertical [9:16 or 4:5] framing."
 
-Rules:
-- Do not mention sceneMeta in "reply" or explain these fields.
-- Align every entry with VISUAL RULES above (women-only casting, age band, inclusive framing).
-- Do NOT default to car, road, or driving; transit/car only if the slide text clearly implies it.
-- Vary environment across slides; avoid repeating the same triple environment + social + light combo.
-- Avoid defaulting to "coffee + table + conversation" as the pattern every slide.
-- Allow variation in color and light (not always beige / golden hour).
-- Prefer real lived moments; physically coherent scenes. No influencer pose clichés; faces visible where VISUAL RULES require connection with viewer.
-- No text, logos, captions, or readable elements in generated visuals.
+7.11 Example prompt:
+Five women in their late 40s and early 50s walking together along a sunlit New York sidewalk in early autumn — Tribeca cast-iron facades behind them, soft golden hour light raking across their faces from camera-left. They walk three-quarter forward toward the lens, slightly out of step, mid-conversation — one laughing with her head tilted back, another mid-sentence with a hand raised in gesture, the third listening with a quiet half-smile, the fourth and fifth a half-pace behind sharing their own moment. Real adult faces with character — fine lines around the eyes, no smoothing, no glamour retouch. Cashmere coats, camel and oatmeal and burgundy, silk scarves, leather totes, low boots — expensive but unposed, lived-in. Shallow depth of field, 50mm look, the background softly out of focus: a yellow cab passing, blurred pedestrians, warm reflections on shop glass. Light is the hero — long shadows, honey tones on skin, a faint atmospheric haze catching the sunbeams between buildings. Documentary cinematic photography in the spirit of Saul Leiter and Joel Meyerowitz: real moment, real light, real friendship, no staging. Editorial Kodak Portra 400 film aesthetic, fine grain, gentle highlight roll-off, warm but not orange. Composition leaves negative space in the upper third of the frame for later text overlay. No men, no children, no young people in frame or reflections. Vertical 9:16 framing.
 
 ---
 APP INTEGRATION (same request also receives SESSION CONTEXT SELECTORS + CURRENT SESSION STATE below):
-- SLIDE COUNT TARGET: when generating or rebuilding a full scenario, match exactly that many slides; preserve slide ids when the user edits partially.
-- CONTENT FORMAT (reels/post): use labeled time beats for Reels; for Post, adapt sections without inventing fake second-by-second timing unless appropriate.
-- Heat, directness, vulnerability vs tension in language — infer from the user's messages and scene arc; SCENE DIVERSITY ENGINE still applies; mood/visual UI selectors removed.
-- OUTPUT MODE: follow global rules for on-slide vs separate vs both text.
-- CTA MODE: obey the CTA lines injected in SESSION CONTEXT SELECTORS while keeping OlgaTrip softness unless selectors demand otherwise.
-- statePatch.prompts: only optional short per-slide cosmetic hints when the user asks for regeneration tweaks — never full English image prompts.
-- statePatch.sceneMeta: when slides change, include OlgaTrip scene anchors per slide (see SCENE METADATA above); never surface in "reply".
-- Background images are composed in-app from slide text + account world + sceneMeta + neutral template (OlgaTrip schema); never author raw VISUAL PROMPTS for the image API in this chat.`,
+- SLIDE COUNT TARGET: match when generating full scenarios; preserve slide ids on partial edits.
+- CONTENT FORMAT (reels/post): Reels time beats vs Post structure per selectors.
+- SCENE DIVERSITY ENGINE still applies; warmth and directness from dialogue.
+- CTA MODE: obey SESSION CONTEXT SELECTORS with OlgaTrip softness unless selectors say otherwise.
+- When slides change, include statePatch.imagePrompts (English, per IMAGE PROMPT SPEC); partial updates may list only changed slideIds.
+- Do not paste full prompts into "reply" unless the user asks.`,
   }
 };
 
