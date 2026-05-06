@@ -27,13 +27,38 @@ class ImageRouteError extends Error {
   }
 }
 
-function mapOpenAIImageFailure(httpStatus: number, rawText: string): ImageRouteError {
+function sniffModerationTriggers(prompt: string): string[] {
+  const hits: string[] = [];
+  const tests: Array<{ label: string; re: RegExp }> = [
+    { label: "numeric age (e.g. 42-year-old)", re: /\b\d{1,2}[- ]year[- ]old\b/i },
+    { label: "double-negative emotion ('not X, just Y')", re: /\bnot\s+\w+[^.]{0,40}\bjust\s+\w+\b/i },
+    { label: "scrutiny vocab", re: /\b(assessing|evaluating|scrutinizing|examining|analyzing|dissecting|judging|weighing)\b/i },
+    { label: "suspicion vocab", re: /\b(skeptical|doubtful|suspicious)\b/i },
+    { label: "interrogation/surveillance vocab", re: /\b(interrogat\w*|surveillance|investigating|confrontation|target|subject)\b/i },
+    { label: "face/head touching gesture", re: /\b(hand on (the )?temple|rubbing (his|her|their)? ?eyes|touching (his|her|their)? ?forehead|head in hands|fingers pressed to (his|her|their)? ?face)\b/i },
+    { label: "substances/violence/intimacy words", re: /\b(substances?|violence|intimacy)\b/i },
+    { label: "real-person names (examples)", re: /\b(Steve Jobs|Sheryl Sandberg|Patti Smith)\b/i }
+  ];
+  for (const t of tests) {
+    if (t.re.test(prompt)) hits.push(t.label);
+  }
+  return hits;
+}
+
+function mapOpenAIImageFailure(
+  httpStatus: number,
+  rawText: string,
+  opts?: { prompt?: string; model?: string }
+): ImageRouteError {
   try {
     const j = JSON.parse(rawText) as { error?: { code?: string; message?: string } };
     const code = j.error?.code;
     if (code === "moderation_blocked") {
+      const model = opts?.model ? ` (model: ${opts.model})` : "";
+      const triggerHits = opts?.prompt ? sniffModerationTriggers(opts.prompt) : [];
+      const triggersLine = triggerHits.length ? `\n\nPossible triggers detected: ${triggerHits.join(", ")}.` : "";
       return new ImageRouteError(
-        "Модерация OpenAI отклонила картинку (moderation_blocked). Переформулируйте английский промпт слайда: опишите сцену нейтральнее, уберите лишний акцент на алкоголе, теле, конфликте или драме — часто срабатывает ложно. Затем «Перегенерировать» для этого кадра.",
+        `Модерация OpenAI отклонила картинку (moderation_blocked)${model}. Переформулируйте английский промпт: опишите сцену нейтральнее и “в положительном ключе”, уберите слова подозрения/оценки рядом с экраном, конкретный возраст цифрой и жесты касания лица/головы.${triggersLine}`,
         400
       );
     }
@@ -104,7 +129,7 @@ async function generateWithOpenAI(prompt: string, aspect: "9:16" | "4:5") {
 
   if (!res.ok) {
     const t = await res.text();
-    throw mapOpenAIImageFailure(res.status, t);
+    throw mapOpenAIImageFailure(res.status, t, { prompt, model });
   }
   const data = (await res.json()) as Record<string, unknown>;
   const first = (data?.data as Record<string, unknown>[] | undefined)?.[0] ?? {};
