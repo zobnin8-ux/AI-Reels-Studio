@@ -9,139 +9,204 @@ const ASPECT_PHRASES = {
 
 /**
  * Смягчает типичные формулировки, из‑за которых gpt-image даёт ложные moderation_blocked
- * (усталость, драма, ночь, алкоголь и т.д.). Только для Zobnin — у других профилей другая эстетика.
+ * (усталость, драма, ночь, алкоголь и т.д.). Универсальные замены + проектные нюансы.
  */
-export function softenImagePromptForModeration(prompt: string): string {
+export function softenImagePromptForModeration(prompt: string, project: ProjectId): string {
   let s = prompt;
-  const pairs: [RegExp, string][] = [
-    // OPENAI MODERATION HYGIENE safety net (profile zobnin §7.11) — prefer clean prompts from the model
+
+  type Replacement = string | ((substring: string, ...args: unknown[]) => string);
+
+  // === UNIVERSAL (all projects) ===
+  const universalPairs: Array<[RegExp, Replacement]> = [
+    // 1) Real people names / "in the spirit of"
+    [/\bin the spirit of [A-Z][a-zà-ÿ'-]+(?:\s+(?:and|&)\s+[A-Z][a-zà-ÿ'-]+){0,3}(?:\s+[A-Z][a-zà-ÿ'-]+){0,2}\b/gi, "with editorial documentary feel"],
+    [
+      /\b(?:Annie Leibovitz|Wolfgang Tillmans|Dan Winters|Henrik Knudsen|Alec Soth|Martin Schoeller|Platon|Lars Tunbjörk|Gregory Crewdson)\b/gi,
+      ""
+    ],
+    [/\b(?:Joel Meyerowitz|Saul Leiter|Slim Aarons|Steve McCurry|Vivian Maier|Gray Malin)\b/gi, ""],
+    [/\b(?:Todd Hido|Sally Mann|Rinko Kawauchi|Nan Goldin|Hannah Starkey)\b/gi, ""],
+
+    // 2) Negative constructions that often spike moderation
+    [/\bno men in frame(?:\s+or\s+reflections)?\b/gi, "women only in frame, including reflections"],
+    [/\bno children(?:\s+in frame)?\b/gi, "adults only in frame"],
     [/\bnot\s+stressed,?\s*just\s+evaluating\b/gi, "composed and attentive"],
     [/\bnot\s+frustrated,?\s*not\s+pleased,?\s*just\s+assessing\b/gi, "calm and focused, mid-thought"],
-    [/\bno\s+longer\s+overwhelmed\b/gi, "focused and present"],
-    [/\bwithout\s+anxiety\s+or\s+tension\b/gi, "calm and steady"],
-    [/\bhand\s+on\s+(his|her|their|the)?\s*temple\b/gi, "hand resting near the desk edge"],
-    [/\brubbing\s+(his|her|their)?\s*eyes\b/gi, "looking at the screen"],
-    [/\btouching\s+(his|her|their)?\s*forehead\b/gi, "upright posture at the desk"],
-    [/\bhand\s+on\s+chin\s+in\s+worry\b/gi, "hand resting on the desk"],
-    [/\bfingers\s+pressed\s+to\s+(his|her|their)?\s*face\b/gi, "fingers on the keyboard"],
-    [/\bhead\s+in\s+hands\b/gi, "seated upright at the desk"],
-    [/\b(a|an)\s+\d{1,2}[- ]year[- ]old\s+man\b/gi, "a man in his early forties"],
-    [/\b(a|an)\s+\d{1,2}[- ]year[- ]old\s+woman\b/gi, "a woman in her early forties"],
-    [/\b(a|an)\s+\d{1,2}[- ]year[- ]old\s+(guy|male)\b/gi, "a man in his early forties"],
-    [/\b(a|an)\s+\d{1,2}[- ]year[- ]old\s+(gal|female)\b/gi, "a woman in her early forties"],
-    [/\b(a|an)\s+\d{1,2}[- ]year[- ]old\s+(person|professional|executive)\b/gi, "an adult professional"],
-    [/\bscrutinizing\b/gi, "looking closely at"],
-    [/\bstudying\s+intently\b/gi, "reading carefully"],
-    [/\bdissecting\b/gi, "working through"],
-    [/\bskeptical\b/gi, "thoughtful"],
-    [/\bsuspicious\b/gi, "curious"],
-    [/\bassessing\b/gi, "considering"],
-    [/\bevaluating\b/gi, "working through"],
-    [/\bexamining\b/gi, "looking at"],
-    [/\banalyzing\b/gi, "reviewing"],
-    [/\bjudging\b/gi, "considering"],
-    [/\bweighing\b/gi, "considering"],
-    [/\bdoubtful\b/gi, "thoughtful"],
-    [/\bcritical (expression|look|gaze)\b/gi, "thoughtful $1"],
-    [/\bpiercing (gaze|look|eyes)\b/gi, "attentive $1"],
-    [/\bpointed (expression|look|gaze)\b/gi, "direct $1"],
-    [/\bintense\b/gi, "steady"],
-    [/\binterrogat\w*\b/gi, "discussion"],
-    [/\bsurveillance\b/gi, "overview"],
-    [/\binvestigating\b/gi, "reviewing"],
-    [/\bconfrontation\b/gi, "conversation"],
-    [/\bSteve Jobs\b/gi, "a tech executive"],
-    [/\bSheryl Sandberg\b/gi, "an executive"],
-    [/\bPatti Smith\b/gi, "a musician"],
-    [/\blate at night\b/gi, "mid-morning"],
-    [/\bpast midnight\b/gi, "late morning"],
-    [/\bdeep into the night\b/gi, "mid-morning"],
-    [/\b3\s*am\b/gi, "10am"],
-    [/\b2\s*am\b/gi, "10am"],
-    [/\bdimly lit\b/gi, "sunlit"],
-    [/\bdark room\b/gi, "bright office"],
-    [/\bdark office\b/gi, "daylit office"],
-    [/\bnight office\b/gi, "daytime office"],
-    [/\bgloomy\b/gi, "bright"],
-    [/\bsingle desk lamp\b/gi, "large window"],
-    [/\bscreen[- ]?glow on (the )?face\b/gi, "soft daylight on face"],
-    [/\bmonitor light on (the )?face\b/gi, "window light on face"],
-    [/\bexhaust(ed|ion|ing)?\b/gi, "composed"],
-    [/\bfrustrat(ed|ion|ing)?\b/gi, "thoughtful"],
-    [/\boverwhelm(ed|ing)?\b/gi, "focused"],
-    [/\bstress(ed|ful|ing)?\b/gi, "attentive"],
-    [/\bweary\b/gi, "alert"],
-    [/\btired eyes\b/gi, "clear eyes"],
-    [/\btired\b/gi, "composed"],
-    [/\bangr(y|ily)\b/gi, "calm"],
-    [/\bfuriou(s|ly)\b/gi, "steady"],
-    [/\banxious\b/gi, "calm"],
-    [/\banxiety\b/gi, "focus"],
-    [/\bdistress(ed|ing)?\b/gi, "neutral poise"],
-    [/\bdesperate\b/gi, "intent"],
-    [/\bcrying\b/gi, "thinking quietly"],
-    [/\btears\b/gi, ""],
-    [/\bsobbing\b/gi, ""],
-    [/\bpanic\b/gi, "consideration"],
-    [/\bscared\b/gi, "composed"],
+    [/\bnot crying\b/gi, "calm"],
+
+    // 3) Alcohol everywhere → safe substitutes
+    [/\bcarafe of ros[éeé]\b/gi, "carafe of sparkling water"],
+    [/\bglass of (?:wine|red wine|white wine|ros[éeé]|champagne|prosecco)\b/gi, "tea cup"],
+    [/\bwine glass(?:es)?\b/gi, "tea cup"],
+    [/\bwine bar\b/gi, "small café"],
+    [/\bwine tasting\b/gi, "coffee tasting"],
+    [/\bwineries\b/gi, "small artisan farms"],
+    [/\bwine\b/gi, "tea"],
+    [/\bros[éeé]\b/gi, "sparkling water"],
+    [/\bchampagne\b/gi, "sparkling water"],
+    [/\bprosecco\b/gi, "sparkling water"],
+    [/\bcocktail\b/gi, "coffee"],
+    [/\bbeer\b/gi, "sparkling water"],
+    [/\b(whiskey|whisky|vodka|gin|vermouth|aperitif)\b/gi, "coffee"],
+    [/\balcohol(?:ic)?\b/gi, "drink"],
+    [/\bdrunk\b/gi, ""],
+
+    // 5) Intimate / sensual lexicon
+    [/\bintimate\b/gi, "warm"],
+    [/\bsensual\b/gi, "warm"],
+    [/\bseductive\b/gi, ""],
+    [/\bsexy\b/gi, ""],
+    [/\bsexual\b/gi, ""],
+    [/\bnude|naked\b/gi, "fully dressed"],
+
+    // 6) Body-focus words
+    [/\bbare shoulders\b/gi, "soft shoulders"],
+    [/\bcleavage\b/gi, ""],
+    [/\bthigh(s)?\b/gi, "lap"],
+    [/\bbelly\b/gi, "midsection"],
+    [/\bcollarbone\b/gi, "neckline"],
+
+    // 7) Conflict / violence
+    [/\bargument\b/gi, "discussion"],
+    [/\barguing\b/gi, "talking"],
+    [/\bfight(ing)?\b/gi, "interaction"],
+    [/\bhostile\b/gi, "neutral"],
+    [/\btense atmosphere\b/gi, "calm atmosphere"],
     [/\btrauma\b/gi, ""],
     [/\babuse(d|sive)?\b/gi, ""],
     [/\bviolence\b/gi, ""],
     [/\bviolent\b/gi, ""],
-    [/\bargument\b/gi, "discussion"],
-    [/\barguing\b/gi, "talking professionally"],
-    [/\bfight(ing)?\b/gi, "collaboration"],
-    [/\bhostile\b/gi, "professional"],
-    [/\btense atmosphere\b/gi, "calm atmosphere"],
-    [/\btense\b/gi, "relaxed"],
-    [/\btension\b/gi, "ease"],
-    [/\bconflict(ed|ing)?\b/gi, "dialogue"],
-    [/\bintimate\b/gi, "professional"],
-    [/\bseductive\b/gi, ""],
-    [/\bsexy\b/gi, ""],
-    [/\bnude|naked\b/gi, "fully dressed"],
-    [/\bwine\b/gi, "tea"],
-    [/\bbeer\b/gi, "sparkling water"],
-    [/\bwhiskey|whisky|vodka\b/gi, "coffee"],
-    [/\bcocktail\b/gi, "coffee"],
-    [/\balcohol(ic)?\b/gi, "drink"],
-    [/\bdrunk\b/gi, ""],
-    [/\bsuffering\b/gi, ""],
-    [/\bsuffers\b/gi, "works"],
-    [/\bsuffered\b/gi, "handled"],
-    [/\bsuffer\b/gi, "manage"],
-    [/\bpain(ful|fully)?\b/gi, "effort"],
-    [/\bgrim\b/gi, "neutral"],
-    [/\bbleak\b/gi, "minimal"],
-    [/\bhopeless\b/gi, "measured"],
-    [/\bburnout\b/gi, "steady work"],
-    [/\bclenched\b/gi, "relaxed"],
-    [/\bfurrowed brow\b/gi, "gentle focus"],
-    [/\bbad news\b/gi, "routine update"],
-    [/\bsexual\b/gi, ""],
     [/\brage\b/gi, ""],
     [/\bhorror\b/gi, ""],
-    [/\bterrified\b/gi, "composed"],
-    [/\bshouting\b/gi, "speaking"],
-    [/\bscreaming\b/gi, ""],
-    [/\bwasted time\b/gi, "time allocation"],
-    [/\bwasted\b/gi, "spent"],
-    [/\bhopelessly\b/gi, "carefully"],
-    [/\bhelpless\b/gi, "attentive"],
-    [/\bdepressed\b/gi, "reflective"],
     [/\bsuicid(e|al)\b/gi, ""],
     [/\btraumatized\b/gi, ""],
-    [/\bcooling coffee\b/gi, "mug on desk"],
-    [/\bstale coffee\b/gi, "coffee mug"]
+
+    // 8) Tears / grief visual triggers
+    [/\btears\b/gi, ""],
+    [/\bsobbing\b/gi, ""],
+    [/\bcrying\b/gi, "looking away"],
+    [/\bweeping\b/gi, ""],
+    [/\bmascara streaks?\b/gi, ""],
+    [/\bsmudged makeup\b/gi, ""],
+    [/\bswollen eyes\b/gi, "tired eyes"],
+    [/\bred eyes\b/gi, ""],
+    [/\btrembling lips?\b/gi, "soft mouth"],
+
+    // 9) Bed / sleeping scene triggers
+    [/\b(?:on|sitting on|edge of|in)\s+an?\s+unmade\s+bed\b/gi, "in a chair by the window"],
+    [/\bunmade\s+bed\b/gi, "armchair"],
+    [/\brumpled\s+sheets?\b/gi, ""],
+    [/\b(?:bed)\s+sheets?\b/gi, "fabric"],
+    [/\bpillow\s+on\s+the\s+floor\b/gi, ""],
+    [/\bin\s+bed\b/gi, "in the room"],
+    [/\bunder\s+the\s+covers\b/gi, ""],
+    [/\bmattress\b/gi, "couch"],
+
+    // 10) Other common moderation spikes
+    [/\bdead\s+plant\b/gi, "small plant"],
+    [/\bdead\b/gi, ""],
+    [/\bbad news\b/gi, "routine update"],
+    [/\bsuffering\b/gi, ""],
+    [/\bsuffer(s|ed)?\b/gi, ""],
+    [/\bpain(ful|fully)?\b/gi, "effort"],
+    [/\bdepressed\b/gi, "reflective"],
+    [/\bhopeless\b/gi, "measured"],
+    [/\bshouting\b/gi, "speaking"],
+    [/\bscreaming\b/gi, ""],
+    [/\bterrified\b/gi, "composed"],
+    [/\bdesperate\b/gi, "intent"]
   ];
-  for (const [re, rep] of pairs) {
-    s = s.replace(re, rep);
+
+  for (const [re, rep] of universalPairs) {
+    s = s.replace(re, rep as never);
   }
+
+  // === PROJECT-SPECIFIC ===
+  if (project === "zobnin") {
+    const zobninPairs: Array<[RegExp, Replacement]> = [
+      [
+        /\b(a|an)\s+(\d{1,2})[- ]year[- ]old\s+(man|woman|guy|gal|male|female|person|professional|executive)\b/gi,
+        (_m: string, _art: string, _age: string, kind: string) => {
+          const isMale = /man|guy|male/i.test(kind);
+          const isFemale = /woman|gal|female/i.test(kind);
+          if (isMale) return "a man in his early forties";
+          if (isFemale) return "a woman in her early forties";
+          return "an adult professional";
+        }
+      ],
+      // night/dark triggers
+      [/\blate at night\b/gi, "mid-morning"],
+      [/\bpast midnight\b/gi, "late morning"],
+      [/\bdeep into the night\b/gi, "mid-morning"],
+      [/\b3\s*am\b/gi, "10am"],
+      [/\b2\s*am\b/gi, "10am"],
+      [/\bdimly lit\b/gi, "sunlit"],
+      [/\bdark room\b/gi, "bright office"],
+      [/\bdark office\b/gi, "daylit office"],
+      [/\bnight office\b/gi, "daytime office"],
+      [/\bgloomy\b/gi, "bright"],
+      [/\bsingle desk lamp\b/gi, "large window"],
+      [/\bscreen[- ]?glow on (the )?face\b/gi, "soft daylight on face"],
+      [/\bmonitor light on (the )?face\b/gi, "window light on face"],
+
+      // scrutiny / suspicion lexicon (screen-adjacent often)
+      [/\bscrutinizing\b/gi, "looking closely at"],
+      [/\bstudying\s+intently\b/gi, "reading carefully"],
+      [/\bdissecting\b/gi, "working through"],
+      [/\bskeptical\b/gi, "thoughtful"],
+      [/\bsuspicious\b/gi, "curious"],
+      [/\bassessing\b/gi, "considering"],
+      [/\bevaluating\b/gi, "working through"],
+      [/\bexamining\b/gi, "looking at"],
+      [/\banalyzing\b/gi, "reviewing"],
+      [/\bjudging\b/gi, "considering"],
+      [/\bweighing\b/gi, "considering"],
+      [/\bdoubtful\b/gi, "thoughtful"],
+      [/\bpiercing (gaze|look|eyes)\b/gi, "attentive $1"],
+      [/\bpointed (expression|look|gaze)\b/gi, "direct $1"],
+      [/\bintense\b/gi, "steady"],
+
+      // face/head-touch gestures
+      [/\bhand\s+on\s+(his|her|their|the)?\s*temple\b/gi, "hand resting near the desk edge"],
+      [/\brubbing\s+(his|her|their)?\s*eyes\b/gi, "looking at the screen"],
+      [/\btouching\s+(his|her|their)?\s*forehead\b/gi, "upright posture at the desk"],
+      [/\bhand\s+on\s+chin\s+in\s+worry\b/gi, "hand resting on the desk"],
+      [/\bfingers\s+pressed\s+to\s+(his|her|their)?\s*face\b/gi, "fingers on the keyboard"],
+      [/\bhead\s+in\s+hands\b/gi, "seated upright at the desk"]
+    ];
+    for (const [re, rep] of zobninPairs) s = s.replace(re, rep as never);
+  }
+
+  if (project === "olgatrip") {
+    const olgatripPairs: Array<[RegExp, Replacement]> = [
+      [/\b(a|an)\s+\d{1,2}[- ]year[- ]old\s+(woman|gal|female|person)\b/gi, "a woman in her early thirties"],
+      [/\b(a|an)\s+\d{1,2}[- ]year[- ]old\s+(man|guy|male)\b/gi, ""],
+      [/\bwomen in their forties\b/gi, "women in their early thirties"],
+      [/\bwomen in their late forties\b/gi, "women in their early thirties"],
+      [/\bwomen in their mid-forties\b/gi, "women in their early thirties"],
+      [/\bwomen in their fifties\b/gi, "women in their early thirties"],
+      [/\bin her forties\b/gi, "in her early thirties"],
+      [/\bin her late forties\b/gi, "in her early thirties"],
+      [/\bin her mid-forties\b/gi, "in her early thirties"],
+      [/\bin her fifties\b/gi, "in her early thirties"],
+      [/\bmature women\b/gi, "young women"],
+      [/\bmature adult women\b/gi, "young adult women"]
+    ];
+    for (const [re, rep] of olgatripPairs) {
+      s = s.replace(re, rep as never);
+    }
+  }
+
+  // poslenego — возраст не трогаем, эстетика бренда допускает разные диапазоны;
+  // если возникнет проблема, добавим конкретные замены здесь
+
+  // Final cleanup
   s = s
     .replace(/\s{2,}/g, " ")
     .replace(/\s+,/g, ",")
     .replace(/,\s*,/g, ",")
     .replace(/\(\s*\)/g, "")
+    .replace(/\s+\.\s*/g, ". ")
     .trim();
   return s;
 }
@@ -153,8 +218,8 @@ export function sanitizeForOpenAIImage(
   project?: ProjectId
 ): string {
   let out = rawPrompt.trim();
-  if (project === "zobnin") {
-    out = softenImagePromptForModeration(out);
+  if (project) {
+    out = softenImagePromptForModeration(out, project);
   }
 
   const lower = out.toLowerCase();
