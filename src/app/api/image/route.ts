@@ -17,6 +17,43 @@ function jsonError(message: string, status = 400) {
   return NextResponse.json({ error: message }, { status });
 }
 
+class ImageRouteError extends Error {
+  constructor(
+    message: string,
+    readonly httpStatus: number
+  ) {
+    super(message);
+    this.name = "ImageRouteError";
+  }
+}
+
+function mapOpenAIImageFailure(httpStatus: number, rawText: string): ImageRouteError {
+  try {
+    const j = JSON.parse(rawText) as { error?: { code?: string; message?: string } };
+    const code = j.error?.code;
+    if (code === "moderation_blocked") {
+      return new ImageRouteError(
+        "Модерация OpenAI отклонила картинку (moderation_blocked). Переформулируйте английский промпт слайда: опишите сцену нейтральнее, уберите лишний акцент на алкоголе, теле, конфликте или драме — часто срабатывает ложно. Затем «Перегенерировать» для этого кадра.",
+        400
+      );
+    }
+    if (code === "content_policy_violation") {
+      return new ImageRouteError(
+        "Промпт нарушает политику контента OpenAI. Смягчите описание и попробуйте снова.",
+        400
+      );
+    }
+    const m = j.error?.message?.trim();
+    if (m) {
+      return new ImageRouteError(`OpenAI: ${m}`, httpStatus);
+    }
+  } catch {
+    /* не JSON */
+  }
+  const clip = rawText.length > 900 ? `${rawText.slice(0, 900)}…` : rawText;
+  return new ImageRouteError(`OpenAI image error (${httpStatus}): ${clip}`, httpStatus >= 400 && httpStatus < 600 ? httpStatus : 500);
+}
+
 async function resizeCoverToPng(
   imageBase64: string,
   w: number,
@@ -67,7 +104,7 @@ async function generateWithOpenAI(prompt: string, aspect: "9:16" | "4:5") {
 
   if (!res.ok) {
     const t = await res.text();
-    throw new Error(`OpenAI image error (${res.status}): ${t}`);
+    throw mapOpenAIImageFailure(res.status, t);
   }
   const data = (await res.json()) as Record<string, unknown>;
   const first = (data?.data as Record<string, unknown>[] | undefined)?.[0] ?? {};
@@ -111,6 +148,9 @@ export async function POST(request: Request) {
       await resizeCoverToPng(raw.imageBase64, INSTAGRAM_REELS_PX.w, INSTAGRAM_REELS_PX.h)
     );
   } catch (e: unknown) {
+    if (e instanceof ImageRouteError) {
+      return jsonError(e.message, e.httpStatus);
+    }
     const msg = e instanceof Error ? e.message : "Image error";
     return jsonError(msg, 500);
   }

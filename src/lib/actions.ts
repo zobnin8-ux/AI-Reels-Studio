@@ -147,7 +147,12 @@ export async function sendDialogueTurn(
 
   if (!res.ok) {
     const err = await res.json().catch(() => ({}));
-    throw new Error((err as { error?: string }).error ?? `Chat failed (${res.status})`);
+    let msg = (err as { error?: string }).error ?? `Chat failed (${res.status})`;
+    if (res.status === 502 || res.status === 504) {
+      msg +=
+        " Часто это таймаут шлюза (например Render): в панели сервиса увеличьте request timeout / лимит времени функции, либо повторите запрос короче.";
+    }
+    throw new Error(msg);
   }
 
   return (await res.json()) as { reply: string; statePatch?: StatePatch };

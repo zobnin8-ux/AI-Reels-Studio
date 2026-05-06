@@ -4,6 +4,9 @@ import { buildDialogueSystemPrompt } from "@/lib/dialogue-context";
 import { sanitizeModelReplyForDisplay } from "@/lib/chat-reply-format";
 import { chatApiResponseSchema, sessionImagePromptSchema } from "@/lib/chat-response";
 
+/** Vercel / совместимые хосты; на Render при 502 также поднимите таймаут сервиса в панели. */
+export const maxDuration = 300;
+
 const selectorsSchema = z.object({
   project: z.enum(["poslenego", "zobnin", "olgatrip"]),
   contentType: z.enum(["reels", "post"]),
