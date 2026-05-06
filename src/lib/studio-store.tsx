@@ -7,7 +7,6 @@ import React, {
   useEffect,
   useMemo,
   useReducer,
-  useRef,
   useState
 } from "react";
 import { alignImagesToSlides } from "@/lib/image-prompt-sync";
@@ -19,61 +18,6 @@ type Action =
   | { type: "resetAll" };
 
 const STORAGE_KEY = "ai-reels-studio:v2026:session";
-const STORAGE_VERSION = 2;
-
-function stripHeavyFieldsForStorage(state: StudioState): StudioState {
-  return {
-    ...state,
-    images: state.images.map((img) => ({ ...img, imageBase64: undefined }))
-  };
-}
-
-function isProbablyStudioState(x: unknown): x is StudioState {
-  if (!x || typeof x !== "object") return false;
-  const s = x as Record<string, unknown>;
-  return (
-    (s.provider === "openai" || s.provider === "anthropic") &&
-    typeof s.project === "string" &&
-    typeof s.contentType === "string" &&
-    typeof s.slideCount === "number" &&
-    Array.isArray(s.messages) &&
-    Array.isArray(s.slides) &&
-    Array.isArray(s.angles) &&
-    Array.isArray(s.imagePrompts) &&
-    Array.isArray(s.images) &&
-    typeof s.caption === "string" &&
-    typeof s.music === "object" &&
-    s.music !== null
-  );
-}
-
-/** Только в браузере после mount — чтобы SSR и первый клиентский рендер совпадали (без ошибок гидрации). */
-function loadSessionFromStorage(): StudioState | null {
-  const base = createInitialState();
-  try {
-    const raw = window.localStorage.getItem(STORAGE_KEY);
-    if (!raw) return null;
-    const parsed = JSON.parse(raw) as { v?: number; state?: unknown };
-    if (parsed?.v !== STORAGE_VERSION) return null;
-    if (!isProbablyStudioState(parsed.state)) return null;
-    const merged: StudioState = { ...base, ...(parsed.state as StudioState) };
-    if (typeof merged.autoGenerateImages !== "boolean") merged.autoGenerateImages = false;
-    if (!Array.isArray(merged.messages)) merged.messages = [];
-    if (!Array.isArray(merged.slides)) merged.slides = [];
-    if (!Array.isArray(merged.angles)) merged.angles = [];
-    if (!Array.isArray(merged.imagePrompts)) merged.imagePrompts = [];
-    if (!Array.isArray(merged.images)) merged.images = [];
-    if (!merged.music || typeof merged.music !== "object") {
-      merged.music = base.music;
-    }
-    const sc = merged.slideCount;
-    if (sc !== 5 && sc !== 7 && sc !== 9) merged.slideCount = 7;
-    merged.images = alignImagesToSlides(merged.slides, merged.images, merged.imagePrompts);
-    return merged;
-  } catch {
-    return null;
-  }
-}
 
 function reducer(state: StudioState, action: Action): StudioState {
   switch (action.type) {
@@ -122,34 +66,16 @@ export function StudioProvider({ children }: { children: React.ReactNode }) {
     [state, dispatch, sessionUndoResetEpoch]
   );
 
-  const saveTimer = useRef<number | null>(null);
-  /** Первый проход persist не должен затереть localStorage до восстановления сессии из хранилища. */
-  const skipPersistUntilHydrateRef = useRef(true);
-
-  useEffect(() => {
-    const merged = loadSessionFromStorage();
-    if (merged) {
-      _dispatch({ type: "replace", state: merged });
-    }
-    skipPersistUntilHydrateRef.current = false;
-  }, []);
-
+  // Каждое открытие приложения = новый, чистый сеанс.
+  // Сессионный persist можно вернуть позже как явную настройку/фичу (например, "Restore last session").
   useEffect(() => {
     if (typeof window === "undefined") return;
-    if (skipPersistUntilHydrateRef.current) return;
-    if (saveTimer.current) window.clearTimeout(saveTimer.current);
-    saveTimer.current = window.setTimeout(() => {
-      try {
-        const payload = { v: STORAGE_VERSION, state: stripHeavyFieldsForStorage(state) };
-        window.localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
-      } catch {
-        // ignore (quota / private mode)
-      }
-    }, 250);
-    return () => {
-      if (saveTimer.current) window.clearTimeout(saveTimer.current);
-    };
-  }, [state]);
+    try {
+      window.localStorage.removeItem(STORAGE_KEY);
+    } catch {
+      // ignore
+    }
+  }, []);
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }
