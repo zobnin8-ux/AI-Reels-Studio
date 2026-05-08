@@ -10,7 +10,10 @@ const INSTAGRAM_REELS_PX = { w: 1080, h: 1920 } as const;
 const reqSchema = z.object({
   prompt: z.string().min(1),
   aspect: z.enum(["9:16", "4:5"]),
-  stylePreset: z.string().optional()
+  stylePreset: z.string().optional(),
+  useReferences: z.boolean().optional(),
+  /** Array of full URLs or data URLs. */
+  references: z.array(z.string().min(1)).optional()
 });
 
 function jsonError(message: string, status = 400) {
@@ -153,6 +156,118 @@ async function generateWithOpenAI(prompt: string, aspect: "9:16" | "4:5") {
   return { imageBase64, mimeType };
 }
 
+function isDataUrl(u: string) {
+  return /^data:image\/[a-zA-Z0-9.+-]+;base64,/.test(u);
+}
+
+function dataUrlToBuffer(u: string): { buf: Buffer; mime: string } {
+  const m = /^data:(image\/[a-zA-Z0-9.+-]+);base64,(.*)$/.exec(u);
+  if (!m) throw new Error("Invalid data URL");
+  const mime = m[1] || "image/jpeg";
+  const b64 = m[2] || "";
+  return { buf: Buffer.from(b64, "base64"), mime };
+}
+
+async function fetchAndNormalizeRefImage(
+  urlOrData: string,
+  idx: number
+): Promise<{ blob: Blob; filename: string }> {
+  let buf: Buffer;
+  let mime = "image/jpeg";
+
+  if (isDataUrl(urlOrData)) {
+    const parsed = dataUrlToBuffer(urlOrData);
+    buf = parsed.buf;
+    mime = parsed.mime;
+  } else {
+    const r = await fetch(urlOrData);
+    if (!r.ok) {
+      throw new Error(`Reference fetch failed (${r.status})`);
+    }
+    const arr = new Uint8Array(await r.arrayBuffer());
+    buf = Buffer.from(arr);
+    mime = r.headers.get("content-type") || mime;
+  }
+
+  // Normalize: strip metadata, resize long edge, convert to JPEG to keep payload small and stable.
+  const normalized = await sharp(buf)
+    .rotate()
+    .resize(1280, 1280, { fit: "inside", withoutEnlargement: true })
+    .jpeg({ quality: 86, mozjpeg: true })
+    .toBuffer();
+
+  const blob = new Blob([normalized], { type: "image/jpeg" });
+  return { blob, filename: `ref_${idx + 1}.jpg` };
+}
+
+async function generateWithOpenAIEdit(
+  prompt: string,
+  aspect: "9:16" | "4:5",
+  references: string[]
+) {
+  const apiKey = process.env.OPENAI_API_KEY;
+  if (!apiKey) throw new Error("Missing OPENAI_API_KEY");
+
+  const model = process.env.OPENAI_IMAGE_MODEL || "gpt-image-2";
+  const size = "1024x1536";
+
+  const qualityRaw = (process.env.OPENAI_IMAGE_QUALITY ?? "high").trim().toLowerCase();
+  const skipQuality = qualityRaw === "" || qualityRaw === "skip" || qualityRaw === "off";
+  const quality =
+    qualityRaw === "low" || qualityRaw === "medium" || qualityRaw === "high" ? qualityRaw : "high";
+
+  const refs = references.filter(Boolean).slice(0, 6);
+  if (refs.length === 0) {
+    return generateWithOpenAI(prompt, aspect);
+  }
+
+  const fd = new FormData();
+  fd.set("model", model);
+  fd.set("prompt", prompt);
+  fd.set("size", size);
+  if (!skipQuality) {
+    fd.set("quality", quality);
+  }
+
+  // images.edit accepts multiple image parts (same field name).
+  const blobs = await Promise.all(refs.map((u, i) => fetchAndNormalizeRefImage(u, i)));
+  for (const it of blobs) {
+    fd.append("image", it.blob, it.filename);
+  }
+
+  const res = await fetch("https://api.openai.com/v1/images/edits", {
+    method: "POST",
+    headers: {
+      authorization: `Bearer ${apiKey}`
+    },
+    body: fd as unknown as BodyInit
+  });
+
+  if (!res.ok) {
+    const t = await res.text();
+    throw mapOpenAIImageFailure(res.status, t, { prompt, model });
+  }
+  const data = (await res.json()) as Record<string, unknown>;
+  const first = (data?.data as Record<string, unknown>[] | undefined)?.[0] ?? {};
+  const b64 = first?.b64_json as string | undefined;
+  if (b64) {
+    return { imageBase64: b64 as string, mimeType: "image/png" };
+  }
+  const url = first?.url as string | undefined;
+  if (!url) throw new Error("OpenAI image: empty image payload");
+
+  const imgRes = await fetch(url);
+  if (!imgRes.ok) throw new Error(`OpenAI image URL fetch failed (${imgRes.status})`);
+  const arr = new Uint8Array(await imgRes.arrayBuffer());
+  let binary = "";
+  for (let i = 0; i < arr.length; i++) {
+    binary += String.fromCharCode(arr[i]!);
+  }
+  const imageBase64 = btoa(binary);
+  const mimeType = imgRes.headers.get("content-type") || "image/png";
+  return { imageBase64, mimeType };
+}
+
 export async function POST(request: Request) {
   let body: z.infer<typeof reqSchema>;
   try {
@@ -163,7 +278,10 @@ export async function POST(request: Request) {
   }
 
   try {
-    const raw = await generateWithOpenAI(body.prompt, body.aspect);
+    const raw =
+      body.useReferences && (body.references?.length ?? 0) > 0
+        ? await generateWithOpenAIEdit(body.prompt, body.aspect, body.references ?? [])
+        : await generateWithOpenAI(body.prompt, body.aspect);
     if (body.aspect === "4:5") {
       return NextResponse.json(
         await resizeCoverToPng(raw.imageBase64, INSTAGRAM_POST_PX.w, INSTAGRAM_POST_PX.h)

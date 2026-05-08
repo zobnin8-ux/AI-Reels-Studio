@@ -3,6 +3,7 @@
 import { useMemo, useRef, useState } from "react";
 import { useStudio } from "@/lib/studio-store";
 import { requestDialogueTurn } from "@/lib/dialogue-bridge";
+import { generateImagesFromState } from "@/lib/actions";
 
 type RefResult = { id: string; kind: "unsplash"; thumb: string; full: string; author?: string; sourceUrl?: string };
 
@@ -10,6 +11,7 @@ export function ReferencesPanel({ compact = false }: { compact?: boolean }) {
   const { state, dispatch } = useStudio();
   const uploadRefsRef = useRef<HTMLInputElement>(null);
   const [busy, setBusy] = useState(false);
+  const [genBusy, setGenBusy] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
   const [results, setResults] = useState<RefResult[]>([]);
   const [pinterestDraft, setPinterestDraft] = useState("");
@@ -18,6 +20,7 @@ export function ReferencesPanel({ compact = false }: { compact?: boolean }) {
 
   const selectedCount = refs.items.length + refs.pinterestUrls.length;
   const canUseRefs = selectedCount > 0;
+  const canGenerateWithRefs = refs.items.length > 0 && state.slides.length > 0 && !genBusy;
 
   const selectedSummary = useMemo(() => {
     const lines: string[] = [];
@@ -135,6 +138,26 @@ export function ReferencesPanel({ compact = false }: { compact?: boolean }) {
     }
   }
 
+  async function onGenerateWithRefs() {
+    if (!refs.items.length || state.slides.length === 0) return;
+    setNotice(null);
+    setGenBusy(true);
+    try {
+      const images = await generateImagesFromState(state, {
+        useReferences: true,
+        onProgress: ({ images: next }) => {
+          dispatch({ type: "set", patch: { images: next } });
+        }
+      });
+      dispatch({ type: "set", patch: { images } });
+    } catch (e: unknown) {
+      const m = e instanceof Error ? e.message : "Ошибка генерации изображений";
+      setNotice(m);
+    } finally {
+      setGenBusy(false);
+    }
+  }
+
   function askUseRefsForImagePrompts() {
     const lines = [
       "Используй выбранные референсы, чтобы переписать ВСЕ imagePrompts (по одному на каждый slideId).",
@@ -197,6 +220,15 @@ export function ReferencesPanel({ compact = false }: { compact?: boolean }) {
             title="Переписать imagePrompt одного слайда по референсам"
           >
             Один слайд
+          </button>
+          <button
+            type="button"
+            className="asset-badge"
+            disabled={!canGenerateWithRefs}
+            onClick={() => void onGenerateWithRefs()}
+            title="Сгенерировать изображения, отправив выбранные референсы в OpenAI (images.edit)"
+          >
+            {genBusy ? "…" : "Генерировать с рефами"}
           </button>
         </div>
       </div>

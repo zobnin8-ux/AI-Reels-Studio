@@ -164,10 +164,15 @@ export type GenerateImagesProgressPayload = {
 
 export async function generateImagesFromState(
   state: StudioState,
-  options?: { onProgress?: (p: GenerateImagesProgressPayload) => void; signal?: AbortSignal }
+  options?: {
+    onProgress?: (p: GenerateImagesProgressPayload) => void;
+    signal?: AbortSignal;
+    useReferences?: boolean;
+  }
 ): Promise<GeneratedImage[]> {
   const onProgress = options?.onProgress;
   const signal = options?.signal;
+  const useReferences = Boolean(options?.useReferences);
 
   if (state.slides.length === 0) {
     return [];
@@ -233,7 +238,7 @@ export async function generateImagesFromState(
     onProgress?.({ images: [...out] });
 
     try {
-      const img = await fetchOneImage(state, j.id, j.slideId, j.finalPrompt, j.uiHint, signal);
+      const img = await fetchOneImage(state, j.id, j.slideId, j.finalPrompt, j.uiHint, signal, useReferences);
       out[i] = img;
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : "Image error";
@@ -258,15 +263,22 @@ async function fetchOneImage(
   slideId: string,
   apiPrompt: string,
   uiHint: string,
-  signal?: AbortSignal
+  signal?: AbortSignal,
+  useReferences?: boolean
 ): Promise<GeneratedImage> {
+  const refFullUrls = (useReferences ? state.references.items : [])
+    .map((x) => x.full)
+    .filter(Boolean)
+    .slice(0, 6);
   const res = await fetch("/api/image", {
     method: "POST",
     headers: { "content-type": "application/json" },
     signal,
     body: JSON.stringify({
       prompt: apiPrompt,
-      aspect: aspectFromContentType(state.contentType)
+      aspect: aspectFromContentType(state.contentType),
+      useReferences: Boolean(useReferences) && refFullUrls.length > 0,
+      references: refFullUrls
     })
   });
   if (!res.ok) {
