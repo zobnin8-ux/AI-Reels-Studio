@@ -8,6 +8,52 @@ import { resolveImagePrompt, sanitizeForOpenAIImage } from "@/lib/image-prompt-p
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 
+function useAutoFitText(opts: {
+  enabled: boolean;
+  containerRef: React.RefObject<HTMLElement | null>;
+  targetRef: React.RefObject<HTMLElement | null>;
+  minPx: number;
+  maxPx: number;
+}) {
+  const { enabled, containerRef, targetRef, minPx, maxPx } = opts;
+  useEffect(() => {
+    if (!enabled) return;
+    const container = containerRef.current;
+    const target = targetRef.current;
+    if (!container || !target) return;
+
+    let raf = 0;
+    const fit = () => {
+      cancelAnimationFrame(raf);
+      raf = requestAnimationFrame(() => {
+        const c = containerRef.current;
+        const t = targetRef.current;
+        if (!c || !t) return;
+
+        let size = maxPx;
+        t.style.fontSize = `${size}px`;
+
+        let guard = 0;
+        while (t.scrollHeight > c.clientHeight && size > minPx && guard < 80) {
+          size -= 1;
+          t.style.fontSize = `${size}px`;
+          guard += 1;
+        }
+      });
+    };
+
+    fit();
+
+    const ro = new ResizeObserver(() => fit());
+    ro.observe(container);
+    ro.observe(target);
+    return () => {
+      cancelAnimationFrame(raf);
+      ro.disconnect();
+    };
+  }, [enabled, containerRef, targetRef, minPx, maxPx]);
+}
+
 function resolvedPromptText(
   imagePrompts: { slideId: string; prompt: string; manualOverride?: string }[],
   slideId: string | undefined
@@ -107,6 +153,21 @@ export function ImageSlideCard({
   const isFrameRail = variant === "frameRail";
   const isFrameLike = isFrame || isFrameRail;
   const isThumb = variant === "thumb";
+
+  const slide = useMemo(() => {
+    if (!image.slideId) return null;
+    return state.slides.find((s) => s.id === image.slideId) ?? null;
+  }, [state.slides, image.slideId]);
+
+  const overlayBoxRef = useRef<HTMLDivElement | null>(null);
+  const overlayTextRef = useRef<HTMLDivElement | null>(null);
+  useAutoFitText({
+    enabled: !!slide && !!image.imageBase64 && (isFrameLike || isThumb),
+    containerRef: overlayBoxRef,
+    targetRef: overlayTextRef,
+    minPx: isThumb ? 8 : 10,
+    maxPx: isThumb ? 12 : 16
+  });
 
   const canRegenerate = useMemo(() => {
     return !!image.slideId?.trim() && !busy && !lockPromptEdit;
@@ -288,6 +349,24 @@ export function ImageSlideCard({
                   alt=""
                   className="max-h-full max-w-full object-contain transition group-hover:opacity-95"
                 />
+                {slide ? (
+                  <div className="pointer-events-none absolute inset-x-0 bottom-0">
+                    <div className="bg-gradient-to-t from-black/80 via-black/35 to-transparent px-3 pb-3 pt-10">
+                      <div className="text-[10px] font-semibold uppercase tracking-wide text-white/85">
+                        {slide.title || `Слайд ${String(index + 1).padStart(2, "0")}`}
+                      </div>
+                      <div
+                        ref={overlayBoxRef}
+                        className="mt-1 max-h-[42%] overflow-hidden text-white/92"
+                        style={{ lineHeight: 1.22 }}
+                      >
+                        <div ref={overlayTextRef} className="whitespace-pre-wrap break-words">
+                          {slide.text}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ) : null}
                 <span
                   className="pointer-events-none absolute right-2 top-2 inline-flex h-8 w-8 items-center justify-center rounded-full border border-white/25 bg-black/45 text-white/90 opacity-0 shadow-md backdrop-blur-sm transition group-hover:opacity-100"
                   aria-hidden
@@ -303,11 +382,32 @@ export function ImageSlideCard({
               </button>
             ) : (
               // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={`data:${image.mimeType ?? "image/png"};base64,${image.imageBase64}`}
-                alt=""
-                className="max-h-full max-w-full object-contain"
-              />
+              <div className="relative flex h-full w-full items-center justify-center">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={`data:${image.mimeType ?? "image/png"};base64,${image.imageBase64}`}
+                  alt=""
+                  className="max-h-full max-w-full object-contain"
+                />
+                {slide ? (
+                  <div className="pointer-events-none absolute inset-x-0 bottom-0">
+                    <div className="bg-gradient-to-t from-black/80 via-black/35 to-transparent px-3 pb-3 pt-10">
+                      <div className="text-[10px] font-semibold uppercase tracking-wide text-white/85">
+                        {slide.title || `Слайд ${String(index + 1).padStart(2, "0")}`}
+                      </div>
+                      <div
+                        ref={overlayBoxRef}
+                        className="mt-1 max-h-[42%] overflow-hidden text-white/92"
+                        style={{ lineHeight: 1.22 }}
+                      >
+                        <div ref={overlayTextRef} className="whitespace-pre-wrap break-words">
+                          {slide.text}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ) : null}
+              </div>
             )
           ) : (
             <div className="flex h-full flex-col items-center justify-center gap-1 px-2 text-center text-[11px] text-muted">
