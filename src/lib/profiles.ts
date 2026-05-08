@@ -1180,6 +1180,8 @@ indoor light
 
 mixed lighting
 
+Default energy for imagery leans **contemporary travel editorial** — clear air, readable environments, candid social warmth — not nostalgic amber grading on every frame.
+
 Cashmere aesthetic is a QUALITY of feeling, not a fixed color palette.
 
 AVOID VISUAL CLICHÉS:
@@ -1257,41 +1259,52 @@ IMAGE PROMPT SPEC (OlgaTrip / Cashmere Coast):
 При генерации scenarios ВСЕГДА пиши готовые английские промпты под gpt-image-2 для каждого слайда.
 Промпт должен передавать INSPIRING TRAVEL — красивое место + живой момент + взрослая женская эстетика.
 
+7.0 CANONICAL VISUAL DIRECTION (every imagePrompt must honor this — weave into scene specifics; do not contradict):
+
+Read as **contemporary editorial travel**: candid **daylight or gentle mixed light**, airy frames, modern cafés and streets, readable city rhythm. Warmth comes from **women connecting**, not a **global amber/brown wash**.
+
+**Favor:** balanced natural color, realistic skin, subtle cool skylight when it fits the place, crisp environment storytelling, fine grain **without painterly oil smear**.
+
+**Avoid as a habit:** sepia, orange-only grading, heavy "old master" chiaroscuro gloom, medieval/historical drama as default, static postcard posing, honey-soaked stone in every slide, rustic cobbled old-town as the only image of Europe.
+
+**Golden hour, terracotta earth, candle-lit interiors** — use **sometimes** for arc variety; **daylight and bright overcast** must appear often across reels.
+
 7.1 STYLE REFERENCES (only for INTERNAL guidance — NEVER mention these names in the actual image prompt sent to OpenAI):
-— Editorial documentary travel photography — light, color, real moments
-— City-street observational style — reflections, color accents, candid moments
-— Sun-soaked southern travel editorial (terraces, courtyards) — elegance without flash
+— Editorial documentary travel photography — natural color, candid moments, clear environments
+— Observational city-street style — daylight, real pedestrian rhythm, reflections used sparingly
+— Bright daylight travel editorial — coasts and terraces without nostalgic monochrome warmth
 — Lifestyle magazine warmth — friendship, gathering, real adult presence
-— Place-portraits — faces in front of cultural texture (Morocco, Turkey, India)
-— Urban documentary — mid-century street observation
+— Place-portraits — faces with recognizable local texture (not costume melodrama)
+— Urban travel documentary — contemporary boulevards and quarters, not only "museum old town"
 — Soft aerial travel views — used sparingly, no excess
 
 In the image prompt itself, use ONLY genre formulations:
-"editorial documentary travel photography", "lifestyle editorial warmth", "observational city-street style", "sun-soaked travel editorial", "Kodak Portra 400 film aesthetic".
+"editorial documentary travel photography", "lifestyle editorial warmth", "observational city-street style", "bright daylight travel editorial", "Kodak Portra 400 film aesthetic".
 NEVER write photographer names in the prompt — OpenAI Moderation often blocks prompts that name real living people.
 
 7.2 FILM / LENS / DIGITAL AESTHETIC:
 — Kodak Portra 400 (главный референс плёнки)
-— Ektar 100 (для южного солнца, насыщенных цветов)
+— Ektar 100 (для ясного южного солнца — **насыщенность без янтарного каста**)
 — 35mm и 50mm — основные фокусы; 85mm для портретов
 — Естественный свет всегда; никаких студийных вспышек, никаких ring lights
-— Мелкое зерно, мягкий roll-off в светах, тёплая, но не оранжевая палитра
+— Мелкое зерно, мягкий roll-off в светах; **сбалансированная** палитра — допустима тёплота **сцены**, но не **сепия**, не **оранжевый fog** на всём кадре, не масляная живопись
 
 7.3 LIGHT LANGUAGE:
-— Утренний свет (утро в кафе, рассветная набережная)
+— **Дневной свет — частый дефолт:** ясное утро и середина дня, мягкий пасмурный день, светлые интерьеры современных кафе
 — Midday над морем (резкие тени, синий Pacific)
-— Golden hour (терраса, ужин, последний свет на лицах) — НЕ единственный свет, но частый
-— Синий час после ужина — городские окна, неон отражается в мокрой брусчатке
+— Утренний свет (набережная, кофе у окна)
+— Golden hour (терраса, ужин) — **иногда**, не в каждом слайде подряд
+— Синий час после ужина — городские окна; сохраняй читаемость лица, избегай «только неон + грязная тьма»
 — Облачный мягкий день для северных и осенних направлений (Big Sur, Орегон, Лондон)
-— Тёплый интерьерный свет вечером (свечи, лампы, candle-lit dinner)
-— Никогда: жёсткое полуденное солнце без причины, студийные вспышки, неон-как-эффект
+— Тёплый интерьерный вечер (лампы, **умеренные** свечи) — без единственного «одна свеча в пещере»
+— Никогда: жёсткое полуденное солнце без причины, студийные вспышки, неон как единственный ключ
 
 7.4 WARDROBE & PALETTE:
 — California expensive-casual для базовых сцен: кашемир, oatmeal, camel, ivory, льняные платья, шёлковые шарфы, кожаные тоут-сумки
 — Для побережья: босиком на песке, льняные слои, шарф на ветру
 — Для ужинов: простые slip-платья в приглушённых тонах
 — Для пустыни (Joshua Tree, Седона): terracotta, ржавчина, тёплая земляная палитра, замша
-— Для Европы: классика и текстура — silk shirt, перчатки осенью, lambswool, chic без сезонной моды
+— Для Европы: смешивай **современные кварталы и обычные городские кафе** с классикой — silk shirt, перчатки осенью, lambswool; **не** делай каждый кадр «только средневековый янтарный old-town»
 — Для южных направлений (Тулум, Греция): белый лён, плетёные сумки, золотые тонкие украшения
 — ВСЕГДА: дорогое, но обношенное, никогда не «свежеотглаженное», никогда не «инфлюенсерский лук»
 — НИКОГДА: логотипов, брендов, спортивного athleisure-as-look, блёсток, костюмированности
@@ -1342,8 +1355,8 @@ PLACE LOCK: If the slide's Russian text names or clearly implies a destination, 
 — Three-quarter front view of faces — главный приём для женщин в кадре
 — Profile с видимой скулой — для движения вперёд (прогулка, разговор)
 — Mid-shot группы за столом или на прогулке
-— Close-up рук с бокалом, чашкой кофе, картой, шарфом
-— Intimate group fragment — двое-трое в одном кадре, не вся группа
+— Close-up рук с чашкой, картой, шарфом (на столе — tea / coffee / sparkling water по 7.11, не алкоголь)
+— Tight group fragment — двое-трое в одном кадре, не вся группа
 — Back view — изредка и только когда контекст требует (взгляд на горизонт, вход в галерею)
 — ВСЕГДА: место в кадре читается как часть истории, не отрезано фокусом
 
@@ -1353,12 +1366,12 @@ Append when relevant: "Kids may appear only if this slide's Russian scenario exp
 
 7.9 EXAMPLE FULL PROMPT (образец густоты):
 
-A group of four women in their early thirties walking three-quarter forward along a sunlit cobbled street in a small Italian old-town district, late afternoon. Soft golden light rakes from camera-left across ochre and terracotta walls; one woman laughs mid-sentence with a hand raised in gesture, another listens with a quiet half-smile, the third points at a small flower shop across the street, the fourth slightly behind, fingers brushing the strap of her leather tote. Real adult faces with character — fine lines around the eyes, no smoothing, no glamour retouch. Linen shirts in cream and oatmeal, a silk scarf in deep burgundy, simple gold earrings, low leather sandals — expensive-casual, lived-in. Behind them: a flower-shop spilling onto the pavement, two background figures talking under a yellow awning, a Vespa parked against the wall, soft blur of an evening crowd at the street's end. Shallow depth of field, 50mm look, fine grain, gentle highlight roll-off. Editorial documentary travel photography — real moment, real light, real friendship, no staging. Kodak Portra 400 aesthetic, warm but not orange, honey tones on skin and stone. Composition leaves negative space in the upper third for later typography overlay. Women only in frame, including reflections; background figures kept distant and out of focus. No text, logos, or readable elements in frame. Vertical 9:16 framing.
+A group of four women in their early thirties at a shared outdoor table on a bright side-street café in a small Mediterranean coastal town, late morning. Clear, high sun softened slightly by a pale awning — daylight feels fresh, stone and stucco read clean off-white and sand, not orange mud; short shadows, airy openness. Two women lean in mid-conversation with easy smiles; one laughs with a hand lifted; the fourth glances toward pedestrians — candid, unposed. Real faces with fine lines — no glamour retouch. Ivory linen, oat knit, simple gold earrings, leather totes — expensive-casual, lived-in. Background: modern café glass, light umbrellas, scooters softly blurred, a glimpse of sea down the lane. Shallow depth of field, 50mm look, fine grain. Editorial documentary travel photography — contemporary travel magazine, real friendship, no staging. Kodak Portra 400 aesthetic: natural skin, balanced neutrals, no sepia, no painterly gloom. Negative space in the upper third. Women only in frame, including reflections; background people distant and soft. On the table: herbal tea and sparkling water with citrus — no alcohol. No text, logos, or readable elements in frame. Vertical 9:16 framing.
 
 7.11 OPENAI MODERATION HYGIENE (CRITICAL — affects whether image is generated at all):
 
 ПРАВИЛО 1 — НЕ упоминать в промпте имена реальных людей.
-Никаких имён фотографов (Joel Meyerowitz, Saul Leiter, Annie Leibovitz, Slim Aarons, Steve McCurry, Vivian Maier и т.д.), художников, актрис. Используй жанровые формулировки: «editorial documentary travel photography», «lifestyle editorial warmth», «observational city-street style», «sun-soaked travel editorial».
+Никаких имён фотографов (Joel Meyerowitz, Saul Leiter, Annie Leibovitz, Slim Aarons, Steve McCurry, Vivian Maier и т.д.), художников, актрис. Используй жанровые формулировки: «editorial documentary travel photography», «lifestyle editorial warmth», «observational city-street style», «bright daylight travel editorial».
 
 ПРАВИЛО 2 — НИКОГДА не упоминать алкоголь.
 Это главный триггер для OlgaTrip-эстетики. Никаких wine, rosé, champagne, prosecco, sparkling wine, cocktail, aperitif, gin, vermouth, beer, whiskey, alcohol.
