@@ -207,7 +207,7 @@ export function parseSessionImport(raw: unknown):
   const music = asMusic(candidate.music);
   const references =
     candidate.references === undefined
-      ? { query: "", source: "unsplash", items: [], pinterestUrls: [] }
+      ? { query: "", source: "unsplash" as const, items: [], pinterestUrls: [] }
       : asReferences(candidate.references);
 
   let imagePrompts: StudioState["imagePrompts"];
