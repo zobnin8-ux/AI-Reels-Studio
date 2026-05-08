@@ -132,7 +132,7 @@ export function ControlPanel() {
         images: [],
         caption: "",
         music: emptyMusic(),
-        references: { query: "", items: [] },
+        references: { query: "", source: "unsplash", items: [], pinterestUrls: [] },
         ...defaultsForProject(nextProject)
       }
     });

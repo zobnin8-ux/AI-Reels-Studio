@@ -381,7 +381,6 @@ export function ImageSlideCard({
                 </span>
               </button>
             ) : (
-              // eslint-disable-next-line @next/next/no-img-element
               <div className="relative flex h-full w-full items-center justify-center">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
