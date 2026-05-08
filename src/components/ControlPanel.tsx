@@ -61,14 +61,8 @@ export function ControlPanel() {
     }
   });
   const importRef = useRef<HTMLInputElement>(null);
-  const uploadRefsRef = useRef<HTMLInputElement>(null);
   const [importNotice, setImportNotice] = useState<SessionImportNotice | null>(null);
-  const [refBusy, setRefBusy] = useState(false);
-  const [refNotice, setRefNotice] = useState<string | null>(null);
-  const [refResults, setRefResults] = useState<
-    Array<{ id: string; kind: "unsplash"; thumb: string; full: string; author?: string; sourceUrl?: string }>
-  >([]);
-  const [pinterestDraft, setPinterestDraft] = useState("");
+  // References moved to the right panel (OutputPanel).
 
   useEffect(() => {
     document.body.classList.toggle("showcase", richStudioBackground);
@@ -81,11 +75,7 @@ export function ControlPanel() {
     return () => window.clearTimeout(t);
   }, [importNotice]);
 
-  useEffect(() => {
-    if (!refNotice) return;
-    const t = window.setTimeout(() => setRefNotice(null), 7000);
-    return () => window.clearTimeout(t);
-  }, [refNotice]);
+  // (refs) no-op
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -138,114 +128,7 @@ export function ControlPanel() {
     });
   }
 
-  async function searchReferences() {
-    const q = (state.references?.query ?? "").trim();
-    if (q.length < 2) {
-      setRefNotice("Запрос слишком короткий (минимум 2 символа).");
-      return;
-    }
-    setRefBusy(true);
-    try {
-      const source = state.references?.source ?? "unsplash";
-      const endpoint = source === "pexels" ? "/api/references/pexels" : "/api/references/unsplash";
-      const res = await fetch(endpoint, {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ query: q })
-      });
-      if (!res.ok) {
-        const j = (await res.json().catch(() => ({}))) as { error?: string };
-        throw new Error(j.error ?? `Search failed (${res.status})`);
-      }
-      const j = (await res.json()) as { items?: typeof refResults };
-      setRefResults(j.items ?? []);
-    } catch (e: unknown) {
-      const msg = e instanceof Error ? e.message : "Search failed";
-      setRefNotice(msg);
-    } finally {
-      setRefBusy(false);
-    }
-  }
-
-  function addPinterestUrl(raw: string) {
-    const u = raw.trim();
-    if (!u) return;
-    // minimal normalization
-    const url = u.startsWith("http") ? u : `https://${u}`;
-    const cur = state.references?.pinterestUrls ?? [];
-    if (cur.includes(url)) return;
-    const next = [url, ...cur].slice(0, 24);
-    dispatch({
-      type: "set",
-      patch: {
-        references: { ...(state.references ?? { query: "", source: "unsplash", items: [], pinterestUrls: [] }), pinterestUrls: next }
-      }
-    });
-  }
-
-  function removePinterestUrl(url: string) {
-    const cur = state.references?.pinterestUrls ?? [];
-    const next = cur.filter((x) => x !== url);
-    dispatch({
-      type: "set",
-      patch: {
-        references: { ...(state.references ?? { query: "", source: "unsplash", items: [], pinterestUrls: [] }), pinterestUrls: next }
-      }
-    });
-  }
-
-  function addReference(item: (typeof refResults)[number]) {
-    const cur = state.references?.items ?? [];
-    if (cur.some((x) => x.id === item.id && x.kind === "unsplash")) return;
-    const next = [
-      { id: item.id, kind: "unsplash" as const, thumb: item.thumb, full: item.full, author: item.author, sourceUrl: item.sourceUrl },
-      ...cur
-    ].slice(0, 24);
-    dispatch({ type: "set", patch: { references: { ...(state.references ?? { query: "", items: [] }), items: next } } });
-  }
-
-  function removeReference(id: string) {
-    const cur = state.references?.items ?? [];
-    const next = cur.filter((x) => x.id !== id);
-    dispatch({ type: "set", patch: { references: { ...(state.references ?? { query: "", items: [] }), items: next } } });
-  }
-
-  async function onUploadRefs(files: FileList | null) {
-    if (!files || files.length === 0) return;
-    const maxBytes = 3_000_000;
-    const cur = state.references?.items ?? [];
-    const uploads: typeof cur = [];
-
-    const readOne = (f: File) =>
-      new Promise<string>((resolve, reject) => {
-        const r = new FileReader();
-        r.onerror = () => reject(new Error("File read error"));
-        r.onload = () => resolve(String(r.result ?? ""));
-        r.readAsDataURL(f);
-      });
-
-    setRefBusy(true);
-    try {
-      for (const f of Array.from(files).slice(0, 12)) {
-        if (!f.type.startsWith("image/")) continue;
-        if (f.size > maxBytes) {
-          setRefNotice(`Файл слишком большой: ${f.name} (лимит 3MB)`);
-          continue;
-        }
-        const dataUrl = await readOne(f);
-        const id = `upload_${Math.random().toString(16).slice(2)}_${Date.now().toString(16)}`;
-        uploads.push({ id, kind: "upload", thumb: dataUrl, full: dataUrl });
-      }
-      const next = [...uploads, ...cur].slice(0, 24);
-      dispatch({ type: "set", patch: { references: { ...(state.references ?? { query: "", items: [] }), items: next } } });
-    } catch (e: unknown) {
-      const msg = e instanceof Error ? e.message : "Upload failed";
-      setRefNotice(msg);
-    } finally {
-      setRefBusy(false);
-      if (uploadRefsRef.current) uploadRefsRef.current.value = "";
-    }
-  }
+  // references moved to OutputPanel (right column)
 
   function onProjectChange(nextProject: ProjectId) {
     if (nextProject === state.project) return;
@@ -450,174 +333,7 @@ export function ControlPanel() {
           </div>
         </div>
 
-        <div className="group">
-          <div className="group-title">Референсы</div>
-          {refNotice ? (
-            <div style={{ fontSize: 11, color: "#fca5a5", marginBottom: 8, whiteSpace: "pre-wrap" }}>{refNotice}</div>
-          ) : null}
-          <div className="field">
-            <span className="label mono">Поиск (Unsplash)</span>
-            <div className="field-row" style={{ gap: 8 }}>
-              <select
-                className="select"
-                value={state.references?.source ?? "unsplash"}
-                onChange={(e) =>
-                  dispatch({
-                    type: "set",
-                    patch: {
-                      references: { ...(state.references ?? { query: "", source: "unsplash", items: [], pinterestUrls: [] }), source: e.target.value as "unsplash" | "pexels" }
-                    }
-                  })
-                }
-                style={{ maxWidth: 140 }}
-                aria-label="Источник поиска референсов"
-              >
-                <option value="unsplash">Unsplash</option>
-                <option value="pexels">Pexels</option>
-              </select>
-              <input
-                className="input"
-                value={state.references?.query ?? ""}
-                onChange={(e) =>
-                  dispatch({
-                    type: "set",
-                    patch: {
-                      references: {
-                        ...(state.references ?? { query: "", source: "unsplash", items: [], pinterestUrls: [] }),
-                        query: e.target.value
-                      }
-                    }
-                  })
-                }
-                placeholder="например: italy street, women walking, cafe sunlight"
-              />
-              <button type="button" className="gen-btn" onClick={() => void searchReferences()} disabled={refBusy}>
-                {refBusy ? "…" : "Искать"}
-              </button>
-            </div>
-            <div style={{ marginTop: 6, fontSize: 11, color: "var(--text-muted)" }}>
-              Если результатов нет: проверь ключи в <span className="mono">.env.local</span> (UNSPLASH_ACCESS_KEY / PEXELS_API_KEY) и перезапусти сервер.
-            </div>
-          </div>
-          <div className="field">
-            <span className="label mono">Загрузить свои</span>
-            <div className="field-row" style={{ gap: 8 }}>
-              <button type="button" className="gen-btn" onClick={() => uploadRefsRef.current?.click()} disabled={refBusy}>
-                Загрузить
-              </button>
-              <input
-                ref={uploadRefsRef}
-                type="file"
-                accept="image/*"
-                multiple
-                style={{ display: "none" }}
-                onChange={(e) => void onUploadRefs(e.target.files)}
-              />
-              <span style={{ fontSize: 11, color: "var(--text-muted)" }}>до 12 файлов, 3MB каждый</span>
-            </div>
-          </div>
-
-          {refResults.length > 0 ? (
-            <div className="field">
-              <span className="label mono">Результаты</span>
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 8 }}>
-                {refResults.slice(0, 18).map((it) => (
-                  <button
-                    key={it.id}
-                    type="button"
-                    className="studio-btn-ghost"
-                    onClick={() => addReference(it)}
-                    style={{ padding: 0, borderRadius: 10, overflow: "hidden" }}
-                    title={it.author ? `Add · ${it.author}` : "Add"}
-                  >
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={it.thumb} alt="" style={{ width: "100%", height: 90, objectFit: "cover", display: "block" }} />
-                  </button>
-                ))}
-              </div>
-            </div>
-          ) : null}
-
-          {state.references?.items?.length ? (
-            <div className="field">
-              <span className="label mono">Выбрано</span>
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 8 }}>
-                {state.references.items.slice(0, 24).map((it) => (
-                  <div key={it.id} style={{ position: "relative", borderRadius: 10, overflow: "hidden" }}>
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={it.thumb} alt="" style={{ width: "100%", height: 90, objectFit: "cover", display: "block" }} />
-                    <button
-                      type="button"
-                      onClick={() => removeReference(it.id)}
-                      className="asset-badge"
-                      style={{ position: "absolute", right: 6, top: 6 }}
-                      aria-label="Remove reference"
-                      title="Remove"
-                    >
-                      ×
-                    </button>
-                  </div>
-                ))}
-              </div>
-            </div>
-          ) : null}
-
-          <div className="field">
-            <span className="label mono">Pinterest (ссылки)</span>
-            <div className="field-row" style={{ gap: 8 }}>
-              <input
-                className="input"
-                value={pinterestDraft}
-                onChange={(e) => setPinterestDraft(e.target.value)}
-                placeholder="вставь ссылку на Pin / Board"
-              />
-              <button
-                type="button"
-                className="gen-btn"
-                onClick={() => {
-                  addPinterestUrl(pinterestDraft);
-                  setPinterestDraft("");
-                }}
-                disabled={refBusy}
-              >
-                Добавить
-              </button>
-            </div>
-            {state.references?.pinterestUrls?.length ? (
-              <div style={{ marginTop: 8, display: "flex", flexDirection: "column", gap: 6 }}>
-                {state.references.pinterestUrls.slice(0, 12).map((u) => (
-                  <div
-                    key={u}
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 8,
-                      border: "1px solid var(--border-subtle)",
-                      borderRadius: 10,
-                      padding: "6px 10px",
-                      background: "rgba(8,16,20,0.35)"
-                    }}
-                  >
-                    <a href={u} target="_blank" rel="noreferrer" style={{ fontSize: 11, color: "var(--text)" }}>
-                      {u.length > 62 ? `${u.slice(0, 62)}…` : u}
-                    </a>
-                    <div style={{ flex: 1 }} />
-                    <button type="button" className="asset-badge" onClick={() => removePinterestUrl(u)} title="Remove">
-                      ×
-                    </button>
-                  </div>
-                ))}
-                <div style={{ fontSize: 11, color: "var(--text-muted)" }}>
-                  Примечание: Pinterest выдачу “как в Pinterest” внутри приложения не даёт официальным API. Ссылки — чтобы держать рефы рядом; нужные картинки загружай через “Загрузить свои”.
-                </div>
-              </div>
-            ) : (
-              <div style={{ marginTop: 6, fontSize: 11, color: "var(--text-muted)" }}>
-                Вставь ссылку — она сохранится в сессии и будет всегда под рукой.
-              </div>
-            )}
-          </div>
-        </div>
+        {/* Референсы переехали в правую панель (OutputPanel) */}
 
         <div className="group">
           <div className="group-title">Фон студии</div>

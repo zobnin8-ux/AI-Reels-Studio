@@ -77,7 +77,7 @@ button.asset-badge {
   grid-template-columns:
     clamp(280px, 22vw, 320px)
     minmax(0, 1fr)
-    clamp(320px, 26vw, 380px) !important;
+    clamp(300px, 23vw, 340px) !important;
 }
 
 /* Лента кадров внутри панели сцены — сразу над чатом */
