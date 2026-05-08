@@ -1,13 +1,19 @@
 "use client";
 
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { useStudio } from "@/lib/studio-store";
 import { requestDialogueTurn } from "@/lib/dialogue-bridge";
 import { generateImagesFromState } from "@/lib/actions";
+import type { ReferenceImage } from "@/lib/state";
 
 type RefResult = { id: string; kind: "unsplash"; thumb: string; full: string; author?: string; sourceUrl?: string };
 
-export function ReferencesPanel({ compact = false }: { compact?: boolean }) {
+type PreviewState =
+  | { kind: "result"; item: RefResult }
+  | { kind: "selected"; item: ReferenceImage };
+
+export function ReferencesPanel() {
   const { state, dispatch } = useStudio();
   const uploadRefsRef = useRef<HTMLInputElement>(null);
   const [busy, setBusy] = useState(false);
@@ -15,11 +21,12 @@ export function ReferencesPanel({ compact = false }: { compact?: boolean }) {
   const [notice, setNotice] = useState<string | null>(null);
   const [results, setResults] = useState<RefResult[]>([]);
   const [pinterestDraft, setPinterestDraft] = useState("");
+  const [preview, setPreview] = useState<PreviewState | null>(null);
 
   const refs = state.references;
 
   const selectedCount = refs.items.length + refs.pinterestUrls.length;
-  const canUseRefs = selectedCount > 0;
+  const canPromptFromRefs = selectedCount > 0;
   const canGenerateWithRefs = refs.items.length > 0 && state.slides.length > 0 && !genBusy;
 
   const selectedSummary = useMemo(() => {
@@ -43,6 +50,24 @@ export function ReferencesPanel({ compact = false }: { compact?: boolean }) {
     return lines.join("\n");
   }, [refs.items, refs.pinterestUrls]);
 
+  useEffect(() => {
+    if (!preview) return;
+    function onKey(e: KeyboardEvent) {
+      if (e.key === "Escape") setPreview(null);
+    }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [preview]);
+
+  useEffect(() => {
+    if (!preview) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = prev;
+    };
+  }, [preview]);
+
   async function search() {
     const q = refs.query.trim();
     if (q.length < 2) {
@@ -65,9 +90,7 @@ export function ReferencesPanel({ compact = false }: { compact?: boolean }) {
       const j = (await res.json()) as { items?: RefResult[] };
       setResults(j.items ?? []);
       if ((j.items ?? []).length === 0) {
-        setNotice(
-          "Ничего не найдено. Проверь ключи в .env.local (UNSPLASH_ACCESS_KEY / PEXELS_API_KEY) и перезапусти сервер."
-        );
+        setNotice("Ничего не найдено. Если включён поиск — проверьте ключи API и перезапуск сервера.");
       }
     } catch (e: unknown) {
       setNotice(e instanceof Error ? e.message : "Search failed");
@@ -169,6 +192,7 @@ export function ReferencesPanel({ compact = false }: { compact?: boolean }) {
       'В statePatch верни только imagePrompts: [{"slideId","prompt"}, ...] для всех слайдов.'
     ].filter(Boolean);
     requestDialogueTurn(lines.join("\n"));
+    setNotice("Запрос ушёл в чат: модель обновит текстовые промпты. Картинки пока не создаются — нажмите «Сгенерировать все картинки» ниже.");
   }
 
   function askUseRefsForOneSlide() {
@@ -193,94 +217,120 @@ export function ReferencesPanel({ compact = false }: { compact?: boolean }) {
       'В statePatch верни только imagePrompts с ОДНИМ объектом {"slideId","prompt"} для этого slideId.'
     ].filter(Boolean);
     requestDialogueTurn(lines.join("\n"));
+    setNotice("Запрос ушёл в чат для одного слайда. Картинки не создаются — используйте кнопку генерации ниже.");
   }
 
+  const gridCols = "repeat(3, 1fr)";
+
+  const previewModal =
+    preview && typeof document !== "undefined"
+      ? createPortal(
+          <div className="ref-preview-root" role="presentation">
+            <button
+              type="button"
+              className="ref-preview-backdrop"
+              aria-label="Закрыть просмотр"
+              onClick={() => setPreview(null)}
+            />
+            <div className="ref-preview-dialog" role="dialog" aria-modal="true" aria-label="Просмотр референса">
+              <div className="ref-preview-toolbar">
+                <button type="button" className="asset-badge" onClick={() => setPreview(null)}>
+                  Закрыть
+                </button>
+                {preview.kind === "result" ? (
+                  <button
+                    type="button"
+                    className="gen-btn"
+                    onClick={() => {
+                      addResult(preview.item);
+                      setPreview(null);
+                    }}
+                  >
+                    Добавить к выбранным
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    className="studio-btn-ghost rounded-lg border border-border bg-black/30 px-3 py-1.5 text-xs"
+                    onClick={() => {
+                      removeItem(preview.item.id);
+                      setPreview(null);
+                    }}
+                  >
+                    Убрать из выбранных
+                  </button>
+                )}
+              </div>
+              <div className="ref-preview-img-wrap">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={preview.item.full} alt="" className="ref-preview-img" />
+              </div>
+              {preview.kind === "result" && preview.item.author ? (
+                <div className="ref-preview-caption">{preview.item.author}</div>
+              ) : null}
+            </div>
+          </div>,
+          document.body
+        )
+      : null;
+
   return (
-    <div className="asset-block">
-      <div className="asset-head">
-        <div className="asset-h">
-          Референсы <b>·</b> поиск и выбор
-        </div>
-        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          <span className="asset-badge">{selectedCount ? `${selectedCount} выбрано` : "пусто"}</span>
-          <button
-            type="button"
-            className="asset-badge"
-            disabled={!canUseRefs}
-            onClick={() => askUseRefsForImagePrompts()}
-            title="Попросить модель переписать imagePrompts с учётом референсов"
-          >
-            Использовать
-          </button>
-          <button
-            type="button"
-            className="asset-badge"
-            disabled={!canUseRefs}
-            onClick={() => askUseRefsForOneSlide()}
-            title="Переписать imagePrompt одного слайда по референсам"
-          >
-            Один слайд
-          </button>
-          <button
-            type="button"
-            className="asset-badge"
-            disabled={!canGenerateWithRefs}
-            onClick={() => void onGenerateWithRefs()}
-            title="Сгенерировать изображения, отправив выбранные референсы в OpenAI (images.edit)"
-          >
-            {genBusy ? "…" : "Генерировать с рефами"}
-          </button>
-        </div>
+    <div className="asset-block references-panel">
+      <div className="asset-head references-panel-head">
+        <div className="asset-h">Референсы</div>
+        <span className="asset-badge">{selectedCount ? `${selectedCount} в подборке` : "подборка пуста"}</span>
       </div>
 
       {notice ? (
-        <div style={{ fontSize: 11, color: "#fca5a5", marginBottom: 8, whiteSpace: "pre-wrap" }}>{notice}</div>
+        <div className="references-notice" role="status">
+          {notice}
+        </div>
       ) : null}
 
       <div className="field">
-        <span className="label mono">Поиск</span>
-        <div className="field-row" style={{ gap: 8 }}>
+        <span className="label">Поиск фото</span>
+        <div className="field-row references-search-row">
           <select
             className="select"
             value={refs.source}
-            onChange={(e) => dispatch({ type: "set", patch: { references: { ...refs, source: e.target.value as "unsplash" | "pexels" } } })}
-            style={{ maxWidth: 130 }}
-            aria-label="Источник поиска референсов"
+            onChange={(e) =>
+              dispatch({
+                type: "set",
+                patch: { references: { ...refs, source: e.target.value as "unsplash" | "pexels" } }
+              })
+            }
+            aria-label="Источник"
           >
             <option value="unsplash">Unsplash</option>
             <option value="pexels">Pexels</option>
           </select>
           <input
-            className="input"
+            className="input references-search-input"
             value={refs.query}
             onChange={(e) => dispatch({ type: "set", patch: { references: { ...refs, query: e.target.value } } })}
-            placeholder="italy street, women walking, cafe sunlight"
+            placeholder=""
+            aria-label="Запрос для поиска"
           />
-          <button type="button" className="gen-btn" onClick={() => void search()} disabled={busy}>
-            {busy ? "…" : "Искать"}
+          <button type="button" className="gen-btn references-search-btn" onClick={() => void search()} disabled={busy}>
+            {busy ? "…" : "Найти"}
           </button>
-        </div>
-        <div style={{ marginTop: 6, fontSize: 11, color: "var(--text-muted)" }}>
-          Для поиска нужны ключи в <span className="mono">.env.local</span>: <span className="mono">UNSPLASH_ACCESS_KEY</span> или{" "}
-          <span className="mono">PEXELS_API_KEY</span>. После правки — перезапуск сервера.
         </div>
       </div>
 
       {results.length ? (
         <div className="field">
-          <span className="label mono">Результаты</span>
-          <div style={{ display: "grid", gridTemplateColumns: compact ? "repeat(2, 1fr)" : "repeat(3, 1fr)", gap: 8 }}>
+          <span className="label">Найдено — нажмите для просмотра</span>
+          <div className="references-thumb-grid" style={{ gridTemplateColumns: gridCols }}>
             {results.slice(0, 18).map((it) => (
               <button
                 key={it.id}
                 type="button"
-                className="studio-btn-ghost"
-                onClick={() => addResult(it)}
-                style={{ padding: 0, borderRadius: 10, overflow: "hidden" }}
-                title={it.author ? `Add · ${it.author}` : "Add"}
+                className="references-thumb-btn"
+                onClick={() => setPreview({ kind: "result", item: it })}
+                aria-label="Открыть превью"
               >
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={it.thumb} alt="" style={{ width: "100%", height: 90, objectFit: "cover", display: "block" }} />
+                <img src={it.thumb} alt="" className="references-thumb-img" />
               </button>
             ))}
           </div>
@@ -288,8 +338,8 @@ export function ReferencesPanel({ compact = false }: { compact?: boolean }) {
       ) : null}
 
       <div className="field">
-        <span className="label mono">Загрузить свои</span>
-        <div className="field-row" style={{ gap: 8 }}>
+        <span className="label">Свои файлы</span>
+        <div className="field-row" style={{ gap: 8, flexWrap: "wrap" }}>
           <button type="button" className="gen-btn" onClick={() => uploadRefsRef.current?.click()} disabled={busy}>
             Загрузить
           </button>
@@ -301,38 +351,40 @@ export function ReferencesPanel({ compact = false }: { compact?: boolean }) {
             style={{ display: "none" }}
             onChange={(e) => void onUpload(e.target.files)}
           />
-          <span style={{ fontSize: 11, color: "var(--text-muted)" }}>до 12 файлов, 3MB каждый</span>
+          <span className="references-hint-inline">до 12 файлов, до 3 МБ</span>
         </div>
       </div>
 
       {refs.items.length ? (
         <div className="field">
-          <span className="label mono">Выбрано</span>
-          <div style={{ display: "grid", gridTemplateColumns: compact ? "repeat(2, 1fr)" : "repeat(3, 1fr)", gap: 8 }}>
+          <span className="label">Выбрано — нажмите для просмотра</span>
+          <div className="references-thumb-grid" style={{ gridTemplateColumns: gridCols }}>
             {refs.items.slice(0, 24).map((it) => (
-              <div key={it.id} style={{ position: "relative", borderRadius: 10, overflow: "hidden" }}>
+              <button
+                key={it.id}
+                type="button"
+                className="references-thumb-btn"
+                onClick={() => setPreview({ kind: "selected", item: it })}
+                aria-label="Открыть превью"
+              >
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={it.thumb} alt="" style={{ width: "100%", height: 90, objectFit: "cover", display: "block" }} />
-                <button
-                  type="button"
-                  onClick={() => removeItem(it.id)}
-                  className="asset-badge"
-                  style={{ position: "absolute", right: 6, top: 6 }}
-                  aria-label="Remove reference"
-                  title="Remove"
-                >
-                  ×
-                </button>
-              </div>
+                <img src={it.thumb} alt="" className="references-thumb-img" />
+              </button>
             ))}
           </div>
         </div>
       ) : null}
 
       <div className="field">
-        <span className="label mono">Pinterest (ссылки)</span>
+        <span className="label">Pinterest (ссылки)</span>
         <div className="field-row" style={{ gap: 8 }}>
-          <input className="input" value={pinterestDraft} onChange={(e) => setPinterestDraft(e.target.value)} placeholder="ссылка на Pin / Board" />
+          <input
+            className="input"
+            value={pinterestDraft}
+            onChange={(e) => setPinterestDraft(e.target.value)}
+            placeholder=""
+            aria-label="Ссылка Pinterest"
+          />
           <button
             type="button"
             className="gen-btn"
@@ -346,37 +398,60 @@ export function ReferencesPanel({ compact = false }: { compact?: boolean }) {
           </button>
         </div>
         {refs.pinterestUrls.length ? (
-          <div style={{ marginTop: 8, display: "flex", flexDirection: "column", gap: 6 }}>
+          <div className="references-pinterest-list">
             {refs.pinterestUrls.slice(0, 10).map((u) => (
-              <div
-                key={u}
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 8,
-                  border: "1px solid var(--border-subtle)",
-                  borderRadius: 10,
-                  padding: "6px 10px",
-                  background: "rgba(8,16,20,0.35)"
-                }}
-              >
-                <a href={u} target="_blank" rel="noreferrer" style={{ fontSize: 11, color: "var(--text)" }}>
-                  {u.length > 58 ? `${u.slice(0, 58)}…` : u}
+              <div key={u} className="references-pinterest-row">
+                <a href={u} target="_blank" rel="noreferrer" className="references-pinterest-link">
+                  {u.length > 48 ? `${u.slice(0, 48)}…` : u}
                 </a>
-                <div style={{ flex: 1 }} />
-                <button type="button" className="asset-badge" onClick={() => removePinterestUrl(u)} title="Remove">
+                <button type="button" className="asset-badge" onClick={() => removePinterestUrl(u)} aria-label="Удалить">
                   ×
                 </button>
               </div>
             ))}
           </div>
-        ) : (
-          <div style={{ marginTop: 6, fontSize: 11, color: "var(--text-muted)" }}>
-            Pinterest выдачу “как в Pinterest” внутри приложения не даёт официальным API. Ссылки — чтобы держать рефы рядом; нужные картинки загружай через “Загрузить свои”.
-          </div>
-        )}
+        ) : null}
       </div>
+
+      <div className="references-actions-block">
+        <div className="references-step-title">Шаг 1 — только чат</div>
+        <p className="references-step-desc">
+          Кнопки ниже отправляют запрос модели в диалог: она перепишет английские промпты кадров под ваши референсы.{" "}
+          <strong>Картинки при этом не создаются.</strong>
+        </p>
+        <button
+          type="button"
+          className="references-btn-secondary w-full"
+          disabled={!canPromptFromRefs}
+          onClick={() => askUseRefsForImagePrompts()}
+        >
+          Обновить промпты — все слайды
+        </button>
+        <button
+          type="button"
+          className="references-btn-secondary w-full"
+          disabled={!canPromptFromRefs}
+          onClick={() => askUseRefsForOneSlide()}
+        >
+          Обновить промпт — один слайд…
+        </button>
+
+        <div className="references-step-title references-step-title--spaced">Шаг 2 — генерация</div>
+        <p className="references-step-desc">
+          Отправляет выбранные изображения в OpenAI вместе с промптами и строит все кадры. Делайте это после того, как
+          промпты вас устроят.
+        </p>
+        <button
+          type="button"
+          className="gen-btn references-btn-primary w-full"
+          disabled={!canGenerateWithRefs}
+          onClick={() => void onGenerateWithRefs()}
+        >
+          {genBusy ? "Генерация…" : "Сгенерировать все картинки"}
+        </button>
+      </div>
+
+      {previewModal}
     </div>
   );
 }
-

@@ -3,7 +3,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useStudio } from "@/lib/studio-store";
 import type { ProjectId, StudioState } from "@/lib/state";
-import { parseSessionImport, SESSION_EXPORT_VERSION } from "@/lib/session-import";
 
 const projectOptions: { id: ProjectId; label: string }[] = [
   { id: "poslenego", label: "После него" },
@@ -13,8 +12,6 @@ const projectOptions: { id: ProjectId; label: string }[] = [
 
 const emptyMusic = () => ({ queries: [] as string[], recommendations: [] as string[], avoid: [] as string[] });
 const BG_MODE_KEY = "ai-reels-studio:v2026:bgMode";
-
-type SessionImportNotice = { kind: "ok" | "error"; message: string };
 
 function defaultsForProject(project: ProjectId): Partial<StudioState> {
   const base: Partial<StudioState> = {
@@ -60,22 +57,9 @@ export function ControlPanel() {
       return false;
     }
   });
-  const importRef = useRef<HTMLInputElement>(null);
-  const [importNotice, setImportNotice] = useState<SessionImportNotice | null>(null);
-  // References moved to the right panel (OutputPanel).
-
   useEffect(() => {
     document.body.classList.toggle("showcase", richStudioBackground);
   }, [richStudioBackground]);
-
-  useEffect(() => {
-    if (!importNotice) return;
-    const ms = importNotice.kind === "error" ? 12_000 : 7000;
-    const t = window.setTimeout(() => setImportNotice(null), ms);
-    return () => window.clearTimeout(t);
-  }, [importNotice]);
-
-  // (refs) no-op
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -143,50 +127,6 @@ export function ControlPanel() {
     resetContentAfterProjectSwitch(nextProject);
   }
 
-  function exportSessionJson() {
-    try {
-      const envelope = {
-        v: SESSION_EXPORT_VERSION,
-        exportedAt: new Date().toISOString(),
-        state
-      };
-      const payload = JSON.stringify(envelope, null, 2);
-      const blob = new Blob([payload], { type: "application/json" });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `ai-reels-studio-session-${new Date().toISOString().slice(0, 19).replace(/[:T]/g, "-")}.json`;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      URL.revokeObjectURL(url);
-    } catch {
-      // ignore
-    }
-  }
-
-  async function onImportFile(file: File | null) {
-    if (!file) return;
-    try {
-      const text = await file.text();
-      const parsed = JSON.parse(text) as unknown;
-      const res = parseSessionImport(parsed);
-      if (!res.ok) {
-        setImportNotice({ kind: "error", message: `Импорт отклонён: ${res.error}` });
-        return;
-      }
-      dispatch({ type: "replace", state: res.state, resetSessionUndo: true });
-      setImportNotice({ kind: "ok", message: "Сессия загружена из файла." });
-    } catch {
-      setImportNotice({
-        kind: "error",
-        message: "Не удалось прочитать файл."
-      });
-    } finally {
-      if (importRef.current) importRef.current.value = "";
-    }
-  }
-
   return (
     <>
       <div className="panel-strip">
@@ -199,27 +139,6 @@ export function ControlPanel() {
       </div>
 
       <div className="panel-body min-h-0">
-        {importNotice ? (
-          <div
-            role="status"
-            aria-live="polite"
-            className={[
-              "session-import-notice",
-              importNotice.kind === "ok" ? "session-import-notice--ok" : "session-import-notice--err"
-            ].join(" ")}
-          >
-            <span>{importNotice.message}</span>
-            <button
-              type="button"
-              className="session-import-notice-dismiss"
-              onClick={() => setImportNotice(null)}
-              aria-label="Закрыть уведомление"
-            >
-              ×
-            </button>
-          </div>
-        ) : null}
-
         <div className="group">
           <div className="group-title">Проект</div>
           <div className="field">
@@ -378,40 +297,18 @@ export function ControlPanel() {
           </div>
         </div>
 
-        <details className="group session-file-details">
-          <summary className="group-title session-file-summary">Файл сессии</summary>
-          <div className="field-row session-file-fields">
-            <div className="field">
-              <button type="button" className="gen-btn w-full" onClick={() => exportSessionJson()}>
-                Сохранить файл
-              </button>
-            </div>
-            <div className="field">
-              <button type="button" className="gen-btn w-full" onClick={() => importRef.current?.click()}>
-                Загрузить файл
-              </button>
-              <input
-                ref={importRef}
-                type="file"
-                accept="application/json"
-                style={{ display: "none" }}
-                onChange={(e) => void onImportFile(e.target.files?.[0] ?? null)}
-              />
-            </div>
-          </div>
-          <div className="field session-file-reset">
-            <button
-              type="button"
-              className="studio-btn-ghost w-full rounded-xl border border-border bg-black/20 px-3 py-2 text-sm text-text hover:bg-black/30"
-              onClick={() => {
-                const ok = window.confirm("Сбросить всю сессию? Это очистит диалог, сценарий и ассеты.");
-                if (ok) dispatch({ type: "resetAll" });
-              }}
-            >
-              Сбросить всё
-            </button>
-          </div>
-        </details>
+        <div className="group">
+          <button
+            type="button"
+            className="studio-btn-ghost w-full rounded-xl border border-border bg-black/20 px-3 py-2 text-sm text-text hover:bg-black/30"
+            onClick={() => {
+              const ok = window.confirm("Сбросить всю сессию? Это очистит диалог, сценарий и ассеты.");
+              if (ok) dispatch({ type: "resetAll" });
+            }}
+          >
+            Сбросить всё
+          </button>
+        </div>
       </div>
     </>
   );
