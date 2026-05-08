@@ -76,10 +76,10 @@ button.asset-badge {
   /* v2026 base CSS sets a fixed 4-col grid; override to 4 columns */
   grid-template-columns:
     clamp(280px, 22vw, 320px)
-    /* Chat column — same width as right Output */
+    /* Chat column — the only flexible column */
+    minmax(0, 1fr)
+    /* References + Output — same fixed width */
     clamp(300px, 23vw, 340px)
-    /* References column — expands to take remaining space */
-    minmax(340px, 1fr)
     clamp(300px, 23vw, 340px) !important;
 }
 
