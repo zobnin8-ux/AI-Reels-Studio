@@ -196,7 +196,9 @@ async function fetchAndNormalizeRefImage(
     .jpeg({ quality: 86, mozjpeg: true })
     .toBuffer();
 
-  const blob = new Blob([normalized], { type: "image/jpeg" });
+  // TS/DOM lib typing: BlobPart doesn't accept Node Buffer reliably (SharedArrayBuffer typing),
+  // so wrap into Uint8Array for cross-env compatibility (Render/Node 24).
+  const blob = new Blob([new Uint8Array(normalized)], { type: "image/jpeg" });
   return { blob, filename: `ref_${idx + 1}.jpg` };
 }
 
