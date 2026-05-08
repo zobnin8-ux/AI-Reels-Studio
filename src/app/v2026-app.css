@@ -772,46 +772,11 @@ aside.panel.anim-4 .panel-strip {
   color: var(--text-muted);
 }
 
-.references-step-title--spaced {
-  margin-top: 8px;
-}
-
 .references-step-desc {
   margin: 0;
   font-size: 11px;
   line-height: 1.5;
   color: var(--text-secondary);
-}
-
-.references-btn-secondary {
-  display: block;
-  width: 100%;
-  padding: 10px 14px;
-  border-radius: var(--r-md);
-  border: 1px solid var(--border-soft);
-  background: rgba(8, 16, 20, 0.5);
-  color: var(--text);
-  font-size: 12px;
-  font-weight: 500;
-  cursor: pointer;
-  text-align: center;
-  transition: border-color 0.15s ease, background 0.15s ease;
-}
-
-.references-btn-secondary:hover:not(:disabled) {
-  border-color: var(--accent);
-  background: rgba(91, 224, 218, 0.08);
-}
-
-.references-btn-secondary:disabled {
-  opacity: 0.45;
-  cursor: not-allowed;
-}
-
-.references-btn-primary {
-  padding-top: 12px;
-  padding-bottom: 12px;
-  font-weight: 600;
 }
 
 .references-apply-label {

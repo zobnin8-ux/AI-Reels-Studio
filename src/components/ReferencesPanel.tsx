@@ -1,9 +1,8 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useStudio } from "@/lib/studio-store";
-import { requestDialogueTurn } from "@/lib/dialogue-bridge";
 import type { ReferenceImage } from "@/lib/state";
 
 type RefResult = { id: string; kind: "unsplash"; thumb: string; full: string; author?: string; sourceUrl?: string };
@@ -26,28 +25,6 @@ export function ReferencesPanel() {
   const refs = state.references;
 
   const selectedCount = refs.items.length + refs.pinterestUrls.length;
-  const canPromptFromRefs = selectedCount > 0;
-
-  const selectedSummary = useMemo(() => {
-    const lines: string[] = [];
-    if (refs.items.length) {
-      lines.push("Selected reference images (from in-app search/uploads):");
-      for (const it of refs.items.slice(0, 12)) {
-        const meta = [it.kind, it.author].filter(Boolean).join(" · ");
-        lines.push(`- ${meta || "reference"} ${it.sourceUrl ? `(${it.sourceUrl})` : ""}`.trim());
-      }
-    }
-    if (refs.pinterestUrls.length) {
-      lines.push("Pinterest references (links):");
-      for (const u of refs.pinterestUrls.slice(0, 12)) lines.push(`- ${u}`);
-    }
-    if (refs.items.some((x) => x.kind === "upload")) {
-      lines.push(
-        "Note: some refs are user-uploaded images; you can't view them directly, but treat them as style/scene guidance."
-      );
-    }
-    return lines.join("\n");
-  }, [refs.items, refs.pinterestUrls]);
 
   useEffect(() => {
     if (!preview) return;
@@ -166,49 +143,6 @@ export function ReferencesPanel() {
       setBusy(false);
       if (uploadRefsRef.current) uploadRefsRef.current.value = "";
     }
-  }
-
-  function askUseRefsForImagePrompts() {
-    const lines = [
-      "Используй выбранные референсы, чтобы переписать ВСЕ imagePrompts (по одному на каждый slideId).",
-      "Не меняй тексты слайдов и сценарий.",
-      "Сохрани структуру, эстетику и MODERATION HYGIENE активного профиля.",
-      "",
-      selectedSummary,
-      "",
-      'В statePatch верни только imagePrompts: [{"slideId","prompt"}, ...] для всех слайдов.'
-    ].filter(Boolean);
-    requestDialogueTurn(lines.join("\n"));
-    setNotice(
-      "Запрос ушёл в чат: модель обновит текстовые промпты. Картинки не создаются — нажмите «Сгенерировать все картинки» в панели «Вывод» справа."
-    );
-  }
-
-  function askUseRefsForOneSlide() {
-    if (state.slides.length === 0) {
-      setNotice("Сначала нужны слайды (сценарий), затем можно переписывать промпты.");
-      return;
-    }
-    const raw = typeof window !== "undefined" ? window.prompt("Номер слайда (1…)", "1") : "1";
-    const n = Number(raw);
-    if (!Number.isFinite(n) || n < 1 || n > state.slides.length) {
-      setNotice(`Неверный номер. Доступно: 1–${state.slides.length}.`);
-      return;
-    }
-    const s = state.slides[n - 1]!;
-    const lines = [
-      `Используй выбранные референсы, чтобы переписать ТОЛЬКО image prompt для слайда ${n} (slideId: ${s.id}, заголовок: «${s.title}»).`,
-      "Не меняй тексты слайдов и сценарий.",
-      "Сохрани структуру, эстетику и MODERATION HYGIENE активного профиля.",
-      "",
-      selectedSummary,
-      "",
-      'В statePatch верни только imagePrompts с ОДНИМ объектом {"slideId","prompt"} для этого slideId.'
-    ].filter(Boolean);
-    requestDialogueTurn(lines.join("\n"));
-    setNotice(
-      "Запрос ушёл в чат для одного слайда. Картинки не создаются — «Сгенерировать все картинки» в панели «Вывод» справа."
-    );
   }
 
   const gridCols = "repeat(3, 1fr)";
@@ -439,29 +373,8 @@ export function ReferencesPanel() {
             Если включено, при нажатии <strong>«Сгенерировать все картинки»</strong> в панели <strong>«Вывод»</strong>{" "}
             справа (и при «Перегенерировать кадр») в OpenAI уйдут и эти изображения. Если выключено — только текстовый
             промпт. Нужны выбранные миниатюры в блоке «Выбрано» (ссылки Pinterest сами по себе в генерацию не попадают).
+            Текст промптов меняется в чате или кнопками у слайдов справа — не здесь.
           </p>
-
-          <div className="references-step-title references-step-title--spaced">Промпты через чат</div>
-          <p className="references-step-desc">
-            Отправляет запрос в диалог: модель перепишет английские промпты под референсы.{" "}
-            <strong>Картинки не создаёт.</strong>
-          </p>
-          <button
-            type="button"
-            className="references-btn-secondary w-full"
-            disabled={!canPromptFromRefs}
-            onClick={() => askUseRefsForImagePrompts()}
-          >
-            Обновить промпты — все слайды
-          </button>
-          <button
-            type="button"
-            className="references-btn-secondary w-full"
-            disabled={!canPromptFromRefs}
-            onClick={() => askUseRefsForOneSlide()}
-          >
-            Обновить промпт — один слайд…
-          </button>
         </div>
       </div>
 
