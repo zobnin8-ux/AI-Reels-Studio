@@ -4,7 +4,6 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useStudio } from "@/lib/studio-store";
 import { requestDialogueTurn } from "@/lib/dialogue-bridge";
-import { generateImagesFromState } from "@/lib/actions";
 import type { ReferenceImage } from "@/lib/state";
 
 type RefResult = { id: string; kind: "unsplash"; thumb: string; full: string; author?: string; sourceUrl?: string };
@@ -17,7 +16,6 @@ export function ReferencesPanel() {
   const { state, dispatch } = useStudio();
   const uploadRefsRef = useRef<HTMLInputElement>(null);
   const [busy, setBusy] = useState(false);
-  const [genBusy, setGenBusy] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
   const [results, setResults] = useState<RefResult[]>([]);
   /** Какие ключевые слова реально ушли в Unsplash/Pexels (после перевода с русского). */
@@ -29,7 +27,6 @@ export function ReferencesPanel() {
 
   const selectedCount = refs.items.length + refs.pinterestUrls.length;
   const canPromptFromRefs = selectedCount > 0;
-  const canGenerateWithRefs = refs.items.length > 0 && state.slides.length > 0 && !genBusy;
 
   const selectedSummary = useMemo(() => {
     const lines: string[] = [];
@@ -69,6 +66,12 @@ export function ReferencesPanel() {
       document.body.style.overflow = prev;
     };
   }, [preview]);
+
+  useEffect(() => {
+    const r = state.references;
+    if (r.items.length > 0 || !r.applyOnGenerate) return;
+    dispatch({ type: "set", patch: { references: { ...r, applyOnGenerate: false } } });
+  }, [state.references.items.length, state.references.applyOnGenerate, dispatch, state.references]);
 
   async function search() {
     const q = refs.query.trim();
@@ -165,26 +168,6 @@ export function ReferencesPanel() {
     }
   }
 
-  async function onGenerateWithRefs() {
-    if (!refs.items.length || state.slides.length === 0) return;
-    setNotice(null);
-    setGenBusy(true);
-    try {
-      const images = await generateImagesFromState(state, {
-        useReferences: true,
-        onProgress: ({ images: next }) => {
-          dispatch({ type: "set", patch: { images: next } });
-        }
-      });
-      dispatch({ type: "set", patch: { images } });
-    } catch (e: unknown) {
-      const m = e instanceof Error ? e.message : "Ошибка генерации изображений";
-      setNotice(m);
-    } finally {
-      setGenBusy(false);
-    }
-  }
-
   function askUseRefsForImagePrompts() {
     const lines = [
       "Используй выбранные референсы, чтобы переписать ВСЕ imagePrompts (по одному на каждый slideId).",
@@ -196,7 +179,9 @@ export function ReferencesPanel() {
       'В statePatch верни только imagePrompts: [{"slideId","prompt"}, ...] для всех слайдов.'
     ].filter(Boolean);
     requestDialogueTurn(lines.join("\n"));
-    setNotice("Запрос ушёл в чат: модель обновит текстовые промпты. Картинки пока не создаются — нажмите «Сгенерировать все картинки» ниже.");
+    setNotice(
+      "Запрос ушёл в чат: модель обновит текстовые промпты. Картинки не создаются — нажмите «Сгенерировать все картинки» в панели «Вывод» справа."
+    );
   }
 
   function askUseRefsForOneSlide() {
@@ -221,7 +206,9 @@ export function ReferencesPanel() {
       'В statePatch верни только imagePrompts с ОДНИМ объектом {"slideId","prompt"} для этого slideId.'
     ].filter(Boolean);
     requestDialogueTurn(lines.join("\n"));
-    setNotice("Запрос ушёл в чат для одного слайда. Картинки не создаются — используйте кнопку генерации ниже.");
+    setNotice(
+      "Запрос ушёл в чат для одного слайда. Картинки не создаются — «Сгенерировать все картинки» в панели «Вывод» справа."
+    );
   }
 
   const gridCols = "repeat(3, 1fr)";
@@ -432,10 +419,32 @@ export function ReferencesPanel() {
 
       <div className="references-panel-footer">
         <div className="references-actions-block">
-          <div className="references-step-title">Шаг 1 — только чат</div>
+          <div className="references-step-title">При генерации кадров</div>
+          <label className="references-apply-label">
+            <input
+              type="checkbox"
+              className="references-apply-checkbox"
+              checked={refs.applyOnGenerate}
+              disabled={refs.items.length === 0}
+              onChange={(e) =>
+                dispatch({
+                  type: "set",
+                  patch: { references: { ...refs, applyOnGenerate: e.target.checked } }
+                })
+              }
+            />
+            <span>Учитывать выбранные фото при генерации</span>
+          </label>
           <p className="references-step-desc">
-            Кнопки ниже отправляют запрос модели в диалог: она перепишет английские промпты кадров под ваши референсы.{" "}
-            <strong>Картинки при этом не создаются.</strong>
+            Если включено, при нажатии <strong>«Сгенерировать все картинки»</strong> в панели <strong>«Вывод»</strong>{" "}
+            справа (и при «Перегенерировать кадр») в OpenAI уйдут и эти изображения. Если выключено — только текстовый
+            промпт. Нужны выбранные миниатюры в блоке «Выбрано» (ссылки Pinterest сами по себе в генерацию не попадают).
+          </p>
+
+          <div className="references-step-title references-step-title--spaced">Промпты через чат</div>
+          <p className="references-step-desc">
+            Отправляет запрос в диалог: модель перепишет английские промпты под референсы.{" "}
+            <strong>Картинки не создаёт.</strong>
           </p>
           <button
             type="button"
@@ -452,20 +461,6 @@ export function ReferencesPanel() {
             onClick={() => askUseRefsForOneSlide()}
           >
             Обновить промпт — один слайд…
-          </button>
-
-          <div className="references-step-title references-step-title--spaced">Шаг 2 — генерация</div>
-          <p className="references-step-desc">
-            Отправляет выбранные изображения в OpenAI вместе с промптами и строит все кадры. Делайте это после того, как
-            промпты вас устроят.
-          </p>
-          <button
-            type="button"
-            className="gen-btn references-btn-primary w-full"
-            disabled={!canGenerateWithRefs}
-            onClick={() => void onGenerateWithRefs()}
-          >
-            {genBusy ? "Генерация…" : "Сгенерировать все картинки"}
           </button>
         </div>
       </div>

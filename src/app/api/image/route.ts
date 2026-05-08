@@ -231,10 +231,12 @@ async function generateWithOpenAIEdit(
     fd.set("quality", quality);
   }
 
-  // images.edit accepts multiple image parts (same field name).
+  // Несколько файлов нельзя класть в повторяющийся ключ `image` — API отвечает
+  // "Duplicate parameter: image". Нужен массив в multipart: `image[]` на каждый файл.
   const blobs = await Promise.all(refs.map((u, i) => fetchAndNormalizeRefImage(u, i)));
+  const imageField = blobs.length > 1 ? "image[]" : "image";
   for (const it of blobs) {
-    fd.append("image", it.blob, it.filename);
+    fd.append(imageField, it.blob, it.filename);
   }
 
   const res = await fetch("https://api.openai.com/v1/images/edits", {

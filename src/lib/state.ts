@@ -53,6 +53,8 @@ export type ReferencesState = {
   source: "unsplash" | "pexels";
   items: ReferenceImage[];
   pinterestUrls: string[];
+  /** Если true — при «Сгенерировать все картинки» в панели Вывод референсы уходят в OpenAI (images.edit). */
+  applyOnGenerate: boolean;
 };
 
 export type ImageStatus = "waiting" | "generating" | "done" | "error";
@@ -128,7 +130,7 @@ export function createInitialState(): StudioState {
 
     caption: "",
     music: { queries: [], recommendations: [], avoid: [] },
-    references: { query: "", source: "unsplash", items: [], pinterestUrls: [] },
+    references: { query: "", source: "unsplash", items: [], pinterestUrls: [], applyOnGenerate: false },
 
     messages: []
   };

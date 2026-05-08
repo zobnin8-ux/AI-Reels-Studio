@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useStudioActivity } from "@/lib/studio-activity";
 import { useStudio } from "@/lib/studio-store";
 import { getSoundEnabled, playSendClick, setSoundEnabled } from "@/lib/ui-sound";
-import { generateImagesFromState, mergeStatePatch, sendDialogueTurn } from "@/lib/actions";
+import { generateImagesFromState, mergeStatePatch, sendDialogueTurn, shouldSendReferencesWithImageApi } from "@/lib/actions";
 import { canRunImageGeneration, userWantsImageGeneration } from "@/lib/auto-image-intent";
 import type { ChatMessage, StudioState } from "@/lib/state";
 import { mergeImagePromptFromModelReply } from "@/lib/image-prompt-sync";
@@ -345,6 +345,7 @@ export function DialoguePanel() {
       if (merged.autoGenerateImages && userWantsImageGeneration(text) && canRunImageGeneration(merged)) {
         try {
           const images = await generateImagesFromState(merged, {
+            useReferences: shouldSendReferencesWithImageApi(merged),
             onProgress: ({ images: next }) => {
               dispatch({ type: "set", patch: { images: next } });
             }

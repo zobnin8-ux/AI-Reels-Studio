@@ -106,7 +106,7 @@ export function ControlPanel() {
         images: [],
         caption: "",
         music: emptyMusic(),
-        references: { query: "", source: "unsplash", items: [], pinterestUrls: [] },
+        references: { query: "", source: "unsplash", items: [], pinterestUrls: [], applyOnGenerate: false },
         ...defaultsForProject(nextProject)
       }
     });

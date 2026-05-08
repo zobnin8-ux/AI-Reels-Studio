@@ -26,6 +26,11 @@ function aspectFromContentType(contentType: StudioState["contentType"]) {
   return contentType === "reels" ? ("9:16" as const) : ("4:5" as const);
 }
 
+/** Референсы уходят в /api/image только если пользователь включил это в колонке «Референсы» и есть выбранные картинки. */
+export function shouldSendReferencesWithImageApi(state: StudioState): boolean {
+  return Boolean(state.references.applyOnGenerate && state.references.items.length > 0);
+}
+
 export function buildSelectorsPayload(
   state: StudioState
 ): Pick<StudioState, "project" | "contentType" | "slideCount" | "ctaMode" | "website" | "triggerWord" | "customCta"> {
@@ -324,7 +329,15 @@ export async function regenerateOneImage(
   } else {
     throw new Error("Нет slideId для перегенерации.");
   }
-  return fetchOneImage(state, imageId, slideId ?? "", finalPrompt, uiHint);
+  return fetchOneImage(
+    state,
+    imageId,
+    slideId ?? "",
+    finalPrompt,
+    uiHint,
+    undefined,
+    shouldSendReferencesWithImageApi(state)
+  );
 }
 
 function formatMusicNotesForZip(music: StudioState["music"]): string {

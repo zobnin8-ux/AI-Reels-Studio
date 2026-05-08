@@ -5,7 +5,7 @@ import { useStudio } from "@/lib/studio-store";
 import { useStudioActivity } from "@/lib/studio-activity";
 import { ImageGenerationProgress } from "@/components/ImageGenerationProgress";
 import { ReadinessChecklist } from "@/components/ReadinessChecklist";
-import { downloadZip, generateImagesFromState, regenerateOneImage } from "@/lib/actions";
+import { downloadZip, generateImagesFromState, regenerateOneImage, shouldSendReferencesWithImageApi } from "@/lib/actions";
 import { requestDialogueTurn } from "@/lib/dialogue-bridge";
 import { mergeImagePromptManual, upsertImageBySlideId } from "@/lib/image-prompt-sync";
 import { resolveImagePrompt } from "@/lib/image-prompt-pipeline";
@@ -134,6 +134,7 @@ export function OutputPanel() {
     try {
       const images = await generateImagesFromState(state, {
         signal: genAbortRef.current.signal,
+        useReferences: shouldSendReferencesWithImageApi(state),
         onProgress: ({ images: next }) => {
           dispatch({ type: "set", patch: { images: next } });
         }
@@ -425,6 +426,12 @@ export function OutputPanel() {
               {showBatchProgress ? <ImageGenerationProgress images={state.images} /> : null}
               {genError ? (
                 <p style={{ marginTop: 10, fontSize: 11, color: "#fca5a5" }}>{genError}</p>
+              ) : null}
+              {shouldSendReferencesWithImageApi(state) ? (
+                <p style={{ marginTop: 8, fontSize: 11, color: "var(--text-secondary)", lineHeight: 1.45 }}>
+                  Включено: выбранные референсы уходят в OpenAI вместе с промптами. Выключить можно галочкой в колонке
+                  «Референсы».
+                </p>
               ) : null}
               {!canGenerateImages ? (
                 <p style={{ marginTop: 8, fontSize: 11, color: "var(--text-muted)" }}>

@@ -814,6 +814,31 @@ aside.panel.anim-4 .panel-strip {
   font-weight: 600;
 }
 
+.references-apply-label {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin: 6px 0 4px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text);
+  cursor: pointer;
+  line-height: 1.4;
+}
+
+.references-apply-label:has(.references-apply-checkbox:disabled) {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.references-apply-checkbox {
+  margin-top: 2px;
+  flex-shrink: 0;
+  width: 16px;
+  height: 16px;
+  accent-color: var(--accent-deep);
+}
+
 /* Reference image lightbox */
 .ref-preview-root {
   position: fixed;

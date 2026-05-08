@@ -61,7 +61,8 @@ function asReferences(x: unknown): StudioState["references"] | null {
   }
   const pinterestUrls = x.pinterestUrls === undefined ? [] : asStringArray(x.pinterestUrls) ?? null;
   if (pinterestUrls === null) return null;
-  return { query, source, items, pinterestUrls };
+  const applyOnGenerate = x.applyOnGenerate === true;
+  return { query, source, items, pinterestUrls, applyOnGenerate };
 }
 
 function asChatMessages(x: unknown): StudioState["messages"] | null {
@@ -207,7 +208,7 @@ export function parseSessionImport(raw: unknown):
   const music = asMusic(candidate.music);
   const references =
     candidate.references === undefined
-      ? { query: "", source: "unsplash" as const, items: [], pinterestUrls: [] }
+      ? { query: "", source: "unsplash" as const, items: [], pinterestUrls: [], applyOnGenerate: false }
       : asReferences(candidate.references);
 
   let imagePrompts: StudioState["imagePrompts"];
