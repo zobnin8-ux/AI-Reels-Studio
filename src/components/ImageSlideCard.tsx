@@ -200,9 +200,9 @@ export function ImageSlideCard({
         isThumb
           ? "reel-frame-inner min-h-0 overflow-hidden p-2"
           : isFrameRail
-            ? "reel-frame-inner overflow-hidden p-2"
+            ? "reel-frame-inner reel-frame-inner--preview-fill overflow-hidden p-2"
             : isFrameLike
-              ? "reel-frame-inner overflow-y-auto p-2"
+              ? "reel-frame-inner reel-frame-inner--preview-fill overflow-y-auto p-2"
               : "studio-card-frame min-w-0 overflow-hidden rounded-xl border border-border bg-panel/40 p-3",
         errorShake ? "studio-shake border-red-400/35" : ""
       ].join(" ")}
@@ -268,17 +268,17 @@ export function ImageSlideCard({
             isThumb
               ? "mx-auto flex w-full min-w-0 flex-[1.35] items-center justify-center overflow-hidden rounded-md border border-[var(--border-subtle)] bg-[var(--bg-elev-3)]"
               : isFrameLike
-                ? "mx-auto flex w-full min-w-0 flex-1 items-center justify-center overflow-hidden rounded-md border border-[var(--border-subtle)] bg-[var(--bg-elev-3)]"
+                ? "flex w-full min-h-0 min-w-0 flex-1 overflow-hidden rounded-md border border-[var(--border-subtle)] bg-[var(--bg-elev-3)]"
                 : "mx-auto flex w-full max-w-[min(100%,320px)] min-w-0 items-center justify-center overflow-hidden rounded-lg border border-border bg-black/40",
-            !isThumb && state.contentType === "reels" ? "aspect-[9/16]" : "",
-            !isThumb && state.contentType !== "reels" ? "aspect-[4/5]" : ""
+            !isThumb && !isFrameLike && state.contentType === "reels" ? "aspect-[9/16]" : "",
+            !isThumb && !isFrameLike && state.contentType !== "reels" ? "aspect-[4/5]" : ""
           ].join(" ")}
         >
           {image.imageBase64 ? (
             onPreview ? (
               <button
                 type="button"
-                className="group relative flex h-full w-full cursor-zoom-in items-center justify-center focus:outline-none focus:ring-2 focus:ring-accent/40"
+                className="group relative flex h-full min-h-0 w-full cursor-zoom-in items-stretch justify-stretch focus:outline-none focus:ring-2 focus:ring-accent/40"
                 onClick={() => onPreview()}
                 aria-label="Открыть кадр на весь экран"
               >
@@ -286,7 +286,10 @@ export function ImageSlideCard({
                 <img
                   src={`data:${image.mimeType ?? "image/png"};base64,${image.imageBase64}`}
                   alt=""
-                  className="max-h-full max-w-full object-contain transition group-hover:opacity-95"
+                  className={[
+                    "transition group-hover:opacity-95",
+                    isFrameLike ? "h-full w-full min-h-0 object-cover" : "max-h-full max-w-full object-contain"
+                  ].join(" ")}
                 />
                 <span
                   className="pointer-events-none absolute right-2 top-2 inline-flex h-8 w-8 items-center justify-center rounded-full border border-white/25 bg-black/45 text-white/90 opacity-0 shadow-md backdrop-blur-sm transition group-hover:opacity-100"
@@ -302,12 +305,12 @@ export function ImageSlideCard({
                 </span>
               </button>
             ) : (
-              <div className="relative flex h-full w-full items-center justify-center">
+              <div className="relative flex h-full min-h-0 w-full items-stretch justify-stretch">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={`data:${image.mimeType ?? "image/png"};base64,${image.imageBase64}`}
                   alt=""
-                  className="max-h-full max-w-full object-contain"
+                  className={isFrameLike ? "h-full w-full min-h-0 object-cover" : "max-h-full max-w-full object-contain"}
                 />
               </div>
             )

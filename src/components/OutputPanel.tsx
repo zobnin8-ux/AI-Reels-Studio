@@ -442,23 +442,21 @@ export function OutputPanel() {
           </div>
         ) : null}
 
-        {mode === "draft" ? (
-          <div className="asset-block">
-            <div className="asset-head">
-              <div className="asset-h">
-                Подпись к <b>посту</b>
-              </div>
-              <span className="asset-badge">текст</span>
+        <div className="asset-block">
+          <div className="asset-head">
+            <div className="asset-h">
+              Подпись к <b>посту</b>
             </div>
-            <textarea
-              className="textarea"
-              value={state.caption}
-              onChange={(e) => dispatch({ type: "set", patch: { caption: e.target.value } })}
-              placeholder="Подпись…"
-              rows={4}
-            />
+            <span className="asset-badge">текст</span>
           </div>
-        ) : null}
+          <textarea
+            className="textarea"
+            value={state.caption}
+            onChange={(e) => dispatch({ type: "set", patch: { caption: e.target.value } })}
+            placeholder="Подпись…"
+            rows={4}
+          />
+        </div>
 
         <div className="asset-block">
           <div className="asset-head">
