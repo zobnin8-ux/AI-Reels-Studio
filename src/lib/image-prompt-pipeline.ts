@@ -51,9 +51,7 @@ export function softenImagePromptForModeration(prompt: string, project: ProjectI
     [/\balcohol(?:ic)?\b/gi, "drink"],
     [/\bdrunk\b/gi, ""],
 
-    // 5) Intimate / sensual lexicon
-    [/\bintimate\b/gi, "warm"],
-    [/\bsensual\b/gi, "warm"],
+    // 5) Intimate / sensual — per-project below (olgatrip must not inject extra "warm")
     [/\bseductive\b/gi, ""],
     [/\bsexy\b/gi, ""],
     [/\bsexual\b/gi, ""],
@@ -122,8 +120,18 @@ export function softenImagePromptForModeration(prompt: string, project: ProjectI
   }
 
   // === PROJECT-SPECIFIC ===
+  if (project === "poslenego") {
+    const poslenegoPairs: Array<[RegExp, Replacement]> = [
+      [/\bintimate\b/gi, "quiet"],
+      [/\bsensual\b/gi, "soft"]
+    ];
+    for (const [re, rep] of poslenegoPairs) s = s.replace(re, rep as never);
+  }
+
   if (project === "zobnin") {
     const zobninPairs: Array<[RegExp, Replacement]> = [
+      [/\bintimate\b/gi, "warm"],
+      [/\bsensual\b/gi, "warm"],
       [
         /\b(a|an)\s+(\d{1,2})[- ]year[- ]old\s+(man|woman|guy|gal|male|female|person|professional|executive)\b/gi,
         (_match: string, ...args: unknown[]) => {
@@ -180,6 +188,8 @@ export function softenImagePromptForModeration(prompt: string, project: ProjectI
 
   if (project === "olgatrip") {
     const olgatripPairs: Array<[RegExp, Replacement]> = [
+      [/\bintimate\b/gi, "close"],
+      [/\bsensual\b/gi, "elegant"],
       [/\b(a|an)\s+\d{1,2}[- ]year[- ]old\s+(woman|gal|female|person)\b/gi, "a woman in her early thirties"],
       [/\b(a|an)\s+\d{1,2}[- ]year[- ]old\s+(man|guy|male)\b/gi, ""],
       [/\bwomen in their forties\b/gi, "women in their early thirties"],
@@ -197,9 +207,6 @@ export function softenImagePromptForModeration(prompt: string, project: ProjectI
       s = s.replace(re, rep as never);
     }
   }
-
-  // poslenego — возраст не трогаем, эстетика бренда допускает разные диапазоны;
-  // если возникнет проблема, добавим конкретные замены здесь
 
   // Final cleanup
   s = s
