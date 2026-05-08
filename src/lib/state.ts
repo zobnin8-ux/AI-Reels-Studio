@@ -36,6 +36,23 @@ export type MusicOutput = {
   avoid: string[];
 };
 
+export type ReferenceImage = {
+  id: string;
+  kind: "unsplash" | "upload";
+  /** Small preview URL or data URL. */
+  thumb: string;
+  /** Full-size URL or data URL. */
+  full: string;
+  /** Optional attribution / metadata. */
+  author?: string;
+  sourceUrl?: string;
+};
+
+export type ReferencesState = {
+  query: string;
+  items: ReferenceImage[];
+};
+
 export type ImageStatus = "waiting" | "generating" | "done" | "error";
 
 export type GeneratedImage = {
@@ -78,6 +95,8 @@ export type StudioState = {
 
   caption: string;
   music: MusicOutput;
+  /** Reference images for the user (not sent to the model). */
+  references: ReferencesState;
 
   messages: ChatMessage[];
 };
@@ -107,6 +126,7 @@ export function createInitialState(): StudioState {
 
     caption: "",
     music: { queries: [], recommendations: [], avoid: [] },
+    references: { query: "", items: [] },
 
     messages: []
   };

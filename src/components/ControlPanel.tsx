@@ -61,7 +61,13 @@ export function ControlPanel() {
     }
   });
   const importRef = useRef<HTMLInputElement>(null);
+  const uploadRefsRef = useRef<HTMLInputElement>(null);
   const [importNotice, setImportNotice] = useState<SessionImportNotice | null>(null);
+  const [refBusy, setRefBusy] = useState(false);
+  const [refNotice, setRefNotice] = useState<string | null>(null);
+  const [refResults, setRefResults] = useState<
+    Array<{ id: string; kind: "unsplash"; thumb: string; full: string; author?: string; sourceUrl?: string }>
+  >([]);
 
   useEffect(() => {
     document.body.classList.toggle("showcase", richStudioBackground);
@@ -73,6 +79,12 @@ export function ControlPanel() {
     const t = window.setTimeout(() => setImportNotice(null), ms);
     return () => window.clearTimeout(t);
   }, [importNotice]);
+
+  useEffect(() => {
+    if (!refNotice) return;
+    const t = window.setTimeout(() => setRefNotice(null), 7000);
+    return () => window.clearTimeout(t);
+  }, [refNotice]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -119,9 +131,90 @@ export function ControlPanel() {
         images: [],
         caption: "",
         music: emptyMusic(),
+        references: { query: "", items: [] },
         ...defaultsForProject(nextProject)
       }
     });
+  }
+
+  async function searchReferences() {
+    const q = (state.references?.query ?? "").trim();
+    if (q.length < 2) {
+      setRefNotice("Запрос слишком короткий (минимум 2 символа).");
+      return;
+    }
+    setRefBusy(true);
+    try {
+      const res = await fetch("/api/references/unsplash", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ query: q })
+      });
+      if (!res.ok) {
+        const j = (await res.json().catch(() => ({}))) as { error?: string };
+        throw new Error(j.error ?? `Search failed (${res.status})`);
+      }
+      const j = (await res.json()) as { items?: typeof refResults };
+      setRefResults(j.items ?? []);
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : "Search failed";
+      setRefNotice(msg);
+    } finally {
+      setRefBusy(false);
+    }
+  }
+
+  function addReference(item: (typeof refResults)[number]) {
+    const cur = state.references?.items ?? [];
+    if (cur.some((x) => x.id === item.id && x.kind === "unsplash")) return;
+    const next = [
+      { id: item.id, kind: "unsplash" as const, thumb: item.thumb, full: item.full, author: item.author, sourceUrl: item.sourceUrl },
+      ...cur
+    ].slice(0, 24);
+    dispatch({ type: "set", patch: { references: { ...(state.references ?? { query: "", items: [] }), items: next } } });
+  }
+
+  function removeReference(id: string) {
+    const cur = state.references?.items ?? [];
+    const next = cur.filter((x) => x.id !== id);
+    dispatch({ type: "set", patch: { references: { ...(state.references ?? { query: "", items: [] }), items: next } } });
+  }
+
+  async function onUploadRefs(files: FileList | null) {
+    if (!files || files.length === 0) return;
+    const maxBytes = 3_000_000;
+    const cur = state.references?.items ?? [];
+    const uploads: typeof cur = [];
+
+    const readOne = (f: File) =>
+      new Promise<string>((resolve, reject) => {
+        const r = new FileReader();
+        r.onerror = () => reject(new Error("File read error"));
+        r.onload = () => resolve(String(r.result ?? ""));
+        r.readAsDataURL(f);
+      });
+
+    setRefBusy(true);
+    try {
+      for (const f of Array.from(files).slice(0, 12)) {
+        if (!f.type.startsWith("image/")) continue;
+        if (f.size > maxBytes) {
+          setRefNotice(`Файл слишком большой: ${f.name} (лимит 3MB)`);
+          continue;
+        }
+        const dataUrl = await readOne(f);
+        const id = `upload_${Math.random().toString(16).slice(2)}_${Date.now().toString(16)}`;
+        uploads.push({ id, kind: "upload", thumb: dataUrl, full: dataUrl });
+      }
+      const next = [...uploads, ...cur].slice(0, 24);
+      dispatch({ type: "set", patch: { references: { ...(state.references ?? { query: "", items: [] }), items: next } } });
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : "Upload failed";
+      setRefNotice(msg);
+    } finally {
+      setRefBusy(false);
+      if (uploadRefsRef.current) uploadRefsRef.current.value = "";
+    }
   }
 
   function onProjectChange(nextProject: ProjectId) {
@@ -325,6 +418,94 @@ export function ControlPanel() {
               placeholder="Тема / что обсуждаем?"
             />
           </div>
+        </div>
+
+        <div className="group">
+          <div className="group-title">Референсы</div>
+          {refNotice ? (
+            <div style={{ fontSize: 11, color: "#fca5a5", marginBottom: 8, whiteSpace: "pre-wrap" }}>{refNotice}</div>
+          ) : null}
+          <div className="field">
+            <span className="label mono">Поиск (Unsplash)</span>
+            <div className="field-row" style={{ gap: 8 }}>
+              <input
+                className="input"
+                value={state.references?.query ?? ""}
+                onChange={(e) =>
+                  dispatch({
+                    type: "set",
+                    patch: { references: { ...(state.references ?? { query: "", items: [] }), query: e.target.value } }
+                  })
+                }
+                placeholder="например: italy street, women walking, cafe sunlight"
+              />
+              <button type="button" className="gen-btn" onClick={() => void searchReferences()} disabled={refBusy}>
+                {refBusy ? "…" : "Искать"}
+              </button>
+            </div>
+          </div>
+          <div className="field">
+            <span className="label mono">Загрузить свои</span>
+            <div className="field-row" style={{ gap: 8 }}>
+              <button type="button" className="gen-btn" onClick={() => uploadRefsRef.current?.click()} disabled={refBusy}>
+                Загрузить
+              </button>
+              <input
+                ref={uploadRefsRef}
+                type="file"
+                accept="image/*"
+                multiple
+                style={{ display: "none" }}
+                onChange={(e) => void onUploadRefs(e.target.files)}
+              />
+              <span style={{ fontSize: 11, color: "var(--text-muted)" }}>до 12 файлов, 3MB каждый</span>
+            </div>
+          </div>
+
+          {refResults.length > 0 ? (
+            <div className="field">
+              <span className="label mono">Результаты</span>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 8 }}>
+                {refResults.slice(0, 18).map((it) => (
+                  <button
+                    key={it.id}
+                    type="button"
+                    className="studio-btn-ghost"
+                    onClick={() => addReference(it)}
+                    style={{ padding: 0, borderRadius: 10, overflow: "hidden" }}
+                    title={it.author ? `Add · ${it.author}` : "Add"}
+                  >
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={it.thumb} alt="" style={{ width: "100%", height: 90, objectFit: "cover", display: "block" }} />
+                  </button>
+                ))}
+              </div>
+            </div>
+          ) : null}
+
+          {state.references?.items?.length ? (
+            <div className="field">
+              <span className="label mono">Выбрано</span>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 8 }}>
+                {state.references.items.slice(0, 24).map((it) => (
+                  <div key={it.id} style={{ position: "relative", borderRadius: 10, overflow: "hidden" }}>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={it.thumb} alt="" style={{ width: "100%", height: 90, objectFit: "cover", display: "block" }} />
+                    <button
+                      type="button"
+                      onClick={() => removeReference(it.id)}
+                      className="asset-badge"
+                      style={{ position: "absolute", right: 6, top: 6 }}
+                      aria-label="Remove reference"
+                      title="Remove"
+                    >
+                      ×
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : null}
         </div>
 
         <div className="group">

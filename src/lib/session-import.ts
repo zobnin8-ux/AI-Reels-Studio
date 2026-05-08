@@ -39,6 +39,26 @@ function asMusic(x: unknown): StudioState["music"] | null {
   return { queries, recommendations, avoid };
 }
 
+function asReferences(x: unknown): StudioState["references"] | null {
+  if (!isRecord(x)) return null;
+  const query = asString(x.query);
+  if (query === null) return null;
+  if (!Array.isArray(x.items)) return null;
+  const items: StudioState["references"]["items"] = [];
+  for (const it of x.items) {
+    if (!isRecord(it)) return null;
+    const id = asString(it.id);
+    const kind = asString(it.kind);
+    const thumb = asString(it.thumb);
+    const full = asString(it.full);
+    const author = it.author === undefined ? undefined : asString(it.author) ?? undefined;
+    const sourceUrl = it.sourceUrl === undefined ? undefined : asString(it.sourceUrl) ?? undefined;
+    if (!id || (kind !== "unsplash" && kind !== "upload") || !thumb || !full) return null;
+    items.push({ id, kind, thumb, full, author, sourceUrl });
+  }
+  return { query, items };
+}
+
 function asChatMessages(x: unknown): StudioState["messages"] | null {
   if (!Array.isArray(x)) return null;
   const out: StudioState["messages"] = [];
@@ -180,6 +200,8 @@ export function parseSessionImport(raw: unknown):
   const images = asImages(candidate.images);
   const messages = asChatMessages(candidate.messages);
   const music = asMusic(candidate.music);
+  const references =
+    candidate.references === undefined ? { query: "", items: [] } : asReferences(candidate.references);
 
   let imagePrompts: StudioState["imagePrompts"];
   if (candidate.imagePrompts === undefined) {
@@ -190,8 +212,8 @@ export function parseSessionImport(raw: unknown):
     imagePrompts = parsed;
   }
 
-  if (!angles || !slides || !images || !messages || !music) {
-    return { ok: false, error: "Неверная структура массивов (angles/slides/images/messages/music)." };
+  if (!angles || !slides || !images || !messages || !music || !references) {
+    return { ok: false, error: "Неверная структура массивов (angles/slides/images/messages/music/references)." };
   }
 
   const state: StudioState = {
@@ -213,6 +235,7 @@ export function parseSessionImport(raw: unknown):
     images,
     caption,
     music,
+    references,
     messages
   };
 
