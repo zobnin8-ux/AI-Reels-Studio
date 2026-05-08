@@ -1263,19 +1263,23 @@ IMAGE PROMPT SPEC (OlgaTrip / Cashmere Coast):
 При генерации scenarios ВСЕГДА пиши готовые английские промпты под gpt-image-2 для каждого слайда.
 Промпт должен передавать INSPIRING TRAVEL — красивое место + живой момент + взрослая женская эстетика.
 
-7.0 CANONICAL VISUAL DIRECTION (every imagePrompt must honor this — weave into scene specifics; do not contradict):
+7.0 CANONICAL VISUAL DIRECTION — CONCENTRATE (every imagePrompt must honor this; weave into scene prose):
 
-Atmosphere: **alive, contemporary, emotionally warm through friendship** — **NOT** painterly, medieval, museum-like, gloomy art-house, or "Dutch master" depression.
+**What this is:** Contemporary inspiring travel — **real women**, spontaneous social warmth, discovery together. Alive, breathable, documentary‑candid.
 
-**Light & color:** natural **daylight white balance**, soft whites, realistic skin, **subtle cool skylight** where natural; airy openness; **crisp contemporary palette**. Warmth = **people laughing, leaning in, gesturing** — not sepia, not heavy amber grading, not monochromatic brown/orange.
+**What this is NOT:** Luxury fashion campaign; Scandinavian minimal/Pinterest "quiet luxury" ad; art‑house melancholy film; Dutch‑master / museum painting; matching‑outfit editorial.
 
-**Social energy (brand-critical):** default to **2–4 women in frame** with **visible interaction** (conversation, shared laugh, eye contact). **Do not default** to one woman staring into the void, empty street, heavy face shadow, frozen pose — that contradicts "travel in company."
+**Social default:** **2–4 women**, visible friendship — smiles, laughter, gestures, casual interruption, natural movement. Not models in formation. **Solo** only if that slide's scenario **explicitly** calls for solitude; still bright/modern, hints of circle or city life (extra cup, blurred friend, busy street).
 
-**Solo frame:** only when that slide's scenario **clearly** demands it; still **bright, modern**, with hints of the group (extra cup, blurred friend, busy background).
+**Wardrobe — avoid matching at all costs:** No coordinated camel coats, identical beige sweaters, or uniform neutral minimalism for everyone. Each woman = **her own** colors, textures, silhouettes (denim jacket, cotton shirt, linen top, relaxed sweater, casual dress, sneakers, light scarf, practical travel layers). **Interiors:** coats **off** (chair, rail); **streets:** vary outerwear — never clone the same long coat on two subjects.
 
-**Avoid as habit:** old-master chiaroscuro as default, Rembrandt gloom, rustic-historical-only Europe, excessive filtered "vintage film" look, emotionally frozen compositions.
+**Light & color:** Fresh **daylight white balance**, natural whites, realistic skin, airy openness, subtle cool reflections, **environmental color variety**. Warmth = **people**, not grading. Habitual traps: sepia, heavy amber/brown/orange wash, muddy cinematic dark, painterly skin, excessive "film still" mood.
 
-**Golden hour / terracotta / candle glow** — occasional arc spice only; **daylight + bright overcast** must dominate across a reel.
+**Composition:** Candid, observed, modern, dynamic, unstaged — **not** frozen symmetry, solemn museum framing, or fashion‑spread perfection.
+
+**Places (café, bakery, street):** Contemporary, lived‑in, sometimes busy — bicycles, passersby, reflections, open windows, cups, bags on chairs, crumbs, life outside the glass. Warm through **activity**, not amber filter.
+
+**Arc:** **Daylight + bright overcast** dominate any reel; golden hour / terracotta / candle — **occasional** spice only.
 
 7.1 STYLE REFERENCES (only for INTERNAL guidance — NEVER mention these names in the actual image prompt sent to OpenAI):
 — Editorial documentary travel photography — natural color, candid moments, clear environments
@@ -1310,7 +1314,9 @@ NEVER write photographer names in the prompt — OpenAI Moderation often blocks 
 — Никогда: единственный источник тьмы+янтарь, студийная вспышка, неон-ключ без дневного заполнения
 
 7.4 WARDROBE & PALETTE:
-— California expensive-casual для базовых сцен: кашемир, oatmeal, camel, ivory, льняные платья, шёлковые шарфы, кожаные тоут-сумки
+— California expensive-casual: кашемир, oatmeal, camel, ivory и т.д. — **как варианты у разных людей**, никогда как **единый matching** look на всю группу (см. 7.0)
+— **Пальто и верхняя одежда (критично):** не делай **длинное шерстяное пальто** дефолтом на **каждом** кадре и **не клонируй** один и тот же лук на двух-трёх женщинах. В **интерьерах** (кафе, пекарня, ресторан) — обычно **снятое пальто** на спинке стула / вешалка / через спинку, героини в **свитере, рубашке, льне, лёгком блейзере**; пальто уместно на **улице** в прохладную погоду, но **варьируй** цвет и крой между людьми (одна в пальто, другая в дубленке/пуховике/шерстяном пальто **другого** оттенка — или одна уже **внутри** без пальто).
+— **Разнообразие в группе:** каждая женщина — **разные** сочетания (текстура, цвет верха, аксессуар); запрещён штамп «две копии в одинаковом camel coat + cream knit».
 — Для побережья: босиком на песке, льняные слои, шарф на ветру
 — Для ужинов: простые slip-платья в приглушённых тонах
 — Для пустыни (Joshua Tree, Седона): terracotta, ржавчина, тёплая земляная палитра, замша
@@ -1363,6 +1369,7 @@ PLACE LOCK: If the slide's Russian text names or clearly implies a destination, 
 — Театральный glam, sequins, evening gowns с блёстками
 — Постный «тяжёлый» дзен-кадр без жизни (пустая комната отеля + серое небо)
 — Кадр-штамп: **одна** женщина у витрины пекарни, печаль, пустая улица, янтарный свет — как **единственный** визуальный язык рилса
+— Две-три женщины в **одинаковых** camel / oatmeal пальто как «форма» — повторяющийся AI-штамп; варьируй одежду и снимай верхнюю одежду внутри
 
 7.7 FRAMING PREFERENCES:
 — Three-quarter front view of faces — главный приём для женщин в кадре
@@ -1376,7 +1383,7 @@ PLACE LOCK: If the slide's Russian text names or clearly implies a destination, 
 7.8 MANDATORY CLOSING LINE FOR EVERY PROMPT:
 Start from this template (append / merge into your prose, do not drop the constraints):
 
-"No text, logos, or readable elements in frame. Women only in frame, including reflections; adults only in frame. Bright contemporary travel mood; neutral daylight color balance; socially alive — default to visible friendship or group unless this slide is explicitly solitary in the scenario. No sepia cast, no brown monochrome grade, no painterly old-master gloom. Reserve negative space (upper third or one side) for typography overlay. Vertical [9:16 for reels / 4:5 for post] framing."
+"No text, logos, or readable elements in frame. Women only in frame, including reflections; adults only in frame. Bright contemporary travel mood; neutral daylight color balance; socially alive — default to visible friendship or group unless this slide is explicitly solitary in the scenario. Varied individual outfits — no matching camel coats or coordinated beige uniforms. No sepia cast, no brown monochrome grade, no painterly old-master gloom. Reserve negative space (upper third or one side) for typography overlay. Vertical [9:16 for reels / 4:5 for post] framing."
 
 Append when relevant: "Kids may appear only if this slide's Russian scenario explicitly describes a bachelorette-with-kids trip; otherwise adults only."
 
