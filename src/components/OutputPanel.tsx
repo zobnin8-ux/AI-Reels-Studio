@@ -5,7 +5,6 @@ import { useStudio } from "@/lib/studio-store";
 import { useStudioActivity } from "@/lib/studio-activity";
 import { ImageGenerationProgress } from "@/components/ImageGenerationProgress";
 import { ReadinessChecklist } from "@/components/ReadinessChecklist";
-import { ReferencesPanel } from "@/components/ReferencesPanel";
 import { downloadZip, generateImagesFromState, regenerateOneImage } from "@/lib/actions";
 import { requestDialogueTurn } from "@/lib/dialogue-bridge";
 import { mergeImagePromptManual, upsertImageBySlideId } from "@/lib/image-prompt-sync";
@@ -529,8 +528,6 @@ export function OutputPanel() {
             />
           </div>
         </div>
-
-        <ReferencesPanel compact />
 
         <div className="export-dock">
           <div className="export-dock-title">Архив</div>

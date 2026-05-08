@@ -4,6 +4,7 @@ import { ControlPanel } from "@/components/ControlPanel";
 import { DialoguePanel } from "@/components/DialoguePanel";
 import { ImageActivitySync } from "@/components/ImageActivitySync";
 import { OutputPanel } from "@/components/OutputPanel";
+import { ReferencesPanel } from "@/components/ReferencesPanel";
 import { PanelErrorBoundary } from "@/components/PanelErrorBoundary";
 import { StudioTopBar } from "@/components/StudioTopBar";
 import { StudioActivityProvider, useStudioActivity } from "@/lib/studio-activity";
@@ -33,6 +34,12 @@ function AppGrid() {
           <DialoguePanel />
         </PanelErrorBoundary>
       </section>
+
+      <aside className="panel anim-3 min-h-0">
+        <PanelErrorBoundary label="Референсы">
+          <ReferencesPanel />
+        </PanelErrorBoundary>
+      </aside>
 
       <aside className="panel anim-4 min-h-0">
         <PanelErrorBoundary label="Вывод">
