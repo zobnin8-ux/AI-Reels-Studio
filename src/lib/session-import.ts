@@ -43,6 +43,9 @@ function asReferences(x: unknown): StudioState["references"] | null {
   if (!isRecord(x)) return null;
   const query = asString(x.query);
   if (query === null) return null;
+  const sourceRaw = x.source === undefined ? "unsplash" : asString(x.source);
+  const source = sourceRaw === "pexels" ? "pexels" : sourceRaw === "unsplash" ? "unsplash" : null;
+  if (!source) return null;
   if (!Array.isArray(x.items)) return null;
   const items: StudioState["references"]["items"] = [];
   for (const it of x.items) {
@@ -56,7 +59,9 @@ function asReferences(x: unknown): StudioState["references"] | null {
     if (!id || (kind !== "unsplash" && kind !== "upload") || !thumb || !full) return null;
     items.push({ id, kind, thumb, full, author, sourceUrl });
   }
-  return { query, items };
+  const pinterestUrls = x.pinterestUrls === undefined ? [] : asStringArray(x.pinterestUrls) ?? null;
+  if (pinterestUrls === null) return null;
+  return { query, source, items, pinterestUrls };
 }
 
 function asChatMessages(x: unknown): StudioState["messages"] | null {
@@ -201,7 +206,9 @@ export function parseSessionImport(raw: unknown):
   const messages = asChatMessages(candidate.messages);
   const music = asMusic(candidate.music);
   const references =
-    candidate.references === undefined ? { query: "", items: [] } : asReferences(candidate.references);
+    candidate.references === undefined
+      ? { query: "", source: "unsplash", items: [], pinterestUrls: [] }
+      : asReferences(candidate.references);
 
   let imagePrompts: StudioState["imagePrompts"];
   if (candidate.imagePrompts === undefined) {

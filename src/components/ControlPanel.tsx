@@ -68,6 +68,7 @@ export function ControlPanel() {
   const [refResults, setRefResults] = useState<
     Array<{ id: string; kind: "unsplash"; thumb: string; full: string; author?: string; sourceUrl?: string }>
   >([]);
+  const [pinterestDraft, setPinterestDraft] = useState("");
 
   useEffect(() => {
     document.body.classList.toggle("showcase", richStudioBackground);
@@ -145,7 +146,9 @@ export function ControlPanel() {
     }
     setRefBusy(true);
     try {
-      const res = await fetch("/api/references/unsplash", {
+      const source = state.references?.source ?? "unsplash";
+      const endpoint = source === "pexels" ? "/api/references/pexels" : "/api/references/unsplash";
+      const res = await fetch(endpoint, {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ query: q })
@@ -162,6 +165,33 @@ export function ControlPanel() {
     } finally {
       setRefBusy(false);
     }
+  }
+
+  function addPinterestUrl(raw: string) {
+    const u = raw.trim();
+    if (!u) return;
+    // minimal normalization
+    const url = u.startsWith("http") ? u : `https://${u}`;
+    const cur = state.references?.pinterestUrls ?? [];
+    if (cur.includes(url)) return;
+    const next = [url, ...cur].slice(0, 24);
+    dispatch({
+      type: "set",
+      patch: {
+        references: { ...(state.references ?? { query: "", source: "unsplash", items: [], pinterestUrls: [] }), pinterestUrls: next }
+      }
+    });
+  }
+
+  function removePinterestUrl(url: string) {
+    const cur = state.references?.pinterestUrls ?? [];
+    const next = cur.filter((x) => x !== url);
+    dispatch({
+      type: "set",
+      patch: {
+        references: { ...(state.references ?? { query: "", source: "unsplash", items: [], pinterestUrls: [] }), pinterestUrls: next }
+      }
+    });
   }
 
   function addReference(item: (typeof refResults)[number]) {
@@ -428,13 +458,35 @@ export function ControlPanel() {
           <div className="field">
             <span className="label mono">Поиск (Unsplash)</span>
             <div className="field-row" style={{ gap: 8 }}>
+              <select
+                className="select"
+                value={state.references?.source ?? "unsplash"}
+                onChange={(e) =>
+                  dispatch({
+                    type: "set",
+                    patch: {
+                      references: { ...(state.references ?? { query: "", source: "unsplash", items: [], pinterestUrls: [] }), source: e.target.value as "unsplash" | "pexels" }
+                    }
+                  })
+                }
+                style={{ maxWidth: 140 }}
+                aria-label="Источник поиска референсов"
+              >
+                <option value="unsplash">Unsplash</option>
+                <option value="pexels">Pexels</option>
+              </select>
               <input
                 className="input"
                 value={state.references?.query ?? ""}
                 onChange={(e) =>
                   dispatch({
                     type: "set",
-                    patch: { references: { ...(state.references ?? { query: "", items: [] }), query: e.target.value } }
+                    patch: {
+                      references: {
+                        ...(state.references ?? { query: "", source: "unsplash", items: [], pinterestUrls: [] }),
+                        query: e.target.value
+                      }
+                    }
                   })
                 }
                 placeholder="например: italy street, women walking, cafe sunlight"
@@ -442,6 +494,9 @@ export function ControlPanel() {
               <button type="button" className="gen-btn" onClick={() => void searchReferences()} disabled={refBusy}>
                 {refBusy ? "…" : "Искать"}
               </button>
+            </div>
+            <div style={{ marginTop: 6, fontSize: 11, color: "var(--text-muted)" }}>
+              Если результатов нет: проверь ключи в <span className="mono">.env.local</span> (UNSPLASH_ACCESS_KEY / PEXELS_API_KEY) и перезапусти сервер.
             </div>
           </div>
           <div className="field">
@@ -506,6 +561,62 @@ export function ControlPanel() {
               </div>
             </div>
           ) : null}
+
+          <div className="field">
+            <span className="label mono">Pinterest (ссылки)</span>
+            <div className="field-row" style={{ gap: 8 }}>
+              <input
+                className="input"
+                value={pinterestDraft}
+                onChange={(e) => setPinterestDraft(e.target.value)}
+                placeholder="вставь ссылку на Pin / Board"
+              />
+              <button
+                type="button"
+                className="gen-btn"
+                onClick={() => {
+                  addPinterestUrl(pinterestDraft);
+                  setPinterestDraft("");
+                }}
+                disabled={refBusy}
+              >
+                Добавить
+              </button>
+            </div>
+            {state.references?.pinterestUrls?.length ? (
+              <div style={{ marginTop: 8, display: "flex", flexDirection: "column", gap: 6 }}>
+                {state.references.pinterestUrls.slice(0, 12).map((u) => (
+                  <div
+                    key={u}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 8,
+                      border: "1px solid var(--border-subtle)",
+                      borderRadius: 10,
+                      padding: "6px 10px",
+                      background: "rgba(8,16,20,0.35)"
+                    }}
+                  >
+                    <a href={u} target="_blank" rel="noreferrer" style={{ fontSize: 11, color: "var(--text)" }}>
+                      {u.length > 62 ? `${u.slice(0, 62)}…` : u}
+                    </a>
+                    <div style={{ flex: 1 }} />
+                    <button type="button" className="asset-badge" onClick={() => removePinterestUrl(u)} title="Remove">
+                      ×
+                    </button>
+                  </div>
+                ))}
+                <div style={{ fontSize: 11, color: "var(--text-muted)" }}>
+                  Примечание: Pinterest выдачу “как в Pinterest” внутри приложения не даёт официальным API. Ссылки — чтобы держать рефы рядом; нужные картинки загружай через “Загрузить свои”.
+                </div>
+              </div>
+            ) : (
+              <div style={{ marginTop: 6, fontSize: 11, color: "var(--text-muted)" }}>
+                Вставь ссылку — она сохранится в сессии и будет всегда под рукой.
+              </div>
+            )}
+          </div>
         </div>
 
         <div className="group">

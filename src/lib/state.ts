@@ -50,7 +50,9 @@ export type ReferenceImage = {
 
 export type ReferencesState = {
   query: string;
+  source: "unsplash" | "pexels";
   items: ReferenceImage[];
+  pinterestUrls: string[];
 };
 
 export type ImageStatus = "waiting" | "generating" | "done" | "error";
@@ -126,7 +128,7 @@ export function createInitialState(): StudioState {
 
     caption: "",
     music: { queries: [], recommendations: [], avoid: [] },
-    references: { query: "", items: [] },
+    references: { query: "", source: "unsplash", items: [], pinterestUrls: [] },
 
     messages: []
   };
