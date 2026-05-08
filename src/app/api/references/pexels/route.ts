@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
+import { keywordsForStockPhotoSearch } from "@/lib/stock-photo-query";
 
 const reqSchema = z.object({
   query: z.string().trim().min(2).max(80),
@@ -25,8 +26,13 @@ export async function POST(request: Request) {
   }
 
   const perPage = body.perPage ?? 18;
+  const searchQuery = await keywordsForStockPhotoSearch(body.query);
+  if (searchQuery.length < 2) {
+    return jsonError("Query too short after normalization", 400);
+  }
+
   const url = new URL("https://api.pexels.com/v1/search");
-  url.searchParams.set("query", body.query);
+  url.searchParams.set("query", searchQuery);
   url.searchParams.set("per_page", String(perPage));
   url.searchParams.set("orientation", "portrait");
 
@@ -67,6 +73,6 @@ export async function POST(request: Request) {
       })
       .filter(Boolean) ?? [];
 
-  return NextResponse.json({ items });
+  return NextResponse.json({ items, queryUsed: searchQuery });
 }
 

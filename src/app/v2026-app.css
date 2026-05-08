@@ -601,6 +601,42 @@ aside.panel.anim-4 .panel-strip {
 }
 
 /* ——— References column ——— */
+/* Заполняем высоту колонки: скролл только у середины, кнопки шагов всегда внизу панели */
+.references-panel-root {
+  flex: 1 1 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  margin-bottom: 0;
+}
+
+.references-panel-top {
+  flex-shrink: 0;
+}
+
+.references-panel-scroll {
+  flex: 1 1 0;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  padding-right: 4px;
+}
+
+.references-panel-footer {
+  flex-shrink: 0;
+  padding-top: 12px;
+  border-top: 1px solid var(--border-divider);
+  background: linear-gradient(180deg, rgba(5, 11, 14, 0) 0%, rgba(18, 32, 38, 0.97) 20%);
+}
+
+.references-panel-footer .references-actions-block {
+  margin-top: 0;
+  padding-top: 0;
+  border-top: none;
+}
+
 .references-panel-head {
   flex-wrap: wrap;
   align-items: center;
@@ -644,6 +680,25 @@ aside.panel.anim-4 .panel-strip {
 .references-hint-inline {
   font-size: 11px;
   color: var(--text-muted);
+}
+
+.references-search-hint {
+  margin: 8px 0 0;
+  font-size: 10px;
+  line-height: 1.45;
+  color: var(--text-muted);
+}
+
+.references-catalog-query {
+  margin: 6px 0 0;
+  font-size: 10px;
+  line-height: 1.4;
+  color: var(--text-secondary);
+}
+
+.references-catalog-query .mono {
+  color: var(--text-dim);
+  word-break: break-word;
 }
 
 .references-thumb-grid {
@@ -704,9 +759,6 @@ aside.panel.anim-4 .panel-strip {
 }
 
 .references-actions-block {
-  margin-top: 16px;
-  padding-top: 14px;
-  border-top: 1px solid var(--border-divider);
   display: flex;
   flex-direction: column;
   gap: 10px;
