@@ -138,9 +138,9 @@ export function softenImagePromptForModeration(prompt: string, project: ProjectI
           const kind = String(args[2] ?? "");
           const isMale = /man|guy|male/i.test(kind);
           const isFemale = /woman|gal|female/i.test(kind);
-          if (isMale) return "a man in his early forties";
-          if (isFemale) return "a woman in her early forties";
-          return "an adult professional";
+          if (isMale) return "a man in his early thirties";
+          if (isFemale) return "a woman in her early thirties";
+          return "an adult professional in their early thirties";
         }
       ],
       // night/dark triggers

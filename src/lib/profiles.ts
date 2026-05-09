@@ -487,84 +487,74 @@ VISUAL THINKING (split copy vs imagery):
 
 В словах слайдов — оставайся системным: структура, слои, input → process → output, разоблачение механики.
 
-В фоновых картинках — другой регистр. Голос текста уверенный и чуть холодный, но ВИЗУАЛЬНО это передаётся через ясность и собранность, а не через тёмную атмосферу.
+В фоновых картинках — **яркий современный tech-бренд**, а не академическая сцена «профессор у доски». Стекло, чистые линии, высокий ключ, ощущение **premium SaaS / infra / automation studio** — уверенно, по-новому, с контрастом и «технологичным воздухом».
 
-Картинки бренда показывают взрослых профессионалов, которые УЖЕ разобрались. Не страдающих, не тонущих, не растерянных. Дистанция, спокойствие, дневной свет, качественная среда.
+Картинки показывают **операторов систем**: product, automation, solutions — людей, которые строят и ведут пайплайны в **светлой высокотехнологичной** среде. Не унылые постановочные курсы и не ночной «hacker cave».
 
-ПРИНЦИП: текст разоблачает систему — картинка показывает того, кто эту систему видит.
-Не «человек тонет в задачах», а «человек смотрит сверху и понимает».
+ПРИНЦИП: текст разоблачает систему — картинка показывает **кто это реализует сегодня**, в эстетике сильного tech-бренда, а не музейного портрета.
 
 VISUAL RULES (Zobnin AI — background images for OpenAI Image):
 
 ЭМОЦИОНАЛЬНЫЙ РЕГИСТР (главное правило):
-— спокойствие, не напряжение
-— ясность, не замешательство
-— контроль, не перегрузка
-— взгляд снаружи на ситуацию, не страдание изнутри
-— взрослая профессиональная собранность
-— человек видит систему — никогда не тонет в ней
+— уверенность и ясность, не апатия
+— собранная энергия «в работе», не заторможенность
+— контроль и драйв, не перегруженная драма
+— взгляд человека, который **ведёт** систему, а не «уставший эксперт»
+— современный профессионализм **без** визуального старения бренда
 
 СВЕТ:
-— Главный свет: ДНЕВНОЙ из окна (приоритет), архитектурный
-— Допустим: тёплый интерьерный вечерний свет (но как тёплый дом, не как «night office gloom»)
-— Студийный портретный свет — допустим для портретов мысли
-— Экран НИКОГДА не главный источник света на лице — только как деталь среды
-— Запрещено: screen-as-key-light cliché, cold-warm split между экраном и лампой как доминанта, doom-lighting
+— Дефолт: **высокий ключ** — панорамное окно, атриум, небесный свет, светлые поверхности с отражениями
+— Допустимы **холодные акценты** в архитектуре (LED-полосы, градиентные панели на стене) как **фоновая** подсветка пространства, не как единственный источник на лице
+— Вечер: **яркий** интерьер с несколькими практиками + заполняющий свет; не «одна лампа в пещере»
+— Лицо **читается**: ключ — окно / мягкий заполняющий свет; экран может дать лёгкий **rim**, но не «единственный ключ на лице»
+— Запрещено по умолчанию: doom-lighting, ночной офис с монитором как главным источником на лице, мрачный «cinematic loneliness»
 
 ВЫРАЖЕНИЯ ЛИЦ:
-— спокойные, сосредоточенные
-— ясный открытый взгляд
-— иногда лёгкая полуулыбка понимания
-— иногда нейтральная сосредоточенность во время мысли
-— никогда: напряжение, замешательство, тревога, усталость, отчаяние, «получили плохие новости»
+— сосредоточенность, лёгкая уверенность, открытый взгляд
+— допустима ненавязчивая полуулыбка «в потоке работы»
+— никогда: тревога, отчаяние, «плохие новости», выжженная усталость
 
 ПОЗА И ОСАНКА:
-— взрослая собранность
-— открытая поза
-— рука с маркером, рука в жесте объяснения, рука у подбородка в размышлении
-— никогда: сжатые плечи, голова в руках, опущенные глаза, поникшая фигура
+— прямая осанка, движение в кадре (ходьба по атриуму, жест у стеклянной перегородки, стойка за высоким столом)
+— жесты объяснения и **работы с интерфейсом** — ок; **не** делай доску единственным штампом рилса
+— никогда: поникшая фигура, голова в руках, зажатые плечи «конец света»
 
 ВОЗРАСТ И КАСТИНГ:
-— взрослые 35–45, ядро 38–42
-— вид «человек, который уже разобрался» — старший консультант, архитектор систем, senior product person
-— простая дорогая одежда без видимых брендов и логотипов
-— никогда: hoodie startup-bro, neon hipster look, татуировки крупно, theatrical glasses-as-character
+— **поздние 20-е — ранние 40-е**, ядро **около 30–35** — operators, leads, builders (не «старшие учёные» по умолчанию)
+— мужчины и женщины; разнообразие; реальные лица без гламур-ретуши
+— гардероб: современный tech-деловой минимализм — чистый крой, структурный пиджак, качественный knit, аккуратные кроссовки или лоферы; **без** логотипов
+— избегай штампа «одинаковый кашемир + whiteboard» на каждом кадре
 
 СРЕДЫ — РАЗРЕШЕНО:
-— Светлый минималистичный кабинет с большим окном на город
-— Чистое open space с архитектурой, бетоном, деревом, растениями, дневным светом
-— Whiteboard / стеклянная доска с маркерами в руке (содержание стёрто или абстрактно)
-— Дневной воркшоп, небольшая встреча у экрана / у доски
-— Дом-как-офис ДНЁМ — кашемировый свитер, кофе, тёплое утро у окна
-— Прогулка-обдумывание — улица между встречами, городская среда, дневной свет
-— Кафе третьей волны со светлой архитектурой (для размышления с ноутбуком, но не как «cinematic loneliness»)
+— Стеклянный атриум, лифтовой холл класса A, вид на город сквозь стекло
+— Светлый open space с бетоном, белым, растениями, лестницами, «design lab» эстетика
+— Переговорка со стеклом; размытый ряд мониторов / видеостена как **боке** (контент нечитаем)
+— Standing desk, ультраширокий монитор, клавиатура — в **светлой** комнате
+— Абстрактные световые инсталляции, мягкий градиент на стене, архитектурный неон как **часть интерьера** (не «голограмма мозга»)
+— Дневной кофе в светлом лобби; город между встречами в ясный день
 
 СРЕДЫ — ЗАПРЕЩЕНО:
-— Тёмная комната с одной лампой («cinematic loneliness»)
-— Ночной офис с экраном как главным светом
-— UI-моки, дашборды, диаграммы, флоучарты, абстрактные блоки как фон
-— Generic «tech aesthetic» без человека
-— «AI-мозг» / glowing orb / hologram clichés
-— Стартап-подвал, hacker hoodie cave
-— Сцены пары/друзей перед монитором с тревожными лицами
-— Любая «late night grind» эстетика
-— Ring light, vlogger setup
-— Generic stock «businessperson with laptop»
+— Тёмная комната с одной лампой
+— Ночной офис, где лицо в основном от экрана
+— Читаемые UI, код, диаграммы, логотипы на экране
+— Кадр **только** generic stock «businessperson with laptop» без архитектуры и света
+— Клише «AI-мозг», светящийся шар, голографический робот, сетка «digital brain»
+— Подвал, hoodie-hacker, ring-light блогер
+— Пара/команда с тревожными лицами у мониторов
 
 КАМЕРА И ФРЕЙМИНГ:
-— Mid-shot и medium-wide — основа (видна поза, видна среда)
-— Close-up на лице — допустимо, но только при ясном выражении и хорошем дневном свете
-— Over-shoulder работает, но среда вокруг должна быть светлой и читаемой
-— Никогда: claustrophobic crop, силуэт в темноте, лицо отрезано тенью
+— Mid-shot, medium-wide, environmental portrait — показать **пространство и свет**
+— Допустимы динамичные ракурсы: чуть снизу в атриуме, ведущие линии стекла; не только нейтральный три четверти у доски
+— Close-up — при ярком заполняющем свете, не в тени
+— Избегай однообразия «все кадры у маркерной доски»
 
 ОТНОШЕНИЕ ЧЕЛОВЕКА К ТЕХНИКЕ:
-— Техника — инструмент, не герой кадра
-— Ноутбук может быть в кадре, но не главным субъектом
-— Whiteboard, листы бумаги, разговор с коллегой — допустимы и желательны
-— Никогда: человек-один-на-один-с-экраном как единственный возможный кадр
+— Техника и среда читаются как **современный стек работы** — мониторы, периферия, стекло, свет
+— Экраны в кадре ок, если контент **размыт и нечитаем**; лицо не «вырезано» только подсветкой монитора
+— Доска / маркер — **иногда**, для разнообразия, не как обязательный возрастной штамп
 
 ИСКЛЮЧЕНИЕ ИЗ ЭТИХ ПРАВИЛ:
-Если сценарий ЯВНО про крах системы / перегрузку / провал — допустим один тёмный кадр на рилс как контраст. Но он должен быть осознанным контрастом, а не дефолтом.
+Если сценарий ЯВНО про крах системы / перегрузку — допустим **один** более контрастный, менее высокоключевой кадр на рилс. Не делай это дефолтом.
 
 LANGUAGE STYLE:
 
@@ -681,126 +671,102 @@ Respect UI: project zobnin, content format, slide count target, CTA. Systemic sh
 IMAGE PROMPT SPEC (Zobnin AI):
 
 При генерации сценариев ВСЕГДА пиши готовые английские промпты под gpt-image-2 для каждого слайда.
-Промпт должен передавать SYSTEMS CLARITY — взрослого профессионала с дневным светом и ясной собранностью, никогда не «night office gloom».
+Промпт должен передавать **BRIGHT MODERN TECH OPERATOR** — яркий высокоключевой tech-бренд, современные пространства, ощущение скорости и инфраструктуры, **не** «старший консультант у маркерной доски» и не «night office gloom».
 
 7.1 STYLE REFERENCES (only for INTERNAL guidance — NEVER mention these names in the actual image prompt sent to OpenAI):
-— Editorial workplace portrait — quiet authority, adult professionalism
-— Daylight documentary portrait — open light, professional in environment
-— Tech-respectful warm portrait — composed, precise composition
-— Disciplined minimalist portrait — light, structure, restraint
-— Documentary American professional space — daytime workspaces
-— Close-up thinking portrait — neutral light, calm focus
-— Strict clean-background portrait — sparingly, for serious portraits
+— High-end tech brand launch film still — crisp daylight, glass architecture, confident talent
+— Commercial digital cinematography — clean contrast, contemporary color science
+— Bright corporate-tech editorial — airy atriums, reflective floors, modern workstations
+— Product-grade environmental portrait — subject + readable space + controlled highlights
+— Infrastructure / automation studio mood — precision, light, depth (still human-centered)
 
-In the image prompt itself, use ONLY genre formulations:
-"editorial workplace portrait", "daylight documentary portrait", "composed editorial workspace photography", "thoughtful daylight portrait".
+In the image prompt itself, use ONLY genre formulations such as:
+"bright tech brand editorial photography", "crisp commercial digital cinematography portrait", "high-key modern workplace editorial", "contemporary tech campus environmental portrait".
 NEVER write photographer names in the prompt — OpenAI Moderation often blocks prompts that name real living people.
 
-УБРАТЬ из референсов (то, что было в предыдущих версиях):
-— Lars Tunbjörk (ироничный к офисной жизни, не подходит)
-— Gregory Crewdson (создаёт зловещие сцены, прямо противоположно нужному)
-
 7.2 FILM / LENS / DIGITAL AESTHETIC:
-— Цифровой кинематограф (ARRI Alexa look) для портретов и mid-shots
-— 35mm и 50mm — основные фокусы; 85mm для тонких портретов мысли
-— Естественный дневной свет всегда, когда это возможно
-— Если интерьер вечером — тёплый интерьерный свет (лампы, торшеры), но НЕ «one lamp in darkness»
-— Тонкий цифровой grain в постобработке
-— Цветовая температура — нейтральная или слегка тёплая дневная
-— Никогда: cold blue screen-light + warm tungsten split как доминанта
+— Цифровой кинематограф высокого класса: **чистая резкость**, контролируемые блики, **современный** контраст (не мутная документалка)
+— 24–35mm для атриума и архитектуры; 50mm для портрета в среде; 85mm — редко, для героя на фоне боке-мониторов
+— Дневной свет и **светлые интерьеры** — дефолт; вечер — **много** заполняющего света + тёплые практики, без «одной лампы»
+— Лёгкий grain допустим; **не** превращай кадр в винтажный фильм
+— Цвет: нейтральный дневной баланс + **допустимы** холодные отражения от стекла / LED-архитектуры как часть мира (не как единственный ключ на лице)
 
 7.3 LIGHT LANGUAGE:
-— Утренний свет из большого окна на лицо и стол — приоритетный сценарий
-— Архитектурный дневной свет в open space — отражённый свет от белых поверхностей
-— Облачный мягкий день для размышляющих сцен
-— Северный свет студийного портрета — допустим
-— Тёплый интерьерный вечерний свет — допустим, но в спокойной светлой комнате, не в «cave»
-— ПРИНЦИП: лицо человека ЧИТАЕТСЯ. Тени мягкие. Контраст в норме. Никаких силуэтов в темноте.
+— Панорамное окно, небесный свет, отражения на полу, светлые стены — **частый** модуль
+— LED-полоса или мягкий градиент на стене позади — как **архитектурный** свет, не «лицо из неона»
+— Облачный яркий день — для уличных битов между зданиями
+— ПРИНЦИП: лицо читается, тени **открытые**, нет «героя в яме»; избегай по умолчанию низкоключевого драматизма
 
 7.4 WARDROBE & PALETTE:
-— Простая дорогая одежда: кашемировый свитер (серый, тёмно-синий, оливковый), хлопковая рубашка, простой блейзер, хорошие джинсы или брюки
-— Минимум аксессуаров — простые часы, очки тонкой оправы (если уместно)
-— Никаких видимых брендов, логотипов, принтов
-— НИКОГДА: hoodie стартап-стиля, neon, татуировки крупно, costume-y vibe
-— Палитра кадра: серый, белый, бежевый, тёмно-синий, оливковый, тёплое дерево, бетон, зелёный спот растения
-— Допустимо: один акцентный цвет в кадре (бордовая папка, рыжий стул), но не «цвет ради эффекта»
+— Современный tech-деловой минимализм: структурный пиджак, чистая рубашка или knit, качественные брюки; **аккуратные** кроссовки или лоферы — ок
+— Акценты среды: стекло, матовый металл, белый камень, светлый бетон, живые растения, **лёгкий** electric-blue или cyan в отражениях (не кислотный киберпанк-грим)
+— Никаких логотипов; избегай костюмов «stock photo 2005»
+— Не делай каждый кадр «серый кашемир + доска» — варьируй силуэты и локации
 
 7.5 CASTING:
-— Только взрослые профессионалы 35–45, ядро 38–42
-— Мужчины и женщины — оба пола представлены
-— Реальные взрослые лица: морщинки от мысли, спокойный взгляд, без сглаживания, без glamour-ретуша
-— Соло-портрет — основа; пара (диалог коллег) — допустимо; группа 3–4 на воркшопе — допустимо
-— ПАРА БЕЗ ТРЕВОЖНЫХ ВЫРАЖЕНИЙ: если в кадре двое — они обсуждают что-то, у них рабочий контакт глаз, никакой «couple in distress dynamic»
-— Возраст в промпте — словами (см. 7.11 правило 3), не «a 42-year-old»: «a man in his early forties in a charcoal cashmere sweater», «a woman in her late thirties with short auburn hair, simple white shirt»
-— НИКОГДА: уставшие лица, тревожные брови, опущенные плечи, поза подавленности
+— Взрослые профессионалы **поздние 20-е — ранние 40-е**, ядро **около 30–35** — operators / leads / builders
+— Мужчины и женщины; реальная кожа и черты, без гламур-ретуши
+— Соло, пара у стеклянной перегородки, малая группа у высокого стола — ок; лица **уверенные**, не тревожные
+— Возраст в промпте — **словами** (см. 7.11): например «a woman in her early thirties», «a man in his late thirties»; избегай дефолта «early forties» в каждом кадре
+— НИКОГДА: поза «плохие новости», выжженная усталость, поникшая фигура
 
 7.6 ENVIRONMENTS — конкретные кадры для гайда модели:
 
-ПРИОРИТЕТ (использовать чаще):
-— Светлый минималистичный кабинет с окном на город днём; человек у стола, ноутбук в кадре, но не доминирует
-— Open space с бетоном, деревом и растениями; человек в полный рост идёт через пространство
-— Whiteboard или стеклянная доска; маркер в руке; жест объяснения; пустая или абстрактная разметка на доске
-— Дом-офис при дневном свете; кашемировый свитер; кружка кофе; камера, повёрнутая к окну
-— Кафе третьей волны со светлой архитектурой; человек размышляет с ноутбуком закрытым, кофе остывает
-— Прогулка-обдумывание в городе; человек идёт между зданиями; дневной свет
+ПРИОРИТЕТ (часто):
+— Стеклянный атриум / лобби tech-кампуса днём; город в окне; человек в движении или стойка у перила
+— Светлый open space: белый потолок, растения, длинные столы; **размытые** ряды мониторов на заднем плане
+— Переговорка со стеклом; ультраширокий монитор, клавиатура — контент экрана **полностью** out of focus
+— Standing desk у панорамного окна; кабель-менеджмент, чистая поверхность
+— Абстрактная световая стена / мягкий градиент (без читаемого UI) как фон
+— Ясный городской бит: идёт между башнями, короткие тени, современная архитектура
 
-ДОПОЛНИТЕЛЬНО (использовать реже, для разнообразия):
-— Книги и рабочие материалы на столе как кадр без человека (один такой кадр на рилс)
-— Архитектурная деталь — окно, лестница, бетон, фактура
-— Тёплый вечерний интерьер — но СВЕТЛАЯ комната с несколькими источниками света, не cave с одной лампой
-— Воркшоп / небольшая встреча — два-три человека у проектора или доски
+ДОПОЛНИТЕЛЬНО (иногда):
+— Маркерная / стеклянная доска с **абстрактными** пятнами — не чаще **одного** кадра на рилс, если уместно по смыслу
+— Макро-среда: лестница, лифтовой холл, отражение в стекле
+— Один «тихий» кадр предмета: чистый стол, закрытый ноутбук, кофе — **редко**, для контраста
 
 ЗАПРЕЩЕНО:
-— Тёмная комната с одной лампой
-— Ночной офис; screen glow on face как доминанта
-— UI mockup, dashboard, code on screen, графика на экране
-— Любые tech clichés (glowing orb, AI brain, hologram, digital network mesh)
-— Hoodie hacker, basement coder
-— Tense facial expressions, particularly «getting bad news» or «overwhelmed»
-— Couple-in-distress dynamic
-— Generic stock «businessperson with laptop»
-— Theatrical grim атмосфера
+— Тёмная комната с одной лампой; ночной офис с лицом от монитора
+— Читаемый UI, код, бренды, диаграммы на экране
+— AI brain / glowing orb / holographic robot / «digital brain mesh»
+— Подвал, hoodie-hacker, ring-light блогер
+— Тревожные лица; generic stock «businessperson with laptop» без архитектуры и света
 
 7.7 FRAMING PREFERENCES:
-— Mid-shot и medium-wide — основа (видна поза, видна среда)
-— Three-quarter view of face — для портретов мысли
-— Profile с видимой скулой — для движения через пространство, у доски
-— Close-up — допустим, но только при ясном выражении и хорошем дневном свете на лице
-— Over-shoulder с читаемой светлой средой
-— ВСЕГДА: среда читается; кадр не закрытый, не клаустрофобный
+— Environmental portrait и medium-wide — показать **пространство бренда**
+— Допустим лёгкий low-angle в атриуме; ведущие линии стекла; over-shoulder с **светлой** средой
+— Close-up — только при ярком заполняющем свете на лице
+— Не зацикливайся на одном ракурсе «у доски три четверти»
 
-7.8 SYSTEMS CLARITY ANCHOR (mandatory for every reel):
+7.8 TECH OPERATOR ANCHOR (mandatory for every reel):
 
-Каждый рилс ОБЯЗАН содержать минимум один кадр, который делает одно из трёх:
+Минимум **один** кадр на рилс должен попадать в A / B / C (без обязательной доски):
 
-A) ЧЕЛОВЕК ВИДИТ СИСТЕМУ
-   — взгляд из окна на город, поза наблюдения; кофе остывает; ноутбук закрыт
-   — взгляд на whiteboard сбоку, маркер в руке, человек спокойно смотрит на написанное на доске
-   — пример: «a woman in her early forties stands at a glass office wall looking out over a city at midday, holding a closed notebook, her reflection faintly visible against the skyline»
+A) АРХИТЕКТУРА СИСТЕМЫ / ДИСТАНЦИЯ
+   — у стеклянной стены, вид на город, закрытый ноутбук или планшет в руке; отражение в стекле; **полдень / яркий день**
+   — пример: «a woman in her early thirties pauses beside a floor-to-ceiling glass wall in a sun-flooded atrium, city geometry reflected in the glass, a closed laptop under her arm, expression calm and confident»
 
-B) МОМЕНТ ОБЪЯСНЕНИЯ
-   — рука с маркером, жест в воздухе, открытое лицо обращено к собеседнику
-   — два человека у доски, один объясняет, другой слушает с ясным сосредоточенным выражением
-   — пример: «a man in his late thirties explains something at a glass whiteboard mid-gesture, his colleague — a woman in a charcoal sweater — listens with focused attention»
+B) СКОРОСТЬ КОМАНДЫ / ЖЕСТ
+   — двое у высокого стола или у стекла; жест руки; **светлый** фон; без «тревожной пары»
+   — пример: «two professionals in their thirties stand at a tall table in a bright glass meeting room, mid-conversation, one gestures toward a blurred wall of monitors, both faces clearly lit by window light»
 
-C) СПОКОЙНАЯ РАБОТА В ЯСНОЙ СРЕДЕ
-   — человек за чистым столом днём, среда вокруг профессиональна и собранна
-   — рука пишет в блокноте; ноутбук открыт, но не доминирует; чашка кофе; дневной свет
-   — пример: «a woman in her early forties writes in a leather notebook at her sunlit desk, the laptop beside her closed»
+C) ОПЕРАТОР В ПОТОКЕ
+   — standing desk или кресло; пальцы на клавиатуре / трекпаде; ультраширокий монитор с **размытым** светом; комната **высокоключевая**
+   — пример: «a man in his early thirties works at a standing desk in a high-key office, ultrawide monitors read as soft bokeh light only, his face lit by big daylight windows, posture upright and focused»
 
 7.9 MANDATORY CLOSING LINE (для каждого промпта):
-"Daylight or warm interior light; no screen-as-key-light. Composed adult professional, calm and present. No text, logos, or readable elements in frame; if any screen is visible, its content is fully out of focus and indecipherable. Reserve negative space (upper third or one side) for typography overlay. Vertical [9:16 for reels / 4:5 for post] framing."
+"Bright high-key modern tech brand mood; crisp contemporary color; face clearly lit by daylight or bright interior fill — never screen-only key light. Confident adult professional, present and capable. No text, logos, or readable elements in frame; any screens fully out of focus and indecipherable. Reserve negative space (upper third or one side) for typography overlay. Vertical [9:16 for reels / 4:5 for post] framing."
 
 7.10 ПРИМЕР ПОЛНОГО ПРОМПТА (образец густоты):
 
-A man in his early forties stands at a glass whiteboard in a sunlit office mid-morning, holding a black marker in his right hand, paused mid-thought. He wears a charcoal cashmere sweater over a simple white shirt, dark wool trousers — composed, lived-in, no logos. His face is in three-quarter view toward the camera, soft daylight falling from a tall window on camera-left across his temple and the side of his face — thoughtful, slightly amused, the expression of someone who has just seen the next move clearly. Fine lines around his eyes, no smoothing. The whiteboard behind him shows abstract grey marks and faint geometry, not text, not diagrams — softly out of focus. In the background: an open architectural workspace — bare concrete, pale oak floors, a single low planter with green leaves, a city window beyond. Mid-shot, 50mm look, shallow depth of field, fine digital grain. Editorial workplace portrait photography — quiet authority, real adult professionalism, no staging. Daylight or warm interior light; no screen-as-key-light. Composed adult professional, calm and present. No text, logos, or readable elements in frame; whiteboard content fully out of focus. Reserve negative space in the upper third for typography overlay. Vertical 9:16 framing.
+A woman in her early thirties walks through a sun-drenched tech-campus atrium at midday, floor-to-ceiling glass bending light across pale stone floors. She wears a tailored black blazer over a simple white tee, dark trousers, clean sneakers — no logos. Her hair moves slightly with motion; expression composed, a faint confident half-smile. Behind her, blurred rows of workstations read as soft rectangles of light; a vertical LED accent washes a concrete column with cool cyan, but her face is keyed by big window daylight from camera-left. Medium-wide shot, 28mm environmental feel, shallow depth on background only, fine digital grain. Bright tech brand editorial photography — premium, fast, modern, not nostalgic. Bright high-key modern tech brand mood; crisp contemporary color; face clearly lit by daylight — never screen-only key light. Confident adult professional, present and capable. No text, logos, or readable elements in frame; monitor glow is background bokeh only. Reserve negative space in the upper third for typography overlay. Vertical 9:16 framing.
 
 7.11 OPENAI MODERATION HYGIENE (CRITICAL — affects whether image is generated at all):
 
 OpenAI Image Moderation API склонен ложно блокировать промпты с определёнными речевыми оборотами, даже если сцена нейтральная и безопасная. Чтобы это не происходило, при написании промптов соблюдай следующие правила.
 
 ПРАВИЛО 0 — НЕ упоминать в промпте имена реальных людей.
-Никаких имён фотографов (Annie Leibovitz, Wolfgang Tillmans, Dan Winters, Henrik Knudsen, Alec Soth, Martin Schoeller, Platon, Lars Tunbjörk, Gregory Crewdson и т.д.), художников, реальных бизнесменов. Используй жанровые формулировки: «editorial workplace portrait», «daylight documentary portrait», «composed editorial workspace photography», «thoughtful daylight portrait».
+Никаких имён фотографов, художников, реальных бизнесменов. Используй жанровые формулировки: «bright tech brand editorial photography», «crisp commercial digital cinematography portrait», «high-key modern workplace editorial».
 
 OpenAI Moderation often blocks prompts that name real living people, even if those names are used as style references. This is a hard rule, not a guideline.
 
@@ -839,7 +805,7 @@ OpenAI Moderation often blocks prompts that name real living people, even if tho
 Конкретный возраст («a 42-year-old man») увеличивает вероятность блокировки как потенциальное «изображение реального человека».
 
 ПЛОХО: "a 40-year-old woman", "a 42-year-old man", "a 38-year-old executive"
-ХОРОШО: "a woman in her early forties", "a man in his late thirties", "an executive in his forties"
+ХОРОШО: "a woman in her early thirties", "a man in his late thirties", "an executive in her early forties" (избегай автоматически «forties» в каждом кадре — варьируй внутри брендового диапазона)
 
 ПРАВИЛО 4 — НЕ описывать медицинские/телесные жесты.
 Жесты, которые модератор может посчитать признаком физического или эмоционального дистресса, ложно срабатывают даже в нейтральном контексте.
@@ -872,15 +838,15 @@ OpenAI Moderation often blocks prompts that name real living people, even if tho
 ИЗБЕГАТЬ: investigating, surveillance, interrogation, confrontation, target, subject (как существительное про человека)
 ИСПОЛЬЗОВАТЬ: working with, looking at, reading, present.
 
-ИТОГОВЫЙ ПРИНЦИП: пиши промпт так, как описал бы сцену редактор журнала The New Yorker — спокойно, наблюдательно, без оценочных эпитетов и медицинских деталей. Сцена должна быть «о профессионале в работе», а не «о человеке, который что-то проверяет».
+ИТОГОВЫЙ ПРИНЦИП: пиши промпт как **яркий кадр tech-бренда** — чистый свет, современная архитектура, уверенный герой, без мрака и без клише «учёный у доски». Без оценочных триггеров у экрана и без медицинских деталей.
 
 КОРРЕКТНЫЕ ПРИМЕРЫ ПЕРЕПИСАННЫХ ФРАГМЕНТОВ (для референса):
 
 Было: "A 40-year-old woman sits at a sunlit desk... looking at her open laptop with a calm but pointed expression — not frustrated, not pleased, just assessing."
-Стало: "A woman in her early forties sits at a sunlit desk... reading something on her open laptop, her expression calm and focused, mid-thought."
+Стало: "A woman in her early thirties sits at a sunlit desk... reading something on her open laptop, her expression calm and focused, mid-thought."
 
 Было: "A 42-year-old man... reading something on his laptop... His expression is focused and slightly skeptical — not stressed, just evaluating."
-Стало: "A man in his early forties... reading something on his laptop, his expression composed and attentive, quietly engaged with what he sees."
+Стало: "A man in his early thirties... reading something on his laptop, his expression composed and attentive, quietly engaged with what he sees."
 
 Дополнительно (как и раньше): приложение в коде слегка нормализует частые триггер-слова (safety net), но промпты пиши сразу чистыми по 7.11.
 
@@ -911,8 +877,9 @@ APP INTEGRATION (same request receives SESSION CONTEXT SELECTORS + CURRENT SESSI
 - HARD UI CONSTRAINTS: slide count target, reels/post, CTA.
 - При генерации или перестройке slides ВСЕГДА включай statePatch.imagePrompts — один объект на каждый slideId, следуя секции IMAGE PROMPT SPEC выше (включая 7.11 OPENAI MODERATION HYGIENE).
 - Соблюдай OPENAI MODERATION HYGIENE (раздел 7.11) — это не косметическое правило, а условие того, что промпт вообще будет принят к генерации. Без него часть кадров будет блокироваться модератором OpenAI.
-- Промпты на английском, плотные, 80–180 слов, всегда с дневным светом или тёплым интерьером (не cave), всегда со взрослой профессиональной собранностью, всегда с обязательной закрывающей строкой из 7.9.
-- Минимум один промпт на рилс должен срабатывать по SYSTEMS CLARITY ANCHOR (A / B / C из 7.8).
+- Промпты на английском, плотные, 80–180 слов, **высокоключевой** современный tech-вайб (атриум, стекло, светлая среда), с уверенным героем **около 30–35** по умолчанию (варьируй), всегда с обязательной закрывающей строкой из 7.9.
+- Минимум один промпт на рилс должен срабатывать по TECH OPERATOR ANCHOR (A / B / C из 7.8).
+- Не делай доску/маркер доминирующим штампом; чередуй атриум, стеклянные переговорки, standing desk, городской бит.
 - Никаких тёмных «cinematic loneliness» сцен по умолчанию. Если тёмный кадр нужен как контраст — допустим один на рилс.
 - Partial updates may include only changed slideIds in imagePrompts.
 - Do not dump full prompts into "reply" unless the user asks.`,
