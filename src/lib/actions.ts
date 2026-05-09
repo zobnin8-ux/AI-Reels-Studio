@@ -6,6 +6,7 @@ import {
   type ImagePrompt,
   type StudioState
 } from "@/lib/state";
+import type { ChatParseMeta } from "@/lib/chat-response-parse";
 import type { StatePatch } from "@/lib/chat-response";
 import { unwrapCaptionValue } from "@/lib/chat-reply-format";
 import {
@@ -129,15 +130,33 @@ export function mergeStatePatch(state: StudioState, patch: StatePatch | undefine
 }
 
 /** Один ход диалога: сервер всегда получает селекторы + сессию + историю; ответ — reply + statePatch. */
+export type SendDialogueTurnOptions = {
+  /**
+   * История уже включает последнее user-сообщение (например повтор запроса без дубля в теле).
+   * Последний элемент historyForApi должен быть тем же текстом, что и userText.
+   */
+  historyEndsWithLastUser?: boolean;
+};
+
 export async function sendDialogueTurn(
   state: StudioState,
   userText: string,
-  historyForApi: Pick<ChatMessage, "role" | "content">[]
-): Promise<{ reply: string; statePatch?: StatePatch }> {
+  historyForApi: Pick<ChatMessage, "role" | "content">[],
+  options?: SendDialogueTurnOptions
+): Promise<{ reply: string; statePatch?: StatePatch; chatParse?: ChatParseMeta }> {
   const trimmed = userText.trim();
   if (!trimmed) throw new Error("Пустое сообщение");
 
-  const messages = [...historyForApi, { role: "user" as const, content: trimmed }];
+  if (options?.historyEndsWithLastUser) {
+    const last = historyForApi[historyForApi.length - 1];
+    if (!last || last.role !== "user" || last.content.trim() !== trimmed) {
+      throw new Error("Повтор: история должна заканчиваться тем же пользовательским сообщением.");
+    }
+  }
+
+  const messages = options?.historyEndsWithLastUser
+    ? historyForApi
+    : [...historyForApi, { role: "user" as const, content: trimmed }];
 
   const res = await fetch("/api/chat", {
     method: "POST",
@@ -160,7 +179,11 @@ export async function sendDialogueTurn(
     throw new Error(msg);
   }
 
-  return (await res.json()) as { reply: string; statePatch?: StatePatch };
+  return (await res.json()) as {
+    reply: string;
+    statePatch?: StatePatch;
+    chatParse?: ChatParseMeta;
+  };
 }
 
 export type GenerateImagesProgressPayload = {

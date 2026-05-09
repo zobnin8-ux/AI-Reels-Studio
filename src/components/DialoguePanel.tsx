@@ -131,6 +131,12 @@ export function DialoguePanel() {
   const [inputShake, setInputShake] = useState(false);
   const [soundOn, setSoundOn] = useState(false);
   const [clock, setClock] = useState(() => new Date());
+  /** Показать «Повторить запрос» после частичного разбора JSON или сетевой ошибки. */
+  const [retryHint, setRetryHint] = useState<{
+    userText: string;
+    mode: string;
+    warnings: string[];
+  } | null>(null);
   const endRef = useRef<HTMLDivElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -238,25 +244,57 @@ export function DialoguePanel() {
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [applySessionHistoryUndo]);
 
-  async function runTurn(userText: string) {
+  async function runTurn(userText: string, opts?: { replaceAssistant?: boolean }) {
     const text = userText.trim();
     if (!text || busy) return;
+
+    const replaceAssistant = Boolean(opts?.replaceAssistant);
+    if (!replaceAssistant) {
+      setRetryHint(null);
+    } else if (state.messages.length < 2) {
+      return;
+    } else {
+      const last = state.messages[state.messages.length - 1]!;
+      const prev = state.messages[state.messages.length - 2]!;
+      if (last.role !== "assistant" || prev.role !== "user" || prev.content.trim() !== text) {
+        return;
+      }
+    }
 
     followNextRef.current = true;
     playSendClick();
     setBusy(true);
     setTurnResults(null);
-    const history = state.messages.map((m) => ({ role: m.role, content: m.content }));
+    const history = replaceAssistant
+      ? state.messages.slice(0, -1).map((m) => ({ role: m.role, content: m.content }))
+      : state.messages.map((m) => ({ role: m.role, content: m.content }));
     try {
-      const { reply, statePatch } = await sendDialogueTurn(state, text, history);
+      const { reply, statePatch, chatParse } = await sendDialogueTurn(state, text, history, {
+        historyEndsWithLastUser: replaceAssistant
+      });
 
       // Снимок полной сессии до применения ответа этого хода (включая откат автогенерации кадров в этом ходу).
       pushSessionUndoSnapshot(state);
 
       const userMsg: ChatMessage = { id: uid("u"), role: "user", content: text };
       const cleanedReply = sanitizeModelReplyForDisplay(reply);
-      const assistantContent =
+      let assistantContent =
         cleanedReply.trim().length > 0 ? cleanedReply : "Ответ получен, но текст пустой. Проверь /api/chat и ключи.";
+
+      if (chatParse && (chatParse.mode !== "ok" || (chatParse.warnings?.length ?? 0) > 0)) {
+        const modeLabel =
+          chatParse.mode === "partial"
+            ? "частично (statePatch мог быть урезан)"
+            : chatParse.mode === "reply_only"
+              ? "только текст (сценарий из JSON не применён)"
+              : "ок";
+        const warnBlock =
+          (chatParse.warnings?.length ?? 0) > 0
+            ? `\n${chatParse.warnings.map((w) => `• ${w}`).join("\n")}`
+            : "";
+        assistantContent += `\n\n—\nТехническое (${modeLabel}):${warnBlock}\nЕсли слайды или промпты не обновились — нажми «Повторить запрос к модели».`;
+      }
+
       const assistantMsg: ChatMessage = {
         id: uid("a"),
         role: "assistant",
@@ -311,10 +349,11 @@ export function DialoguePanel() {
         }
       }
 
+      const baseForMessages = replaceAssistant ? state.messages.slice(0, -1) : state.messages;
       const merged: StudioState = {
         ...state,
         ...patch,
-        messages: [...state.messages, userMsg, assistantMsg]
+        messages: replaceAssistant ? [...baseForMessages, assistantMsg] : [...baseForMessages, userMsg, assistantMsg]
       };
 
       const results: { key: string; label: string }[] = [];
@@ -341,6 +380,19 @@ export function DialoguePanel() {
         }
       });
       setInput("");
+
+      if (
+        !chatParse ||
+        (chatParse.mode === "ok" && (!chatParse.warnings || chatParse.warnings.length === 0))
+      ) {
+        setRetryHint(null);
+      } else {
+        setRetryHint({
+          userText: text,
+          mode: chatParse.mode,
+          warnings: chatParse.warnings ?? []
+        });
+      }
 
       if (merged.autoGenerateImages && userWantsImageGeneration(text) && canRunImageGeneration(merged)) {
         try {
@@ -382,6 +434,11 @@ export function DialoguePanel() {
             assistantMsg
           ]
         }
+      });
+      setRetryHint({
+        userText: text,
+        mode: "error",
+        warnings: [msg]
       });
       setInputShake(true);
       window.setTimeout(() => setInputShake(false), 500);
@@ -447,6 +504,25 @@ export function DialoguePanel() {
         <div className="busy-ribbon" role="status" aria-live="polite">
           <span className="dot-pulse" aria-hidden />
           Запрос к модели…
+        </div>
+      ) : null}
+
+      {!busy && retryHint ? (
+        <div
+          className="busy-ribbon"
+          role="status"
+          style={{ borderColor: "rgba(234, 179, 8, 0.35)", flexWrap: "wrap", gap: 10 }}
+        >
+          <span style={{ color: "var(--text-muted, #a3a3a3)" }}>
+            Последний ответ можно отправить снова без дубля сообщения в истории API.
+          </span>
+          <button
+            type="button"
+            className="asset-badge"
+            onClick={() => void runTurn(retryHint.userText, { replaceAssistant: true })}
+          >
+            Повторить запрос к модели
+          </button>
         </div>
       ) : null}
 

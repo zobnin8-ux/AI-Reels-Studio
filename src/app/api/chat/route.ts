@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { buildDialogueSystemPrompt } from "@/lib/dialogue-context";
-import { sanitizeModelReplyForDisplay } from "@/lib/chat-reply-format";
-import { chatApiResponseSchema, sessionImagePromptSchema } from "@/lib/chat-response";
+import { sessionImagePromptSchema } from "@/lib/chat-response";
+import { parseModelChatOutput } from "@/lib/chat-response-parse";
 
 /** Vercel / совместимые хосты; на Render при 502 также поднимите таймаут сервиса в панели. */
 export const maxDuration = 300;
@@ -50,34 +50,6 @@ function jsonError(message: string, status = 400) {
 
 function mockEnabled() {
   return process.env.AI_MOCK_MODE === "1";
-}
-
-function extractJsonObject(raw: string): unknown {
-  const trimmed = raw.trim();
-  const fence = /^```(?:json)?\s*([\s\S]*?)```$/m.exec(trimmed);
-  const candidate = fence ? fence[1]!.trim() : trimmed;
-  const start = candidate.indexOf("{");
-  const end = candidate.lastIndexOf("}");
-  if (start === -1 || end === -1 || end <= start) throw new Error("No JSON object in model output");
-  return JSON.parse(candidate.slice(start, end + 1));
-}
-
-function extractReplyText(raw: string): string {
-  const trimmed = raw.trim();
-  try {
-    const obj = extractJsonObject(trimmed) as { reply?: unknown };
-    if (typeof obj?.reply === "string" && obj.reply.trim()) return obj.reply.trim();
-  } catch {
-    // ignore
-  }
-  const m = trimmed.match(/"reply"\s*:\s*"([\s\S]*?)"/i);
-  if (m?.[1]) {
-    return m[1]
-      .replace(/\\"/g, "\"")
-      .replace(/\\n/g, "\n")
-      .trim();
-  }
-  return trimmed;
 }
 
 function openAIMessages(
@@ -162,15 +134,6 @@ async function callAnthropicChat(
   return text.trim();
 }
 
-function parseChatResponse(raw: string) {
-  const extracted = extractJsonObject(raw);
-  const parsed = chatApiResponseSchema.safeParse(extracted);
-  if (!parsed.success) {
-    throw new Error(`Invalid AI JSON: ${parsed.error.message}`);
-  }
-  return parsed.data;
-}
-
 export async function POST(request: Request) {
   let body: z.infer<typeof chatRequestSchema>;
   try {
@@ -186,7 +149,8 @@ export async function POST(request: Request) {
       const text = lastUser?.content?.slice(0, 120) ?? "";
       return NextResponse.json({
         reply: `[MOCK] Принято: «${text}». В реальном режиме модель вернёт JSON с reply и statePatch.`,
-        statePatch: {}
+        statePatch: {},
+        chatParse: { mode: "ok" as const, warnings: [] as string[] }
       });
     }
 
@@ -196,21 +160,12 @@ export async function POST(request: Request) {
         ? await callOpenAIChat(system, body.messages)
         : await callAnthropicChat(system, body.messages);
 
-    try {
-      const out = parseChatResponse(raw);
-      return NextResponse.json({
-        ...out,
-        reply: sanitizeModelReplyForDisplay(out.reply)
-      });
-    } catch {
-      const fallbackReply =
-        sanitizeModelReplyForDisplay(extractReplyText(raw)) ||
-        "Не удалось распарсить ответ модели. Повтори запрос чуть иначе.";
-      return NextResponse.json({
-        reply: fallbackReply,
-        statePatch: {}
-      });
-    }
+    const parsed = parseModelChatOutput(raw);
+    return NextResponse.json({
+      reply: parsed.reply,
+      statePatch: parsed.statePatch,
+      chatParse: { mode: parsed.parseMode, warnings: parsed.warnings }
+    });
   } catch (e: unknown) {
     const msg = e instanceof Error ? e.message : "Chat error";
     return jsonError(msg, 500);
